@@ -1,0 +1,5 @@
+/* Ayni Global Styles are handled by Tailwind CDN in index.html */
+body {
+    /* Prevent horizontal scroll */
+    overflow-x: hidden;
+}

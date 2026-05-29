@@ -1,0 +1,29 @@
+---
+name: game-content-architect
+description: Genera y valida contenido para niveles de 26play manteniendo la coherencia de SafetyTags
+version: 1.0.0
+---
+
+# Game Content Architect
+
+## Purpose
+Asistir en la expansión de los niveles de cartas del juego, asegurando que el contenido escale en vulnerabilidad emocional y física de manera segura.
+
+## When to Use
+- Cuando necesites crear un nuevo archivo de nivel (ej: `level3.content.ts`).
+- Para balancear la cantidad de retos 'physical' vs 'emotional'.
+
+## Instructions
+1. Analizar el nivel anterior para entender el "umbral de intensidad".
+2. Generar objetos `GameCard` que cumplan con la interfaz definida en `level1.content.ts`.
+3. Asignar `SafetyTag` apropiados basándose en el lenguaje del texto.
+
+## Rules
+- **MUST**: Usar el sistema de IDs `L{level}-Q{n}` o `L{level}-C{n}`.
+- **MUST NOT**: Superar los 60 segundos en retos del nivel 3 sin un tag de 'physical'.
+- **SHOULD**: Mantener una proporción de 40% preguntas y 60% retos/acciones.
+
+## Verification
+- [ ] Los IDs son únicos.
+- [ ] El tipado de TypeScript es válido.
+- [ ] No hay retos de contacto físico sin el tag `physical`.

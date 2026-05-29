@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --cm-bg: #FEF2F2;
+    --cm-accent: #DC2626;
+    --cm-accent-hover: #CA8A04;
+    --cm-text: #450A0A;
+    --cm-text-secondary: #991B1B;
+    --cm-shadow-md: 6px 6px 0 var(--cm-accent);
+    --cm-radius-xl: 0.75rem;
+    --font-heading: 'Playfair Display SC', serif;
+    --font-body: 'Karla', sans-serif;
+  }
+}

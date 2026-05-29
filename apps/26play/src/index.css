@@ -1,0 +1,49 @@
+@import '@house/tokens';
+
+body {
+  margin: 0;
+  background: var(--cm-bg);
+  color: var(--cm-text);
+  font-family: var(--cm-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 700;
+  color: var(--cm-accent);
+  margin: 0 0 var(--cm-space-md) 0;
+}
+
+.btn-primary {
+  background: var(--cm-accent);
+  color: #FFF;
+  padding: 14px 28px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--cm-radius-full);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  background: var(--cm-accent-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.94);
+}
+
+.card {
+  background: var(--cm-surface);
+  padding: var(--cm-space-md);
+  border-radius: var(--cm-radius-xl);
+  box-shadow: var(--cm-shadow-sm);
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  box-shadow: var(--cm-shadow-md);
+  border-color: var(--cm-border);
+}

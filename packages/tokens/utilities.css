@@ -1,0 +1,97 @@
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--cm-font);
+  font-size: var(--cm-font-size-base);
+  line-height: 1.5;
+  color: var(--cm-text);
+  background: var(--cm-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--cm-transition-base), color var(--cm-transition-base);
+}
+
+.cm-surface {
+  background: var(--cm-surface);
+  color: var(--cm-text);
+  border-radius: var(--cm-radius-xl);
+  box-shadow: var(--cm-shadow-sm);
+  border: 1px solid transparent;
+  transition: all var(--cm-transition-base);
+}
+
+.cm-surface:hover {
+  box-shadow: var(--cm-shadow-md);
+  border-color: var(--cm-border);
+}
+
+.cm-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--cm-space-md);
+}
+
+.cm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--cm-accent);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--cm-radius-full);
+  border: none;
+  letter-spacing: 0.02em;
+}
+
+.cm-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cm-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cm-gap-xs { gap: var(--cm-space-xs); }
+.cm-gap-sm { gap: var(--cm-space-sm); }
+.cm-gap-md { gap: var(--cm-space-md); }
+.cm-gap-lg { gap: var(--cm-space-lg); }
+
+.cm-mt-sm { margin-top: var(--cm-space-sm); }
+.cm-mt-md { margin-top: var(--cm-space-md); }
+.cm-mb-sm { margin-bottom: var(--cm-space-sm); }
+.cm-mb-md { margin-bottom: var(--cm-space-md); }
+
+@keyframes cm-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cm-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cm-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cm-anim-fade-in {
+  animation: cm-fade-in 400ms ease-out both;
+}
+
+.cm-anim-scale-in {
+  animation: cm-scale-in 300ms ease-out both;
+}
+
+.cm-anim-slide-up {
+  animation: cm-slide-up 500ms ease-out both;
+}

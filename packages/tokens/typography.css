@@ -1,0 +1,55 @@
+.cm-heading-1 {
+  font-size: var(--cm-font-size-3xl);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  background: linear-gradient(135deg, var(--cm-text) 0%, var(--cm-text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cm-heading-2 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.cm-heading-3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.cm-body {
+  font-size: var(--cm-font-size-base);
+  line-height: 1.5;
+  color: var(--cm-text-secondary);
+}
+
+.cm-body-sm {
+  font-size: var(--cm-font-size-sm);
+  color: var(--cm-text-tertiary);
+  font-weight: 500;
+}
+
+.cm-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--cm-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cm-accent-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--cm-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cm-mono {
+  font-family: var(--cm-font-mono);
+}

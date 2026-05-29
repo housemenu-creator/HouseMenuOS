@@ -1,0 +1,120 @@
+@import '@house/tokens';
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--cm-font);
+  background-color: var(--cm-bg);
+  color: var(--cm-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: var(--cm-space-sm);
+  color: var(--cm-accent);
+}
+
+h1 {
+  font-size: 3rem;
+  border-bottom: 4px solid var(--cm-accent);
+  display: inline-block;
+  padding-bottom: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+}
+
+h2 { font-size: 2.5rem; }
+h3 { font-size: 1.5rem; }
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; font-family: inherit; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--cm-space-sm);
+}
+
+.text-center { text-align: center; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--cm-radius-full);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--cm-accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--cm-accent-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.94);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--cm-border);
+  color: var(--cm-text);
+}
+
+.card {
+  background: var(--cm-surface);
+  border-radius: var(--cm-radius-xl);
+  padding: var(--cm-space-md);
+  box-shadow: var(--cm-shadow-sm);
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+}
+
+.card:hover {
+  box-shadow: var(--cm-shadow-md);
+  border-color: var(--cm-border);
+}
+
+.grid {
+  display: grid;
+  gap: var(--cm-space-md);
+}
+
+@media (max-width: 640px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+@media (min-width: 641px) and (max-width: 1023px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--cm-radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--cm-accent-surface);
+  color: var(--cm-accent);
+}

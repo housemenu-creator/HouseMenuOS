@@ -1,0 +1,57 @@
+:root {
+  --cm-bg: #FEF2F2;
+  --cm-accent: #DC2626;
+  --cm-accent-hover: #CA8A04;
+  --cm-text: #450A0A;
+  --cm-text-secondary: #991B1B;
+  --cm-shadow-md: 6px 6px 0 var(--cm-accent);
+  --cm-shadow-lg: 10px 10px 0 var(--cm-accent-hover);
+  --cm-radius-xl: 0.75rem;
+  --font-heading: 'Playfair Display SC', serif;
+  --font-body: 'Karla', sans-serif;
+}
+
+[data-theme="dark"] {
+  --cm-bg: #0a0a0f;
+  --cm-text: #f5f5f5;
+}
+
+.vibrant-card {
+  background-color: #FFFFFF;
+  border: 2px solid var(--cm-text);
+  box-shadow: var(--cm-shadow-md);
+  border-radius: var(--cm-radius-xl);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vibrant-card:hover {
+  box-shadow: var(--cm-shadow-lg);
+  transform: translate(-2px, -2px);
+}
+
+.heading-serif {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-culinary {
+  background-color: var(--cm-accent-hover);
+  color: #FFFFFF;
+  border: 2px solid var(--cm-text);
+  box-shadow: var(--cm-shadow-md);
+  font-family: var(--font-heading);
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  transition: all 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-culinary:active {
+  box-shadow: none;
+  transform: translateY(4px);
+}

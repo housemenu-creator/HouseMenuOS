@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-culinary-bg text-base-text min-h-screen font-body antialiased;
+  }
+}

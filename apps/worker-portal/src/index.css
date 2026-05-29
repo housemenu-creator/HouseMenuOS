@@ -1,0 +1,57 @@
+@import '@house/tokens';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: var(--cm-bg);
+  color: var(--cm-text);
+  font-family: var(--cm-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--cm-transition-base), color var(--cm-transition-base);
+}
+
+@layer components {
+  .worker-card,
+  .card {
+    background: var(--cm-surface);
+    border: 1px solid var(--cm-border);
+    border-radius: var(--cm-radius-xl);
+    box-shadow: var(--cm-shadow-sm);
+    transition: all 200ms ease;
+  }
+  .worker-card:hover,
+  .card:hover {
+    border-color: var(--cm-accent);
+    box-shadow: var(--cm-shadow-md);
+  }
+  .badge-online {
+    background: var(--cm-success-soft);
+    color: var(--cm-success);
+    border: 1px solid color-mix(in srgb, var(--cm-success) 20%, transparent);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--cm-radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-pending {
+    background: var(--cm-warning-soft);
+    color: var(--cm-warning);
+    border: 1px solid color-mix(in srgb, var(--cm-warning) 20%, transparent);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--cm-radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .stat-card {
+    background: linear-gradient(135deg, var(--cm-surface) 0%, color-mix(in srgb, var(--cm-accent) 10%, transparent) 100%);
+    border: 1px solid var(--cm-border);
+    border-radius: var(--cm-radius-xl);
+    padding: 1.5rem;
+  }
+}

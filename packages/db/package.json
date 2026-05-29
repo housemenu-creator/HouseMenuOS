@@ -1,0 +1,9 @@
+{
+  "name": "@house/db",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "firebase": "^12.13.0"
+  }
+}

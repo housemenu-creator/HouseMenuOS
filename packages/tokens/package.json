@@ -1,0 +1,12 @@
+{
+  "name": "@house/tokens",
+  "version": "1.0.0",
+  "main": "index.css",
+  "exports": {
+    ".": "./index.css",
+    "./variables": "./variables.css",
+    "./glass": "./glass.css",
+    "./typography": "./typography.css",
+    "./utilities": "./utilities.css"
+  }
+}

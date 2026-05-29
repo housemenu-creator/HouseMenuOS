@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Colección raffles
+    match /raffles/{document=**} {
+      // Cualquiera puede ver los sorteos (público)
+      allow read: if true;
+      // Solo el backend o funciones admin pueden modificar o crear raffles
+      // Esto previene que clientes actualicen `soldTickets` u otros datos críticos
+      allow write: if false; 
+    }
+
+    // Colección orders
+    match /orders/{document=**} {
+      // Un usuario solo puede ver sus propias ordenes
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Pueden crear órdenes si están autenticados, asegurándonos que su userId es igual al del creador,
+      // y que la orden nace en estado 'pending'.
+      allow create: if request.auth != null 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      
+      // No pueden modificar ni eliminar sus órdenes fraudulosamente (la validación del ticket y estado la hará el backend)
+      allow update, delete: if false; 
+    }
+  }
+}

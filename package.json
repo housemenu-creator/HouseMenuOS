@@ -1,0 +1,38 @@
+{
+  "name": "house-portal-os",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:hub": "npm run dev -w apps/househub",
+    "dev:menu": "npm run dev -w apps/house-menu",
+    "dev:worker": "npm run dev -w apps/worker-portal",
+    "dev:sorteos": "npm run dev -w apps/sorteos-automaticos",
+    "dev:26play": "npm run dev -w apps/26play",
+    "dev:chaly": "npm run dev -w apps/housepysbot",
+    "dev:portal-hub": "npm run dev -w apps/portal-hub",
+    "dev:cleaning": "npm run dev -w apps/house-cleaning",
+    "dev:laundry": "npm run dev -w apps/house-laundry",
+    "dev:piramid": "npm run dev -w apps/piramid-game",
+    "build:hub": "npm run build -w apps/househub",
+    "dev:core": "concurrently \"npm run dev:hub\" \"npm run dev:menu\" \"npm run dev:worker\"",
+    "dev:all": "concurrently \"npm run dev:hub\" \"npm run dev:menu\" \"npm run dev:worker\" \"npm run dev:sorteos\" \"npm run dev:26play\" \"npm run dev:chaly\" \"npm run dev:portal-hub\" \"npm run dev:cleaning\" \"npm run dev:laundry\" \"npm run dev:piramid\"",
+    "dev": "npm run dev:core",
+    "generate:view": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-view.ps1"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "concurrently": "^8.2.2",
+    "firebase-tools": "^15.18.0"
+  },
+  "overrides": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "jspdf": "^4.2.1"
+  }
+}

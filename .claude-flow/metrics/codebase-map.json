@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-05-21T06:50:39.021Z",
+  "projectRoot": "C:\\Users\\archiphone\\.gemini\\antigravity\\House-Portal-OS",
+  "structure": {
+    "hasPackageJson": true,
+    "hasTsConfig": false,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1779346239022
+}

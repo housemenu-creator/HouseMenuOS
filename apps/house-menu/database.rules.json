@@ -1,0 +1,111 @@
+{
+  "rules": {
+    "tenants": {
+      "$tenantId": {
+        ".read": "auth != null && root.child('tenants').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('tenants').child(auth.uid).exists()",
+        "sessions": {
+          "$token": {
+            ".read": "auth.uid === root.child('tenants').child(auth.uid).child('sessions').child($token).child('userId').val()",
+            ".write": "auth.uid === root.child('tenants').child(auth.uid).child('sessions').child($token).child('userId').val()"
+          }
+        },
+        "users": {
+          "$uid": {
+            ".read": "auth.uid === $uid",
+            ".write": "auth.uid === $uid"
+          }
+        },
+        "memberships": {
+          "$mid": {
+            ".read": "auth.uid === root.child('tenants').child(auth.uid).child('memberships').child($mid).child('userId').val() || root.child('tenants').child(auth.uid).child('role').val() === 'admin'",
+            ".write": "auth.uid === root.child('tenants').child(auth.uid).child('memberships').child($mid).child('userId').val()"
+          }
+        },
+        "roles": {
+          "$roleId": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          }
+        }
+      }
+    },
+    "branches": {
+      "$branchId": {
+        ".indexOn": ["status", "createdAt", "deliveryDate"],
+        "catalog": {
+          ".read": "auth != null",
+          ".write": "auth != null && root.child('tenants').child(auth.uid).exists()",
+          "products": {
+            "$productId": {
+              ".validate": "newData.hasChildren(['name', 'price']) && newData.child('price').isNumber() && newData.child('price').val() >= 0"
+            }
+          }
+        },
+        "config": {
+          ".read": "auth != null",
+          ".write": "auth != null && root.child('tenants').child(auth.uid).exists()"
+        },
+        "orders": {
+          "$orderId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['status', 'createdAt'])",
+            "status": {
+              ".validate": "newData.isString() && newData.val().matches(/^(programado|recibido|preparando|listo|en_camino|entregado|cancelado)$/)"
+            },
+            "canceledBy": {
+              ".validate": "newData.isString()"
+            },
+            "paidBy": {
+              ".validate": "newData.isString()"
+            },
+            "createdBy": {
+              ".validate": "newData.isString()"
+            },
+            "updatedBy": {
+              ".validate": "newData.isString()"
+            },
+            "editedBy": {
+              ".validate": "newData.isString()"
+            },
+            "notedBy": {
+              ".validate": "newData.isString()"
+            }
+          }
+        },
+        "chat": {
+          ".read": "auth != null",
+          ".write": "auth != null && root.child('tenants').child(auth.uid).exists()",
+          "$msgId": {
+            ".validate": "newData.hasChildren(['text', 'sender', 'timestamp'])"
+          }
+        },
+        "fcm_tokens": {
+          "$userId": {
+            ".read": "auth.uid === $userId",
+            ".write": "auth.uid === $userId"
+          }
+        }
+      }
+    },
+    "branches_config": {
+      "$branchId": {
+        ".read": "auth != null && root.child('tenants').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('tenants').child(auth.uid).exists()",
+        "fiscal": {
+          "$field": {
+            ".read": "auth != null && root.child('tenants').child(auth.uid).exists()",
+            ".write": "auth != null && root.child('tenants').child(auth.uid).exists()"
+          }
+        }
+      }
+    },
+    "chats": {
+      "$key": {
+        ".read": "auth != null && root.child('tenants').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('tenants').child(auth.uid).exists()"
+      }
+    }
+  }
+}

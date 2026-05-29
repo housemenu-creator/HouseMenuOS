@@ -1,0 +1,12 @@
+{
+  "name": "@house/store",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "peerDependencies": {
+    "react": "^19.2.6"
+  },
+  "dependencies": {
+    "zustand": "^4.5.7"
+  }
+}

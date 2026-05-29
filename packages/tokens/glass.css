@@ -1,0 +1,20 @@
+.cm-glass {
+  background: var(--cm-glass-bg);
+  backdrop-filter: blur(var(--cm-glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--cm-glass-blur)) saturate(180%);
+  border: 1px solid var(--cm-glass-border);
+  box-shadow: var(--cm-glass-shadow);
+}
+
+.cm-glass-strong {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--cm-shadow-xl);
+}
+
+[data-theme="dark"] .cm-glass-strong {
+  background: rgba(28, 28, 30, 0.85);
+  border-color: rgba(255, 255, 255, 0.06);
+}
