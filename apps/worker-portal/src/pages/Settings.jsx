@@ -67,19 +67,19 @@ export default function Settings() {
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h2 className="text-sm font-pixel text-worker-accent mb-3 uppercase tracking-widest">
+          <h2 className="text-sm font-sans text-cm-accent-hover mb-3 uppercase tracking-widest">
             Panel de Control
           </h2>
           <h1 className="text-4xl font-extrabold tracking-tight flex items-center gap-3">
-            <SettingsIcon className="w-9 h-9 text-worker-primary" />
-            Ajustes & <span className="text-worker-primary">Canjes</span>
+            <SettingsIcon className="w-9 h-9 text-cm-accent" />
+            Ajustes & <span className="text-cm-accent">Canjes</span>
           </h1>
         </div>
         {/* Balance */}
-        <div className="flex items-center gap-3 p-4 border border-[var(--cm-border)] bg-[rgba(124,58,237,0.08)]" style={{ borderRadius: '0px' }}>
+        <div className="flex items-center gap-3 p-4 border border-cm-border bg-cm-accent-surface" style={{ borderRadius: '0px' }}>
           <Coins className="w-6 h-6 text-yellow-400" />
           <div>
-            <span className="block text-[10px] text-worker-muted uppercase font-bold tracking-widest">Tu Balance KPI</span>
+            <span className="block text-[10px] text-cm-text-secondary uppercase font-bold tracking-widest">Tu Balance KPI</span>
             <span className="text-2xl font-bold font-mono text-yellow-400">{userPts.toLocaleString()} pts</span>
           </div>
         </div>
@@ -97,8 +97,8 @@ export default function Settings() {
             onClick={() => setActiveSection(s.key)}
             className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-wide transition-all border ${
               activeSection === s.key 
-                ? 'bg-[rgba(124,58,237,0.2)] text-worker-primary border-[rgba(124,58,237,0.4)]' 
-                : 'bg-transparent text-worker-muted border-[var(--cm-border)] hover:text-worker-text'
+                ? 'bg-cm-accent-light text-cm-accent border-cm-accent/40' 
+                : 'bg-transparent text-cm-text-secondary border-cm-border hover:text-cm-text'
             }`}
             style={{ borderRadius: '0px' }}
           >
@@ -110,7 +110,7 @@ export default function Settings() {
       {/* Section: Canjear Puntos */}
       {activeSection === 'canjear' && (
         <div className="space-y-6">
-          <p className="text-sm text-worker-muted">
+          <p className="text-sm text-cm-text-secondary">
             Acumula puntos KPI completando pedidos, tareas de limpieza y manteniendo tu racha. Canjéalos aquí por tickets de sorteo, beneficios y merch exclusivo.
           </p>
 
@@ -123,7 +123,7 @@ export default function Settings() {
               return (
                 <div 
                   key={reward.id}
-                  className="worker-card p-5 flex flex-col justify-between relative overflow-hidden"
+                  className="bg-cm-surface border border-cm-border shadow-cm-sm transition-all hover:border-cm-accent hover:shadow-cm-md p-5 flex flex-col justify-between relative overflow-hidden"
                   style={{ borderRadius: '0px' }}
                 >
                   {/* Category Tag */}
@@ -141,13 +141,13 @@ export default function Settings() {
                   <div>
                     <div className="text-3xl mb-3">{reward.icon}</div>
                     <h3 className="font-bold text-base mb-1">{reward.name}</h3>
-                    <p className="text-xs text-worker-muted leading-relaxed">{reward.description}</p>
+                    <p className="text-xs text-cm-text-secondary leading-relaxed">{reward.description}</p>
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-[var(--cm-border)]">
                     <div className="flex justify-between items-center mb-3">
                       <span className="font-mono font-bold text-yellow-400 text-sm">{reward.costPts} pts</span>
-                      <span className={`text-[10px] font-bold uppercase ${reward.stock <= 3 ? 'text-red-400' : 'text-worker-muted'}`}>
+                      <span className={`text-[10px] font-bold uppercase ${reward.stock <= 3 ? 'text-red-400' : 'text-cm-text-secondary'}`}>
                         {reward.stock} disponibles
                       </span>
                     </div>
@@ -175,8 +175,8 @@ export default function Settings() {
                         disabled={!canAfford || outOfStock}
                         className={`w-full py-2 text-xs font-bold uppercase tracking-wide border transition-all flex items-center justify-center gap-1.5 ${
                           !canAfford || outOfStock
-                            ? 'bg-transparent text-worker-muted border-[var(--cm-border)] opacity-40 cursor-not-allowed'
-                            : 'bg-[rgba(124,58,237,0.15)] text-worker-primary border-[rgba(124,58,237,0.3)] hover:bg-[rgba(124,58,237,0.25)]'
+                            ? 'bg-transparent text-cm-text-secondary border-cm-border opacity-40 cursor-not-allowed'
+                            : 'bg-cm-accent-light text-cm-accent border-cm-accent/30 hover:bg-cm-accent'
                         }`}
                         style={{ borderRadius: '0px' }}
                       >
@@ -201,21 +201,21 @@ export default function Settings() {
       {activeSection === 'historial' && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold flex items-center gap-2">
-            <Ticket className="w-5 h-5 text-worker-primary" /> Historial de Canjes
+            <Ticket className="w-5 h-5 text-cm-accent" /> Historial de Canjes
           </h3>
 
           {redeemHistory.length === 0 ? (
             <div 
-              className="worker-card p-12 text-center"
+              className="bg-cm-surface border border-cm-border shadow-cm-sm transition-all hover:border-cm-accent hover:shadow-cm-md p-12 text-center"
               style={{ borderRadius: '0px' }}
             >
-              <Gift className="w-12 h-12 text-worker-muted mx-auto mb-3 opacity-40" />
-              <p className="text-worker-muted font-bold text-sm">Aún no has canjeado ningún premio</p>
-              <p className="text-worker-muted text-xs mt-1">Tus canjes aparecerán aquí</p>
+              <Gift className="w-12 h-12 text-cm-text-secondary mx-auto mb-3 opacity-40" />
+              <p className="text-cm-text-secondary font-bold text-sm">Aún no has canjeado ningún premio</p>
+              <p className="text-cm-text-secondary text-xs mt-1">Tus canjes aparecerán aquí</p>
             </div>
           ) : (
             <div 
-              className="worker-card divide-y divide-[var(--cm-border)]"
+              className="bg-cm-surface border border-cm-border shadow-cm-sm transition-all hover:border-cm-accent hover:shadow-cm-md divide-y divide-cm-border"
               style={{ borderRadius: '0px' }}
             >
               {redeemHistory.map(entry => (
@@ -224,7 +224,7 @@ export default function Settings() {
                     <span className="text-2xl">{entry.icon}</span>
                     <div>
                       <span className="font-bold text-sm">{entry.rewardName}</span>
-                      <span className="block text-[10px] text-worker-muted font-bold uppercase">{entry.timestamp} — {entry.id}</span>
+                      <span className="block text-[10px] text-cm-text-secondary font-bold uppercase">{entry.timestamp} — {entry.id}</span>
                     </div>
                   </div>
                   <span className="font-mono font-bold text-red-400 text-sm">-{entry.costPts} pts</span>
@@ -239,37 +239,37 @@ export default function Settings() {
       {activeSection === 'preferencias' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Perfil */}
-          <div className="worker-card p-6 space-y-5" style={{ borderRadius: '0px' }}>
-            <h3 className="text-lg font-bold flex items-center gap-2 pb-2 border-b border-[var(--cm-border)]">
-              <User className="w-5 h-5 text-worker-primary" /> Perfil de Operador
+          <div className="bg-cm-surface border border-cm-border shadow-cm-sm transition-all hover:border-cm-accent hover:shadow-cm-md p-6 space-y-5" style={{ borderRadius: '0px' }}>
+            <h3 className="text-lg font-bold flex items-center gap-2 pb-2 border-b border-cm-border">
+              <User className="w-5 h-5 text-cm-accent" /> Perfil de Operador
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold uppercase text-worker-muted tracking-widest mb-1">Nombre de Usuario</label>
+                <label className="block text-[10px] font-bold uppercase text-cm-text-secondary tracking-widest mb-1">Nombre de Usuario</label>
                 <input 
                   type="text" 
                   defaultValue="Ayni_Master" 
-                  className="w-full p-2.5 bg-[rgba(0,0,0,0.3)] border border-[var(--cm-border)] text-sm font-bold text-worker-text outline-none focus:border-worker-primary transition-colors"
+                  className="w-full p-2.5 bg-[rgba(0,0,0,0.3)] border border-cm-border text-sm font-bold text-cm-text outline-none focus:border-cm-accent transition-colors"
                   style={{ borderRadius: '0px' }}
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase text-worker-muted tracking-widest mb-1">Correo</label>
+                <label className="block text-[10px] font-bold uppercase text-cm-text-secondary tracking-widest mb-1">Correo</label>
                 <input 
                   type="email" 
                   defaultValue="ayni@housepotal.os" 
-                  className="w-full p-2.5 bg-[rgba(0,0,0,0.3)] border border-[var(--cm-border)] text-sm font-bold text-worker-text outline-none focus:border-worker-primary transition-colors"
+                  className="w-full p-2.5 bg-[rgba(0,0,0,0.3)] border border-cm-border text-sm font-bold text-cm-text outline-none focus:border-cm-accent transition-colors"
                   style={{ borderRadius: '0px' }}
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase text-worker-muted tracking-widest mb-1">Rol Asignado</label>
-                <div className="p-2.5 bg-[rgba(0,0,0,0.3)] border border-[var(--cm-border)] text-sm font-bold text-worker-accent">
+                <label className="block text-[10px] font-bold uppercase text-cm-text-secondary tracking-widest mb-1">Rol Asignado</label>
+                <div className="p-2.5 bg-[rgba(0,0,0,0.3)] border border-cm-border text-sm font-bold text-cm-accent">
                   Operador Multi-Área (Cocina + Limpieza)
                 </div>
               </div>
               <button 
-                className="w-full py-2 text-xs font-bold uppercase bg-[rgba(124,58,237,0.15)] text-worker-primary border border-[rgba(124,58,237,0.3)] hover:bg-[rgba(124,58,237,0.25)] transition-colors"
+                className="w-full py-2 text-xs font-bold uppercase bg-cm-accent-light text-cm-accent border border-cm-accent/30 hover:bg-cm-accent transition-colors"
                 style={{ borderRadius: '0px' }}
               >
                 Guardar Cambios
@@ -279,9 +279,9 @@ export default function Settings() {
 
           {/* Notificaciones y UI */}
           <div className="space-y-6">
-            <div className="worker-card p-6 space-y-4" style={{ borderRadius: '0px' }}>
-              <h3 className="text-lg font-bold flex items-center gap-2 pb-2 border-b border-[var(--cm-border)]">
-                <Bell className="w-5 h-5 text-worker-accent" /> Notificaciones
+            <div className="bg-cm-surface border border-cm-border shadow-cm-sm transition-all hover:border-cm-accent hover:shadow-cm-md p-6 space-y-4" style={{ borderRadius: '0px' }}>
+              <h3 className="text-lg font-bold flex items-center gap-2 pb-2 border-b border-cm-border">
+                <Bell className="w-5 h-5 text-cm-accent-hover" /> Notificaciones
               </h3>
               {[
                 { label: 'Pedidos Nuevos', desc: 'Recibe alertas cuando entran pedidos de House Menu', value: notifPedidos, toggle: setNotifPedidos },
@@ -291,14 +291,14 @@ export default function Settings() {
                 <div key={i} className="flex justify-between items-center py-2">
                   <div>
                     <span className="font-bold text-sm">{item.label}</span>
-                    <span className="block text-[10px] text-worker-muted">{item.desc}</span>
+                    <span className="block text-[10px] text-cm-text-secondary">{item.desc}</span>
                   </div>
                   <button
                     onClick={() => item.toggle(!item.value)}
                     className={`w-12 h-6 border-2 relative transition-colors ${
                       item.value 
-                        ? 'bg-worker-primary border-worker-primary' 
-                        : 'bg-transparent border-[var(--cm-border)]'
+                        ? 'bg-cm-accent border-cm-accent' 
+                        : 'bg-transparent border-cm-border'
                     }`}
                     style={{ borderRadius: '0px' }}
                   >
@@ -312,8 +312,8 @@ export default function Settings() {
               ))}
             </div>
 
-            <div className="worker-card p-6 space-y-4" style={{ borderRadius: '0px' }}>
-              <h3 className="text-lg font-bold flex items-center gap-2 pb-2 border-b border-[var(--cm-border)]">
+            <div className="bg-cm-surface border border-cm-border shadow-cm-sm transition-all hover:border-cm-accent hover:shadow-cm-md p-6 space-y-4" style={{ borderRadius: '0px' }}>
+              <h3 className="text-lg font-bold flex items-center gap-2 pb-2 border-b border-cm-border">
                 <Shield className="w-5 h-5 text-emerald-400" /> Interfaz
               </h3>
               {[
@@ -322,10 +322,10 @@ export default function Settings() {
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center py-2">
                   <div className="flex items-center gap-3">
-                    <span className="text-worker-muted">{item.icon}</span>
+                    <span className="text-cm-text-secondary">{item.icon}</span>
                     <div>
                       <span className="font-bold text-sm">{item.label}</span>
-                      <span className="block text-[10px] text-worker-muted">{item.desc}</span>
+                      <span className="block text-[10px] text-cm-text-secondary">{item.desc}</span>
                     </div>
                   </div>
                   <button
@@ -333,7 +333,7 @@ export default function Settings() {
                     className={`w-12 h-6 border-2 relative transition-colors ${
                       item.value 
                         ? 'bg-emerald-500 border-emerald-500' 
-                        : 'bg-transparent border-[var(--cm-border)]'
+                        : 'bg-transparent border-cm-border'
                     }`}
                     style={{ borderRadius: '0px' }}
                   >
