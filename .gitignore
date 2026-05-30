@@ -56,3 +56,13 @@ coverage/
 .cache/
 tmp/
 temp/
+# Local AI runtime state
+.atl/
+
+# Storybook build output
+storybook-static/
+
+# Speckit backup
+.spec-kit-backup/
+
+

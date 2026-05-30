@@ -1,7 +1,81 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "openrouter/quasar-alpha",
+  "agent": {
+    "gentle-orchestrator": {
+      "description": "Gentle AI SDD Orchestrator — coordinates sub-agents",
+      "mode": "primary",
+      "permission": {
+        "task": {
+          "*": "deny",
+          "jd-fix-agent": "allow",
+          "jd-judge-a": "allow",
+          "jd-judge-b": "allow",
+          "sdd-apply": "allow",
+          "sdd-archive": "allow",
+          "sdd-design": "allow",
+          "sdd-explore": "allow",
+          "sdd-init": "allow",
+          "sdd-onboard": "allow",
+          "sdd-propose": "allow",
+          "sdd-spec": "allow",
+          "sdd-tasks": "allow",
+          "sdd-verify": "allow"
+        }
+      },
+      "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/gentle-orchestrator.md}"
+    },
+    "sdd-orchestrator-cheap": {
+      "description": "SDD Orchestrator (cheap profile)",
+      "mode": "primary",
+      "model": "openrouter/quasar-alpha",
+      "permission": {
+        "task": {
+          "*": "deny",
+          "jd-fix-agent": "allow",
+          "jd-judge-a": "allow",
+          "jd-judge-b": "allow",
+          "sdd-apply-cheap": "allow",
+          "sdd-archive-cheap": "allow",
+          "sdd-design-cheap": "allow",
+          "sdd-explore-cheap": "allow",
+          "sdd-init-cheap": "allow",
+          "sdd-onboard-cheap": "allow",
+          "sdd-propose-cheap": "allow",
+          "sdd-spec-cheap": "allow",
+          "sdd-tasks-cheap": "allow",
+          "sdd-verify-cheap": "allow"
+        }
+      },
+      "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-orchestrator-cheap.md}"
+    },
+    "sdd-apply": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-apply.md}" },
+    "sdd-apply-cheap": { "hidden": true, "mode": "subagent", "model": "openrouter/quasar-alpha", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-apply.md}" },
+    "sdd-archive": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-archive.md}" },
+    "sdd-archive-cheap": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-archive.md}" },
+    "sdd-design": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-design.md}" },
+    "sdd-design-cheap": { "hidden": true, "mode": "subagent", "model": "openrouter/quasar-alpha", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-design.md}" },
+    "sdd-explore": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-explore.md}" },
+    "sdd-explore-cheap": { "hidden": true, "mode": "subagent", "model": "openrouter/qwen-qwq-32b:free", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-explore.md}" },
+    "sdd-init": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-init.md}" },
+    "sdd-init-cheap": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-init.md}" },
+    "sdd-onboard": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-onboard.md}" },
+    "sdd-onboard-cheap": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-onboard.md}" },
+    "sdd-propose": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-propose.md}" },
+    "sdd-propose-cheap": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-propose.md}" },
+    "sdd-spec": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-spec.md}" },
+    "sdd-spec-cheap": { "hidden": true, "mode": "subagent", "model": "openrouter/quasar-alpha", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-spec.md}" },
+    "sdd-tasks": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-tasks.md}" },
+    "sdd-tasks-cheap": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-tasks.md}" },
+    "sdd-verify": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-verify.md}" },
+    "sdd-verify-cheap": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/sdd-verify.md}" },
+    "jd-fix-agent": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/jd-fix-agent.md}" },
+    "jd-judge-a": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/jd-judge-a.md}" },
+    "jd-judge-b": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/jd-judge-b.md}" }
+  },
   "instructions": [
+    "C:/Users/archiphone/.config/opencode/skills/agentic-framework/SKILL.md",
+    "C:/Users/archiphone/.config/opencode/agents/project-orchestrator.md",
     "docs/projectContext.md",
     "docs/techStack.md",
     "docs/developer-preferences.md",
@@ -28,6 +102,37 @@
         "CLAUDE_FLOW_MAX_AGENTS": "15",
         "CLAUDE_FLOW_MEMORY_BACKEND": "hybrid"
       }
+    },
+    "engram": {
+      "command": ["engram", "mcp", "--tools=agent"],
+      "type": "local"
+    }
+  },
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "git commit *": "ask",
+      "git push": "ask",
+      "git push *": "ask",
+      "git push --force *": "ask",
+      "git rebase *": "ask",
+      "git reset --hard *": "ask"
+    },
+    "read": {
+      "*": "allow",
+      "**/*.key": "deny",
+      "**/*.pem": "deny",
+      "**/.aws/credentials": "deny",
+      "**/.config/gh/hosts.yml": "deny",
+      "**/.credentials/**": "deny",
+      "**/.env": "deny",
+      "**/.env.*": "deny",
+      "**/.ssh/**": "deny",
+      "**/Library/Keychains/**": "deny",
+      "**/credentials.json": "deny",
+      "**/secrets/**": "deny",
+      "*.env": "deny",
+      "*.env.*": "deny"
     }
   }
 }

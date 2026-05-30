@@ -1,0 +1,87 @@
+# openspec/config.yaml
+# SDD Configuration for House-Portal-OS
+schema: spec-driven
+
+context: |
+  House-Portal-OS — npm workspaces monorepo (10 apps + 4 @house/* packages).
+  React 19 + TypeScript 6.0, Vite 8 + rolldown bundler, Tailwind CSS 3.4.
+  Firebase (RTDB + Auth + Firestore + Storage) — primary backend.
+  Clean Minimalist Design System (@house/tokens). Zustand 5 state management.
+  Framer Motion 12 animations. Lucide React icons. Recharts (househub only).
+  ESM only ("type": "module" in all apps/packages). Node.js 22+.
+  10 apps: house-menu, househub, worker-portal, 26play, sorteos-automaticos,
+  house-cleaning, house-laundry, portal-hub, housepysbot, piramid-game.
+  4 shared packages: @house/ui, @house/tokens, @house/db, @house/store.
+
+strict_tdd: true
+
+testing:
+  runner:
+    name: Vitest
+    version: "^4.1.7"
+    config: apps/house-menu/vitest.config.js
+    commands:
+      run: npm run test -w apps/house-menu
+      watch: npm run test:watch -w apps/house-menu
+      workspace:
+        house-menu: "npm run test -w apps/house-menu"
+        ui: "npx vitest run --config packages/ui"
+  layers:
+    unit:
+      available: true
+      tool: Vitest
+      details: "Pure logic/service testing with in-memory Firebase RTDB mocks"
+    integration:
+      available: true
+      tool: Vitest + jsdom + @testing-library/react
+      details: "jsdom environment, service-layer Firebase mocks, @testing-library/react installed but no DOM tests yet"
+    e2e:
+      available: false
+      tool: Playwright + @vitest/browser-playwright
+      details: "Playwright installed in @house/ui (devDep) but no e2e tests or browser config — needs setup"
+  coverage:
+    available: false
+    tool: "@vitest/coverage-v8 installed but not configured"
+    details: "Available in @house/ui devDeps — no --coverage script or threshold defined at workspace level"
+  quality:
+    linter:
+      available: true
+      tool: ESLint
+      details: "Configured in worker-portal, sorteos-automaticos, piramid-game — not workspace-wide"
+    type_checker:
+      available: true
+      tool: TypeScript 6.0 (tsc)
+      details: "tsconfig.json in 8 of 10 apps — no root-level tsconfig"
+    formatter:
+      available: false
+      tool: ESLint --fix
+      details: "No dedicated formatter (Prettier not found) — ESLint --fix used in lint-enabled apps"
+
+phases:
+  propose:
+    - Validate against techStack.md and projectContext.md
+    - Include rollback plan for risky changes
+  spec:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Follow Clean Minimalist Design System when affecting UI
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Reference AGENTS.md Tier 4 Implementation patterns
+  apply:
+    - Follow existing code patterns (ESM, React 19 patterns)
+    - Respect @house/* package boundaries
+    - Adhere to Clean Minimalist design tokens (--cm-*, cm-* classes)
+    - Include 4 states: loading, empty, error, populated
+    tdd: true
+    test_command: "npm run test -w apps/house-menu"
+  verify:
+    test_command: "npm run test -w apps/house-menu"
+    build_command: "npm run build -w apps/house-menu"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
