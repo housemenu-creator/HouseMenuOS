@@ -22,35 +22,35 @@ export default function HouseBrief() {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-[2rem] p-8 border border-hub-border relative overflow-hidden group shadow-xl"
+      className="glass rounded-[2rem] p-8 border border-cm-border relative overflow-hidden group shadow-xl"
     >
       {/* Background Accent */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-hub-accent/5 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-cm-accent/5 blur-[100px] rounded-full pointer-events-none" />
       
       <button
         onClick={() => setVisible(false)}
-        className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-hub-border/50 text-hub-muted transition-colors opacity-0 group-hover:opacity-100"
+        className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-cm-border/50 text-cm-text-secondary transition-colors opacity-0 group-hover:opacity-100"
       >
         <X size={14} />
       </button>
 
       <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 rounded-xl bg-hub-warning/10 text-hub-warning">
+        <div className="p-2 rounded-xl bg-cm-warning/10 text-cm-warning">
           <Sparkles size={22} />
         </div>
         <div>
           <h2 className="text-xl font-bold tracking-tight">HouseBrief</h2>
-          <p className="text-xs text-hub-muted font-medium uppercase tracking-widest">Resumen de operaciones</p>
+          <p className="text-xs text-cm-text-secondary font-medium uppercase tracking-widest">Resumen de operaciones</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="space-y-1">
-          <div className="text-[10px] uppercase font-bold text-hub-muted tracking-widest">Actividad vs ayer</div>
+          <div className="text-[10px] uppercase font-bold text-cm-text-secondary tracking-widest">Actividad vs ayer</div>
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold tracking-tighter">{today.totalTools}</span>
             <span className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${
-              diff >= 0 ? "bg-hub-success/10 text-hub-success" : "bg-hub-error/10 text-hub-error"
+              diff >= 0 ? "bg-cm-success/10 text-cm-success" : "bg-cm-error/10 text-cm-error"
             }`}>
               {diff >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
               {diff >= 0 ? "+" : ""}{diffPct}%
@@ -59,18 +59,18 @@ export default function HouseBrief() {
         </div>
 
         <div className="space-y-1">
-          <div className="text-[10px] uppercase font-bold text-hub-muted tracking-widest">Tool más usada</div>
+          <div className="text-[10px] uppercase font-bold text-cm-text-secondary tracking-widest">Tool más usada</div>
           <div className="text-xl font-bold tracking-tight">{topTool?.[0]?.replace(/_/g, " ") || "—"}</div>
-          <div className="text-xs text-hub-muted font-medium">{(topTool?.[1] as number) || 0} ejecuciones hoy</div>
+          <div className="text-xs text-cm-text-secondary font-medium">{(topTool?.[1] as number) || 0} ejecuciones hoy</div>
         </div>
 
         <div className="space-y-1">
-          <div className="text-[10px] uppercase font-bold text-hub-muted tracking-widest">Estado Alertas</div>
+          <div className="text-[10px] uppercase font-bold text-cm-text-secondary tracking-widest">Estado Alertas</div>
           <div className="flex items-center gap-3">
-            <span className={`text-2xl font-bold tracking-tighter ${activeErrors.length > 0 ? "text-hub-error" : "text-hub-success"}`}>
+            <span className={`text-2xl font-bold tracking-tighter ${activeErrors.length > 0 ? "text-cm-error" : "text-cm-success"}`}>
               {activeErrors.length}
             </span>
-            <span className={`text-xs font-bold uppercase tracking-wider ${activeErrors.length > 0 ? "text-hub-error" : "text-hub-success"}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider ${activeErrors.length > 0 ? "text-cm-error" : "text-cm-success"}`}>
               {activeErrors.length > 0 ? "Requiere Atención" : "Sistema Estable"}
             </span>
           </div>
@@ -81,18 +81,18 @@ export default function HouseBrief() {
         <motion.div 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="mt-6 p-4 rounded-2xl bg-hub-error/5 border border-hub-error/10"
+          className="mt-6 p-4 rounded-2xl bg-cm-error/5 border border-cm-error/10"
         >
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-hub-error animate-pulse" />
-            <p className="text-xs font-bold text-hub-error uppercase tracking-wider">
+            <div className="w-1.5 h-1.5 rounded-full bg-cm-error animate-pulse" />
+            <p className="text-xs font-bold text-cm-error uppercase tracking-wider">
               Errores Críticos
             </p>
           </div>
           <div className="space-y-2">
             {activeErrors.slice(0, 2).map((e: any) => (
-              <p key={e.id} className="text-sm text-hub-text font-medium flex items-center gap-2">
-                <span className="text-hub-error opacity-50">•</span> {e.message}
+              <p key={e.id} className="text-sm text-cm-text font-medium flex items-center gap-2">
+                <span className="text-cm-error opacity-50">•</span> {e.message}
               </p>
             ))}
           </div>

@@ -26,18 +26,18 @@ export default class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-hub-bg p-6">
-          <div className="glass p-10 rounded-[2.5rem] border border-hub-error/20 shadow-2xl max-w-md w-full text-center">
-            <div className="inline-flex p-4 rounded-3xl bg-hub-error/10 text-hub-error mb-6">
+        <div className="min-h-screen flex items-center justify-center bg-cm-bg p-6">
+          <div className="glass p-10 rounded-[2.5rem] border border-cm-error/20 shadow-2xl max-w-md w-full text-center">
+            <div className="inline-flex p-4 rounded-3xl bg-cm-error/10 text-cm-error mb-6">
               <AlertOctagon size={48} />
             </div>
             <h1 className="text-2xl font-black tracking-tight mb-2">Algo salió mal</h1>
-            <p className="text-sm text-hub-muted font-medium mb-8">
+            <p className="text-sm text-cm-text-secondary font-medium mb-8">
               Hubo un error inesperado al renderizar la interfaz. Hemos registrado el problema.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="w-full py-4 bg-hub-accent text-white font-bold rounded-2xl shadow-lg shadow-hub-accent/20 flex items-center justify-center gap-2 hover:bg-hub-accent-hover transition-all active:scale-[0.98]"
+              className="w-full py-4 bg-cm-accent text-white font-bold rounded-2xl shadow-lg shadow-cm-accent/20 flex items-center justify-center gap-2 hover:bg-cm-accent-hover transition-all active:scale-[0.98]"
             >
               <RefreshCw size={18} />
               Reiniciar Aplicación

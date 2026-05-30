@@ -6,7 +6,7 @@ interface SkeletonProps {
 }
 
 export default function Skeleton({ className = "", variant = "rounded" }: SkeletonProps) {
-  const baseClass = "bg-hub-border/40 animate-pulse";
+  const baseClass = "bg-cm-border/40 animate-pulse";
   const variants = {
     rect: "rounded-none",
     circle: "rounded-full",
@@ -20,7 +20,7 @@ export default function Skeleton({ className = "", variant = "rounded" }: Skelet
 
 export function HouseBriefSkeleton() {
   return (
-    <div className="glass rounded-[2rem] p-8 border border-hub-border space-y-8">
+    <div className="glass rounded-[2rem] p-8 border border-cm-border space-y-8">
       <div className="flex items-center gap-3">
         <Skeleton className="w-10 h-10 rounded-xl" />
         <div className="space-y-2">
@@ -42,7 +42,7 @@ export function HouseBriefSkeleton() {
 
 export function CardSkeleton() {
   return (
-    <div className="glass p-5 rounded-2xl border border-hub-border space-y-4">
+    <div className="glass p-5 rounded-2xl border border-cm-border space-y-4">
       <div className="flex justify-between items-center">
         <Skeleton className="w-24 h-5" />
         <Skeleton className="w-5 h-5 rounded-full" />

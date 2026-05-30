@@ -37,7 +37,7 @@ export function SortableWidget({ id, children, className = "", title }: Props) {
         <div 
           {...attributes} 
           {...listeners}
-          className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-hub-muted hover:text-hub-accent transition-all z-10"
+          className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-cm-text-secondary hover:text-cm-accent transition-all z-10"
         >
           <GripVertical size={16} />
         </div>

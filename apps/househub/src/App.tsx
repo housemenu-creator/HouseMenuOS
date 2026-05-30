@@ -24,7 +24,7 @@ export default function App() {
   requestPermission();
 
   return (
-    <div className="min-h-screen bg-hub-bg text-hub-text font-sans flex flex-col">
+    <div className="min-h-screen bg-cm-bg text-cm-text font-sans flex flex-col">
       <Header dark={dark} toggleTheme={toggle} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />

@@ -17,14 +17,14 @@ export default function StatusPanel() {
 function WhatsAppCard({ status }: { status?: string }) {
   const connected = status === "online";
   return (
-    <div className="bg-hub-card border border-hub-border rounded-xl p-4">
+    <div className="bg-cm-surface border border-cm-border rounded-xl p-4">
       <div className="font-semibold text-sm mb-3">💬 WhatsApp</div>
       <div className="flex items-center justify-between py-1.5 text-sm">
-        <span className="text-hub-muted">Conexión</span>
-        <span className={connected ? "text-hub-success" : "text-hub-warning"}>{connected ? "Conectado" : "Desconocido"}</span>
+        <span className="text-cm-text-secondary">Conexión</span>
+        <span className={connected ? "text-cm-success" : "text-cm-warning"}>{connected ? "Conectado" : "Desconocido"}</span>
       </div>
       <div className="flex items-center justify-between py-1.5 text-sm">
-        <span className="text-hub-muted">Sesión</span>
+        <span className="text-cm-text-secondary">Sesión</span>
         <span className="font-medium">Activa</span>
       </div>
     </div>

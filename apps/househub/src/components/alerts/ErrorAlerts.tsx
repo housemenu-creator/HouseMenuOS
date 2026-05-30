@@ -9,9 +9,9 @@ export default function ErrorAlerts() {
   if (active.length === 0) return null;
 
   return (
-    <div className="bg-hub-card border border-hub-border rounded-xl p-4">
+    <div className="bg-cm-surface border border-cm-border rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle size={16} className="text-hub-warning" />
+        <AlertTriangle size={16} className="text-cm-warning" />
         <span className="font-semibold text-sm">Alertas activas ({active.length})</span>
       </div>
       <div className="space-y-2">
@@ -20,14 +20,14 @@ export default function ErrorAlerts() {
             key={err.id || i}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-start gap-2 p-2 rounded-lg bg-hub-error/5 border border-hub-error/20 text-sm"
+            className="flex items-start gap-2 p-2 rounded-lg bg-cm-error/5 border border-cm-error/20 text-sm"
           >
-            <XCircle size={14} className="text-hub-error mt-0.5 shrink-0" />
+            <XCircle size={14} className="text-cm-error mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium">{err.agentId}{err.tool ? ` / ${err.tool}` : ""}</p>
-              <p className="text-xs text-hub-muted truncate">{err.message}</p>
+              <p className="text-xs text-cm-text-secondary truncate">{err.message}</p>
             </div>
-            <span className="text-[10px] text-hub-muted shrink-0">
+            <span className="text-[10px] text-cm-text-secondary shrink-0">
               {err.timestamp ? formatErrTime(err.timestamp) : ""}
             </span>
           </motion.div>

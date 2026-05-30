@@ -58,7 +58,7 @@ export default function ComandaPrint({ order, onPrint }: Props) {
   return (
     <button
       onClick={handlePrint}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-hub-accent/10 text-hub-accent hover:bg-hub-accent/20 transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-cm-accent/10 text-cm-accent hover:bg-cm-accent/20 transition-colors"
     >
       <Printer size={12} />
       Imprimir

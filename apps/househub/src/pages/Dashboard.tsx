@@ -75,7 +75,7 @@ export default function Dashboard() {
       case "activity": return (
         <SortableWidget id="activity" key="activity">
           <div className="space-y-4">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-hub-muted px-2">Actividad</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-cm-text-secondary px-2">Actividad</h2>
             <ActivityFeed compact />
           </div>
         </SortableWidget>
@@ -83,7 +83,7 @@ export default function Dashboard() {
       case "charts": return (
         <SortableWidget id="charts" key="charts">
           <div className="space-y-4">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-hub-muted px-2">Análisis</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-cm-text-secondary px-2">Análisis</h2>
             <UsageChart />
           </div>
         </SortableWidget>
@@ -92,7 +92,7 @@ export default function Dashboard() {
       case "alerts": return (
         <SortableWidget id="alerts" key="alerts">
           <div className="space-y-4">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-hub-muted px-2">Alertas</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-cm-text-secondary px-2">Alertas</h2>
             <ErrorAlerts />
           </div>
         </SortableWidget>

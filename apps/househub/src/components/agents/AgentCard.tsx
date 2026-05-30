@@ -17,36 +17,36 @@ export function AgentCard({ id, name, status }: AgentCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
-      className="glass p-5 rounded-2xl border border-hub-border transition-all duration-300 hover:shadow-lg"
+      className="glass p-5 rounded-2xl border border-cm-border transition-all duration-300 hover:shadow-lg"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div className="relative">
-            <div className={`w-3 h-3 rounded-full ${isOnline ? "bg-hub-success" : "bg-hub-error"}`} />
-            {isOnline && <div className="absolute inset-0 w-3 h-3 rounded-full bg-hub-success animate-ping opacity-40" />}
+            <div className={`w-3 h-3 rounded-full ${isOnline ? "bg-cm-success" : "bg-cm-error"}`} />
+            {isOnline && <div className="absolute inset-0 w-3 h-3 rounded-full bg-cm-success animate-ping opacity-40" />}
           </div>
           <span className="font-bold text-sm tracking-tight">{name}</span>
         </div>
-        <Icon size={16} className={isOnline ? "text-hub-success" : "text-hub-error"} />
+        <Icon size={16} className={isOnline ? "text-cm-success" : "text-cm-error"} />
       </div>
 
       <div className="grid grid-cols-2 gap-y-4 gap-x-2">
         <div className="space-y-0.5">
-          <span className="text-[10px] uppercase font-bold text-hub-muted tracking-widest">Estado</span>
-          <p className={`text-xs font-semibold ${isOnline ? "text-hub-success" : "text-hub-error"}`}>
+          <span className="text-[10px] uppercase font-bold text-cm-text-secondary tracking-widest">Estado</span>
+          <p className={`text-xs font-semibold ${isOnline ? "text-cm-success" : "text-cm-error"}`}>
             {isOnline ? "En línea" : "Desconectado"}
           </p>
         </div>
         <div className="space-y-0.5">
-          <span className="text-[10px] uppercase font-bold text-hub-muted tracking-widest">Mensajes</span>
+          <span className="text-[10px] uppercase font-bold text-cm-text-secondary tracking-widest">Mensajes</span>
           <p className="text-xs font-semibold">{status?.messagesToday || 0}</p>
         </div>
         <div className="space-y-0.5">
-          <span className="text-[10px] uppercase font-bold text-hub-muted tracking-widest">Tools</span>
+          <span className="text-[10px] uppercase font-bold text-cm-text-secondary tracking-widest">Tools</span>
           <p className="text-xs font-semibold">{status?.toolsExecuted || 0}</p>
         </div>
         <div className="space-y-0.5">
-          <span className="text-[10px] uppercase font-bold text-hub-muted tracking-widest">Últ. vez</span>
+          <span className="text-[10px] uppercase font-bold text-cm-text-secondary tracking-widest">Últ. vez</span>
           <p className="text-xs font-semibold">
             {status?.lastSeen ? formatTime(status.lastSeen) : "—"}
           </p>
@@ -71,7 +71,7 @@ export function SystemCard({ system }: { system?: SystemStatus }) {
   ];
 
   return (
-    <div className="glass p-5 rounded-2xl border border-hub-border">
+    <div className="glass p-5 rounded-2xl border border-cm-border">
       <div className="flex items-center gap-2 mb-4">
         <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
           <Settings size={14} />
@@ -82,10 +82,10 @@ export function SystemCard({ system }: { system?: SystemStatus }) {
       <div className="space-y-3">
         {services.map((s) => (
           <div key={s.name} className="flex items-center justify-between text-xs">
-            <span className="text-hub-muted font-medium">{s.name}</span>
+            <span className="text-cm-text-secondary font-medium">{s.name}</span>
             <div className="flex items-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${s.ok ? "bg-hub-success" : "bg-hub-error"}`} />
-              <span className={`font-bold ${s.ok ? "text-hub-success" : "text-hub-error"}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${s.ok ? "bg-cm-success" : "bg-cm-error"}`} />
+              <span className={`font-bold ${s.ok ? "text-cm-success" : "text-cm-error"}`}>
                 {s.ok ? "OK" : "ERROR"}
               </span>
             </div>
@@ -93,9 +93,9 @@ export function SystemCard({ system }: { system?: SystemStatus }) {
         ))}
       </div>
       
-      <div className="mt-4 pt-4 border-t border-hub-border flex items-center justify-between text-xs">
-        <span className="text-hub-muted font-medium">Uptime</span>
-        <span className="font-bold text-hub-text">{system?.uptime ? formatUptime(system.uptime) : "—"}</span>
+      <div className="mt-4 pt-4 border-t border-cm-border flex items-center justify-between text-xs">
+        <span className="text-cm-text-secondary font-medium">Uptime</span>
+        <span className="font-bold text-cm-text">{system?.uptime ? formatUptime(system.uptime) : "—"}</span>
       </div>
     </div>
   );

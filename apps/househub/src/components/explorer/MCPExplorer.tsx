@@ -59,12 +59,12 @@ export default function MCPExplorer() {
   };
 
   return (
-    <div className="bg-hub-card border border-hub-border rounded-xl">
-      <div className="p-3 border-b border-hub-border">
+    <div className="bg-cm-surface border border-cm-border rounded-xl">
+      <div className="p-3 border-b border-cm-border">
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-hub-muted" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cm-text-secondary" />
           <input
-            className="w-full bg-hub-bg border border-hub-border rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-hub-accent"
+            className="w-full bg-cm-bg border border-cm-border rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-cm-accent"
             placeholder="Buscar herramientas..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -72,19 +72,19 @@ export default function MCPExplorer() {
         </div>
       </div>
 
-      <div className="divide-y divide-hub-border max-h-[500px] overflow-y-auto">
+      <div className="divide-y divide-cm-border max-h-[500px] overflow-y-auto">
         {filtered.map((tool) => (
-          <div key={tool.name} className="px-4 py-3 hover:bg-hub-border/20 transition-colors">
+          <div key={tool.name} className="px-4 py-3 hover:bg-cm-border/20 transition-colors">
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-mono text-sm font-medium">{tool.name}</span>
-                <p className="text-xs text-hub-muted mt-0.5">{tool.description}</p>
+                <p className="text-xs text-cm-text-secondary mt-0.5">{tool.description}</p>
               </div>
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => testTool(tool.name)}
                 disabled={testing === tool.name}
-                className="px-2.5 py-1.5 text-xs rounded-lg bg-hub-accent/10 text-hub-accent hover:bg-hub-accent/20 transition-colors disabled:opacity-50 flex items-center gap-1"
+                className="px-2.5 py-1.5 text-xs rounded-lg bg-cm-accent/10 text-cm-accent hover:bg-cm-accent/20 transition-colors disabled:opacity-50 flex items-center gap-1"
               >
                 {testing === tool.name ? "..." : <><Play size={10} /> Probar</>}
               </motion.button>
@@ -92,21 +92,21 @@ export default function MCPExplorer() {
             {tool.params && Object.keys(tool.params).length > 0 && (
               <div className="flex gap-1 mt-1.5">
                 {Object.entries(tool.params).map(([k, v]) => (
-                  <span key={k} className="text-[10px] px-1.5 py-0.5 rounded bg-hub-border/50 text-hub-muted">
+                  <span key={k} className="text-[10px] px-1.5 py-0.5 rounded bg-cm-border/50 text-cm-text-secondary">
                     {k}: {String(v)}
                   </span>
                 ))}
               </div>
             )}
             {result && testing !== tool.name && (
-              <div className="mt-2 text-xs p-2 rounded bg-hub-bg border border-hub-border">
+              <div className="mt-2 text-xs p-2 rounded bg-cm-bg border border-cm-border">
                 {result}
               </div>
             )}
           </div>
         ))}
       </div>
-      <div className="p-3 border-t border-hub-border text-xs text-hub-muted">
+      <div className="p-3 border-t border-cm-border text-xs text-cm-text-secondary">
         {filtered.length} herramientas — {ALL_TOOLS.length} totales
       </div>
     </div>

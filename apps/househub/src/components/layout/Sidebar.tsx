@@ -28,20 +28,20 @@ export default function Sidebar() {
     <motion.aside
       initial={false}
       animate={{ width: isCollapsed ? 80 : 240 }}
-      className="border-r border-hub-border bg-hub-card/30 hidden md:flex flex-col relative transition-all duration-300 ease-[0.25, 0.1, 0.25, 1]"
+      className="border-r border-cm-border bg-cm-surface/30 hidden md:flex flex-col relative transition-all duration-300 ease-[0.25, 0.1, 0.25, 1]"
     >
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-hub-accent text-white flex items-center justify-center shadow-lg shadow-hub-accent/40 z-50 hover:scale-110 transition-all active:scale-95"
+        className="absolute -right-3 top-8 w-6 h-6 rounded-full bg-cm-accent text-white flex items-center justify-center shadow-lg shadow-cm-accent/40 z-50 hover:scale-110 transition-all active:scale-95"
       >
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
       <div className="p-6">
         {!isCollapsed ? (
-          <div className="text-[10px] font-black text-hub-muted uppercase tracking-[0.2em] px-3">Menú Principal</div>
+          <div className="text-[10px] font-black text-cm-text-secondary uppercase tracking-[0.2em] px-3">Menú Principal</div>
         ) : (
-          <div className="h-4 w-full border-b border-hub-border/50" />
+          <div className="h-4 w-full border-b border-cm-border/50" />
         )}
       </div>
 
@@ -54,8 +54,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 group ${
                 isActive
-                  ? "bg-hub-accent text-white shadow-lg shadow-hub-accent/20 font-bold"
-                  : "text-hub-muted hover:bg-hub-accent/5 hover:text-hub-text font-medium"
+                  ? "bg-cm-accent text-white shadow-lg shadow-cm-accent/20 font-bold"
+                  : "text-cm-text-secondary hover:bg-cm-accent/5 hover:text-cm-text font-medium"
               }`
             }
           >
@@ -76,13 +76,13 @@ export default function Sidebar() {
         ))}
       </div>
 
-      <div className="p-6 border-t border-hub-border/50">
+      <div className="p-6 border-t border-cm-border/50">
         <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-hub-accent to-orange-400 border-2 border-white/20 shadow-inner shrink-0" />
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cm-accent to-orange-400 border-2 border-white/20 shadow-inner shrink-0" />
           {!isCollapsed && (
             <div className="overflow-hidden">
               <p className="text-[10px] font-black tracking-tight uppercase truncate">Administrador</p>
-              <p className="text-[9px] text-hub-muted font-bold truncate">HQ Peruvian Branch</p>
+              <p className="text-[9px] text-cm-text-secondary font-bold truncate">HQ Peruvian Branch</p>
             </div>
           )}
         </div>

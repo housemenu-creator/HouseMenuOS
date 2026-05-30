@@ -42,29 +42,29 @@ export default function AIDailyBrief() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="glass rounded-2xl p-4 border border-hub-accent/20 bg-hub-accent/5 flex items-start gap-4 shadow-lg shadow-hub-accent/5"
+        className="glass rounded-2xl p-4 border border-cm-accent/20 bg-cm-accent/5 flex items-start gap-4 shadow-lg shadow-cm-accent/5"
       >
-        <div className="p-2.5 rounded-xl bg-hub-accent text-white shadow-lg shadow-hub-accent/20 shrink-0">
+        <div className="p-2.5 rounded-xl bg-cm-accent text-white shadow-lg shadow-cm-accent/20 shrink-0">
           <BrainCircuit size={20} />
         </div>
         
         <div className="flex-1 min-w-0 py-0.5">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-hub-accent">IA Briefing</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cm-accent">IA Briefing</span>
             <div className="flex gap-0.5">
               {[1, 2, 3].map(i => (
-                <div key={i} className="w-1 h-1 rounded-full bg-hub-accent animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+                <div key={i} className="w-1 h-1 rounded-full bg-cm-accent animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
               ))}
             </div>
           </div>
-          <p className="text-sm font-semibold text-hub-text leading-tight tracking-tight">
+          <p className="text-sm font-semibold text-cm-text leading-tight tracking-tight">
             {brief}
           </p>
         </div>
 
         <button 
           onClick={() => setVisible(false)}
-          className="text-hub-muted hover:text-hub-text p-1 transition-colors"
+          className="text-cm-text-secondary hover:text-cm-text p-1 transition-colors"
         >
           <X size={16} />
         </button>

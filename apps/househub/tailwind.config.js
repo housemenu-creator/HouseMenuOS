@@ -15,15 +15,7 @@ export default {
         "cm-success": "var(--cm-success)",
         "cm-warning": "var(--cm-warning)",
         "cm-error": "var(--cm-error)",
-        "hub-bg": "var(--cm-bg)",
-        "hub-card": "var(--cm-surface)",
-        "hub-border": "var(--cm-border)",
-        "hub-text": "var(--cm-text)",
-        "hub-muted": "var(--cm-text-secondary)",
-        "hub-accent": "var(--cm-accent)",
-        "hub-success": "var(--cm-success)",
-        "hub-warning": "var(--cm-warning)",
-        "hub-error": "var(--cm-error)",
+
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],

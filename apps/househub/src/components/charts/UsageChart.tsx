@@ -7,7 +7,7 @@ import { useMetrics } from "../../hooks/useMetrics";
 export default function UsageChart() {
   const { today, week, loading } = useMetrics();
 
-  if (loading) return <div className="text-hub-muted text-sm">Cargando...</div>;
+  if (loading) return <div className="text-cm-text-secondary text-sm">Cargando...</div>;
 
   // Tools más usadas
   const toolsData = today?.toolsByType
@@ -26,7 +26,7 @@ export default function UsageChart() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="bg-hub-card border border-hub-border rounded-xl p-4">
+      <div className="bg-cm-surface border border-cm-border rounded-xl p-4">
         <h3 className="text-sm font-semibold mb-4">Tools más usadas hoy</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={toolsData} layout="vertical">
@@ -38,7 +38,7 @@ export default function UsageChart() {
         </ResponsiveContainer>
       </div>
 
-      <div className="bg-hub-card border border-hub-border rounded-xl p-4">
+      <div className="bg-cm-surface border border-cm-border rounded-xl p-4">
         <h3 className="text-sm font-semibold mb-4">Tendencia 7 días</h3>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={trend}>
@@ -51,20 +51,20 @@ export default function UsageChart() {
         </ResponsiveContainer>
       </div>
 
-      <div className="bg-hub-card border border-hub-border rounded-xl p-4 lg:col-span-2">
+      <div className="bg-cm-surface border border-cm-border rounded-xl p-4 lg:col-span-2">
         <h3 className="text-sm font-semibold mb-4">Resumen del día</h3>
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-hub-accent">{today?.totalTools || 0}</div>
-            <div className="text-xs text-hub-muted">Tools ejecutadas</div>
+            <div className="text-2xl font-bold text-cm-accent">{today?.totalTools || 0}</div>
+            <div className="text-xs text-cm-text-secondary">Tools ejecutadas</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-hub-success">{today?.totalMessages || 0}</div>
-            <div className="text-xs text-hub-muted">Mensajes</div>
+            <div className="text-2xl font-bold text-cm-success">{today?.totalMessages || 0}</div>
+            <div className="text-xs text-cm-text-secondary">Mensajes</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-hub-error">{today?.totalErrors || 0}</div>
-            <div className="text-xs text-hub-muted">Errores</div>
+            <div className="text-2xl font-bold text-cm-error">{today?.totalErrors || 0}</div>
+            <div className="text-xs text-cm-text-secondary">Errores</div>
           </div>
         </div>
       </div>

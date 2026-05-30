@@ -54,15 +54,15 @@ export default function ActivityFeed({ compact }: { compact?: boolean }) {
 
   const uniqueTools = useMemo(() => [...new Set(logs.map((l) => l.tool))], [logs]);
 
-  if (loading) return <div className="text-hub-muted text-sm p-4">Cargando actividad...</div>;
+  if (loading) return <div className="text-cm-text-secondary text-sm p-4">Cargando actividad...</div>;
 
   return (
-    <div className="glass border border-hub-border rounded-2xl overflow-hidden shadow-lg">
+    <div className="glass border border-cm-border rounded-2xl overflow-hidden shadow-lg">
       {!compact && (
-        <div className="p-4 border-b border-hub-border bg-hub-card/30 space-y-4">
+        <div className="p-4 border-b border-cm-border bg-cm-surface/30 space-y-4">
           <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2 bg-hub-bg/50 border border-hub-border rounded-xl px-3 py-1.5">
-              <Filter size={12} className="text-hub-muted" />
+            <div className="flex items-center gap-2 bg-cm-bg/50 border border-cm-border rounded-xl px-3 py-1.5">
+              <Filter size={12} className="text-cm-text-secondary" />
               <select
                 className="text-[10px] font-black uppercase tracking-wider bg-transparent outline-none"
                 value={filters.agentId}
@@ -74,8 +74,8 @@ export default function ActivityFeed({ compact }: { compact?: boolean }) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2 bg-hub-bg/50 border border-hub-border rounded-xl px-3 py-1.5">
-              <Calendar size={12} className="text-hub-muted" />
+            <div className="flex items-center gap-2 bg-cm-bg/50 border border-cm-border rounded-xl px-3 py-1.5">
+              <Calendar size={12} className="text-cm-text-secondary" />
               <select
                 className="text-[10px] font-black uppercase tracking-wider bg-transparent outline-none"
                 value={filters.dateRange}
@@ -88,8 +88,8 @@ export default function ActivityFeed({ compact }: { compact?: boolean }) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2 bg-hub-bg/50 border border-hub-border rounded-xl px-3 py-1.5">
-              <AlertTriangle size={12} className="text-hub-muted" />
+            <div className="flex items-center gap-2 bg-cm-bg/50 border border-cm-border rounded-xl px-3 py-1.5">
+              <AlertTriangle size={12} className="text-cm-text-secondary" />
               <select
                 className="text-[10px] font-black uppercase tracking-wider bg-transparent outline-none"
                 value={filters.impact}
@@ -102,9 +102,9 @@ export default function ActivityFeed({ compact }: { compact?: boolean }) {
             </div>
 
             <div className="relative flex-1 min-w-[200px]">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-hub-muted" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cm-text-secondary" />
               <input
-                className="w-full text-xs font-medium bg-hub-bg/50 border border-hub-border rounded-xl pl-9 pr-3 py-2 outline-none focus:ring-2 focus:ring-hub-accent/30 transition-all"
+                className="w-full text-xs font-medium bg-cm-bg/50 border border-cm-border rounded-xl pl-9 pr-3 py-2 outline-none focus:ring-2 focus:ring-cm-accent/30 transition-all"
                 placeholder="Buscar en el registro..."
                 value={filters.search}
                 onChange={(e) => updateFilter({ search: e.target.value })}
@@ -114,22 +114,22 @@ export default function ActivityFeed({ compact }: { compact?: boolean }) {
         </div>
       )}
 
-      <div className={`divide-y divide-hub-border/50 ${compact ? "max-h-[400px] overflow-y-auto" : ""}`}>
+      <div className={`divide-y divide-cm-border/50 ${compact ? "max-h-[400px] overflow-y-auto" : ""}`}>
         {filtered.slice(0, compact ? 10 : 100).map((log, i) => (
           <motion.div
             key={log.id || i}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.02 }}
-            className="flex items-start gap-4 px-5 py-4 text-sm hover:bg-hub-accent/5 transition-colors group"
+            className="flex items-start gap-4 px-5 py-4 text-sm hover:bg-cm-accent/5 transition-colors group"
           >
             <div className="mt-1">
               {log.result === "success" ? (
-                <div className="p-1 rounded-full bg-hub-success/10 text-hub-success">
+                <div className="p-1 rounded-full bg-cm-success/10 text-cm-success">
                   <CheckCircle size={14} />
                 </div>
               ) : (
-                <div className="p-1 rounded-full bg-hub-error/10 text-hub-error">
+                <div className="p-1 rounded-full bg-cm-error/10 text-cm-error">
                   <XCircle size={14} />
                 </div>
               )}
@@ -143,18 +143,18 @@ export default function ActivityFeed({ compact }: { compact?: boolean }) {
                   {log.agentId}
                 </span>
               </div>
-              <p className="text-xs text-hub-muted font-medium line-clamp-1 group-hover:line-clamp-none transition-all">
+              <p className="text-xs text-cm-text-secondary font-medium line-clamp-1 group-hover:line-clamp-none transition-all">
                 {log.message}
               </p>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-hub-muted shrink-0 opacity-60">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-cm-text-secondary shrink-0 opacity-60">
               <Clock size={10} />
               {formatLogTime(log.timestamp)}
             </div>
           </motion.div>
         ))}
         {filtered.length === 0 && (
-          <div className="py-12 flex flex-col items-center justify-center text-hub-muted">
+          <div className="py-12 flex flex-col items-center justify-center text-cm-text-secondary">
             <Search size={32} className="mb-2 opacity-20" />
             <p className="text-xs font-bold uppercase tracking-widest">Sin actividad reciente</p>
           </div>
@@ -162,11 +162,11 @@ export default function ActivityFeed({ compact }: { compact?: boolean }) {
       </div>
 
       {!compact && filtered.length > 0 && (
-        <div className="p-4 border-t border-hub-border bg-hub-card/30 flex justify-between items-center">
-          <span className="text-[10px] font-bold text-hub-muted uppercase tracking-widest">{filtered.length} registros</span>
+        <div className="p-4 border-t border-cm-border bg-cm-surface/30 flex justify-between items-center">
+          <span className="text-[10px] font-bold text-cm-text-secondary uppercase tracking-widest">{filtered.length} registros</span>
           <button
             onClick={() => exportCSV(filtered)}
-            className="text-[10px] font-bold text-hub-accent hover:text-hub-accent-hover uppercase tracking-widest transition-colors flex items-center gap-1.5"
+            className="text-[10px] font-bold text-cm-accent hover:text-cm-accent-hover uppercase tracking-widest transition-colors flex items-center gap-1.5"
           >
             Descargar Reporte CSV
           </button>
