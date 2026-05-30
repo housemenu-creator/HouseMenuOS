@@ -23,11 +23,7 @@ export default {
         "cm-warning": "var(--cm-warning)",
         "cm-error": "var(--cm-error)",
         "cm-info": "var(--cm-info)",
-        "culinary-bg": "var(--cm-bg)",
-        "culinary-primary": "var(--cm-accent)",
-        "culinary-accent": "var(--cm-accent-hover)",
-        "culinary-text": "var(--cm-text)",
-        "culinary-muted": "var(--cm-text-secondary)",
+
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
