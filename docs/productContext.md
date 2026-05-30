@@ -11,7 +11,7 @@
 ## 🚀 The Value Proposition
 - **Gamification**: The ordering process should feel like a game, engaging the user with high-end visuals.
 - **Professional Efficiency**: Order management must be automated to handle high volumes without manual errors.
-- **Brand Identity**: Dark, neon-accented, premium glassmorphism.
+- **Brand Identity**: Modern, clean design following the Clean Minimalist system. Warm CM-accent (`#C2410C`) on dark backgrounds for a premium, professional look.
 
 ## 👤 Target User
 Clients looking for a premium lunch experience that can be ordered in under 30 seconds via mobile or web.

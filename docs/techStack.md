@@ -8,7 +8,7 @@
 ## 🌐 Frontend Stack
 - **Framework**: React 19 + Vite 8 for all apps.
 - **Styling**: Tailwind CSS 3.4 + CSS custom properties (`@house/tokens`).
-- **Design System**: Clean Minimalist (Apple‑inspired, acento `#C2410C`).
+- **Design System**: Clean Minimalist (Apple‑inspired, acento `#C2410C`). Powered by `@house/tokens` CSS custom properties (`--cm-*`).
 - **Animations**: Framer Motion 12.
 - **Icons**: Lucide React.
 - **Charts**: Recharts (househub).
