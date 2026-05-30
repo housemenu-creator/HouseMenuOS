@@ -1,4 +1,5 @@
-const PEPPER = import.meta.env.VITE_ENCRYPTION_PEPPER || 'house-portal-os-default-change-me';
+const PEPPER = import.meta.env.VITE_ENCRYPTION_PEPPER;
+if (!PEPPER) throw new Error('VITE_ENCRYPTION_PEPPER env var is required');
 
 async function deriveKey(salt) {
   const enc = new TextEncoder();

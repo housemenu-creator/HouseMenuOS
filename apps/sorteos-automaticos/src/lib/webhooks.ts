@@ -165,6 +165,7 @@ const handleSocialMission = async (payload: WebhookPayload) => {
  * Validate webhook secret (for security)
  */
 export const validateWebhookSecret = (secret: string): boolean => {
-    const expectedSecret = import.meta.env.VITE_WEBHOOK_SECRET || 'solayni_webhook_2026';
+    const expectedSecret = import.meta.env.VITE_WEBHOOK_SECRET;
+    if (!expectedSecret) throw new Error('VITE_WEBHOOK_SECRET env var is required');
     return secret === expectedSecret;
 };
