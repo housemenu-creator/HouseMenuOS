@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 
 // ── In-memory store ──────────────────────────────────────
 function createStore() {
@@ -81,7 +81,7 @@ vi.mock('firebase/database', () => {
       const newVal = updateFn(oldVal);
       if (newVal !== undefined) {
         store.set(ref.path, newVal);
-        return { committed: true };
+        return { committed: true, data: newVal };
       }
       return { committed: false };
     }),
@@ -191,6 +191,7 @@ describe('deliveryService', () => {
 
   it('assigns a driver to an order', async () => {
     store.set(`branches/${B}/orders/o1`, { id: 'o1', status: 'listo', customerName: 'Test' });
+    store.set(`branches/${B}/delivery/drivers/d1`, { name: 'Carlos', available: true });
     const { deliveryService: ds } = await import('../../lib/deliveryService.js');
     const r = await ds.assignDriver(B, 'o1', 'd1', 'Carlos');
     expect(r.success).toBe(true);
@@ -208,6 +209,7 @@ describe('deliveryService', () => {
   it('unassigns a driver from an order', async () => {
     store.set(`branches/${B}/orders/o1`, { id: 'o1', status: 'en_camino', driverId: 'd1', driverName: 'Carlos' });
     store.set(`branches/${B}/delivery/logs/l1`, { orderId: 'o1', driverId: 'd1', status: 'en_camino' });
+    store.set(`branches/${B}/delivery/drivers/d1`, { name: 'Carlos', available: false });
     const { deliveryService: ds } = await import('../../lib/deliveryService.js');
     const r = await ds.unassignDriver(B, 'o1');
     expect(r.success).toBe(true);
@@ -379,6 +381,13 @@ describe('authService', () => {
   });
 
   describe('PIN hashing', () => {
+    let testPinHash;
+
+    beforeAll(async () => {
+      const { hashPin } = await import('../../lib/crypto.js');
+      testPinHash = await hashPin('9999');
+    });
+
     it('migrates plaintext PIN to hash on successful login', async () => {
       store.set('tenants/default/users/u1', { email: 'chef@rest.com', name: 'Chef', pin: '4321', active: true });
       store.set('tenants/default/memberships/m1', { userId: 'u1', roleId: 'kitchen', branchIds: { hq: true }, active: true });
@@ -391,12 +400,12 @@ describe('authService', () => {
       expect(r.success).toBe(true);
       const user = store.get('tenants/default/users/u1');
       expect(user.pinHash).toBeDefined();
-      expect(user.pinHash).toContain('hashed');
+      expect(user.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
       expect(user.pin).toBeNull();
     });
 
     it('verifies hashed PIN correctly', async () => {
-      store.set('tenants/default/users/u2', { email: 'cook@rest.com', name: 'Cook', pinHash: '$2a$10_hashed_9999', active: true });
+      store.set('tenants/default/users/u2', { email: 'cook@rest.com', name: 'Cook', pinHash: testPinHash, active: true });
       store.set('tenants/default/memberships/m2', { userId: 'u2', roleId: 'kitchen', branchIds: { hq: true }, active: true });
       store.set('tenants/default/roles', {
         kitchen: { name: 'Cocina', permissions: { 'orders:read': true } },
@@ -414,16 +423,17 @@ describe('authService', () => {
       expect(r.success).toBe(true);
       const user = store.get(`tenants/default/users/${r.userId}`);
       expect(user.pinHash).toBeDefined();
-      expect(user.pinHash).toContain('hashed');
+      expect(user.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
       expect(user.pin).toBeUndefined();
     });
 
     it('updateUser hashes pin when provided', async () => {
-      store.set('tenants/default/users/u3', { email: 'update@rest.com', name: 'Update', pinHash: '$2a$10_hashed_old', active: true });
+      store.set('tenants/default/users/u3', { email: 'update@rest.com', name: 'Update', pinHash: testPinHash, active: true });
       const { updateUser } = await import('../../lib/authService.js');
       await updateUser('u3', { pin: 'newpin' });
       const user = store.get('tenants/default/users/u3');
-      expect(user.pinHash).toContain('newpin');
+      expect(user.pinHash).toBeDefined();
+      expect(user.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
       expect(user.pin).toBeUndefined();
     });
   });

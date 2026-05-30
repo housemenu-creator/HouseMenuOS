@@ -187,6 +187,17 @@ export const deliveryService = {
         return { ...current, driverId: null, driverName: null, status: 'listo', updatedAt: nowISO() };
       });
 
+      const logsRef = ref(db, deliveryLogsPath(branchId));
+      const logsSnap = await get(logsRef);
+      if (logsSnap.exists()) {
+        const logs = logsSnap.val();
+        const logEntry = Object.entries(logs).find(([, l]) => l.orderId === orderId && l.status === 'en_camino');
+        if (logEntry) {
+          const [logKey] = logEntry;
+          await update(ref(db, deliveryLogsPath(branchId, logKey)), { status: 'unassigned', unassignedAt: nowISO() });
+        }
+      }
+
       if (releasedDriverId) {
         const driverRef = ref(db, deliveryDriversPath(branchId, releasedDriverId));
         await update(driverRef, { available: true });
