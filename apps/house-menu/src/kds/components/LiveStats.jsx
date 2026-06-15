@@ -25,7 +25,7 @@ export default function LiveStats({ orders, orderIndex }) {
   }, [orders, orderIndex]);
 
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap">
       <StatBadge icon={UtensilsCrossed} value={stats.total} label="Activos" accent />
       <StatBadge icon={Clock} value={stats.recibido} label="Nuevos" color="accent" />
       <StatBadge icon={ChefHat} value={stats.preparando} label="Cocinando" color="warning" />
@@ -52,11 +52,11 @@ function StatBadge({ icon: Icon, value, label, color, pulse, accent }) {
   };
   return (
     <div className={cn(
-      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border',
+      'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-bold border leading-none',
       accent ? 'bg-cm-accent text-white border-cm-accent' : colorMap[color],
       pulse && 'animate-pulse',
     )}>
-      <Icon className="w-3 h-3" />
+      <Icon className="w-2.5 h-2.5" />
       <span>{value}</span>
       <span className={cn('font-normal opacity-70', accent && 'opacity-80')}>{label}</span>
     </div>

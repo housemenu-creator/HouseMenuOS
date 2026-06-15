@@ -41,6 +41,20 @@ export async function reportHeartbeat(
   }
 }
 
+// ── Helpers ─────────────────────────────────────────────
+
+/** Recursively remove undefined values (Firebase RTDB no acepta undefined) */
+function sanitize(val: unknown): unknown {
+  if (val === undefined) return null;
+  if (val === null || typeof val !== "object") return val;
+  if (Array.isArray(val)) return val.map(sanitize);
+  const clean: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+    clean[k] = sanitize(v);
+  }
+  return clean;
+}
+
 // ── Tool Call Log ──────────────────────────────────────
 
 export async function reportToolCall(
@@ -57,7 +71,7 @@ export async function reportToolCall(
     await set(logRef, {
       agentId,
       tool,
-      args,
+      args: sanitize(args),
       result,
       message,
       duration,
@@ -113,10 +127,10 @@ export async function reportSystemHealth(health: {
   uptime: number;
 }) {
   try {
-    await set(child(ref(db), `${BASE}/system`), {
+    await set(child(ref(db), `${BASE}/system`), sanitize({
       ...health,
       lastHeartbeat: Date.now(),
-    });
+    }));
   } catch (e) {
     console.warn(`telemetry.systemHealth error:`, e);
   }

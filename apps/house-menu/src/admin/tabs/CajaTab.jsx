@@ -13,28 +13,68 @@ export default function CajaTab({ cashSessions, allOrders, activeBranchId, user 
   const [cashNotes, setCashNotes] = useState('');
 
   const activeSession = cashSessions.find(s => s.status === 'open');
-  const sessionOrders = useMemo(() => allOrders.filter(o => {
-    const createdAt = new Date(o.createdAt).getTime();
-    if (activeSession) {
+  
+  const sessionOrders = useMemo(() => {
+    if (!activeSession) return [];
+    return allOrders.filter(o => {
+      const createdAt = new Date(o.createdAt).getTime();
       return createdAt >= activeSession.openedAt;
-    }
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    return createdAt >= todayStart.getTime();
-  }), [allOrders, activeSession]);
+    });
+  }, [allOrders, activeSession]);
 
-  const totalEfectivo = sessionOrders.filter(o => o.payment_method === 'Efectivo').reduce((s, o) => s + (o.financials?.total || 0), 0);
-  const totalYapePlin = sessionOrders.filter(o => o.payment_method === 'Yape/Plin' && o.payment_status === 'pagado').reduce((s, o) => s + (o.financials?.total || 0), 0);
-  const totalPos = sessionOrders.filter(o => o.payment_method === 'Tarjeta (POS)').reduce((s, o) => s + (o.financials?.total || 0), 0);
-  const totalPendiente = sessionOrders.filter(o => o.payment_method === 'Pendiente' && o.payment_status !== 'pagado').reduce((s, o) => s + (o.financials?.total || 0), 0);
-  const porVerificar = sessionOrders.filter(o => o.payment_status === 'por_verificar');
-  const totalPorVerificar = porVerificar.reduce((s, o) => s + (o.financials?.total || 0), 0);
+  // 1. Efectivo: Pedidos no cancelados, pagados en efectivo, restando reembolsos en efectivo
+  const cashPaidTotal = useMemo(() => sessionOrders
+    .filter(o => o.status !== 'cancelado' && o.payment_method === 'Efectivo' && o.payment_status === 'pagado')
+    .reduce((s, o) => s + (o.financials?.total || 0), 0), [sessionOrders]);
+    
+  const cashRefundsTotal = useMemo(() => sessionOrders
+    .filter(o => o.status !== 'cancelado' && o.refund && o.refund.method === 'Efectivo')
+    .reduce((s, o) => s + (o.refund.amount || 0), 0), [sessionOrders]);
+
+  const totalEfectivo = cashPaidTotal - cashRefundsTotal;
+
+  // 2. Yape/Plin: Pedidos no cancelados, pagados por Yape/Plin, restando reembolsos en Yape/Plin
+  const yapePlinPaidTotal = useMemo(() => sessionOrders
+    .filter(o => o.status !== 'cancelado' && o.payment_method === 'Yape/Plin' && o.payment_status === 'pagado')
+    .reduce((s, o) => s + (o.financials?.total || 0), 0), [sessionOrders]);
+
+  const yapePlinRefundsTotal = useMemo(() => sessionOrders
+    .filter(o => o.status !== 'cancelado' && o.refund && o.refund.method === 'Yape/Plin')
+    .reduce((s, o) => s + (o.refund.amount || 0), 0), [sessionOrders]);
+
+  const totalYapePlin = yapePlinPaidTotal - yapePlinRefundsTotal;
+
+  // 3. Tarjeta (POS): Pedidos no cancelados, pagados con POS, restando reembolsos en POS
+  const posPaidTotal = useMemo(() => sessionOrders
+    .filter(o => o.status !== 'cancelado' && o.payment_method === 'Tarjeta (POS)' && o.payment_status === 'pagado')
+    .reduce((s, o) => s + (o.financials?.total || 0), 0), [sessionOrders]);
+
+  const posRefundsTotal = useMemo(() => sessionOrders
+    .filter(o => o.status !== 'cancelado' && o.refund && o.refund.method === 'Tarjeta (POS)')
+    .reduce((s, o) => s + (o.refund.amount || 0), 0), [sessionOrders]);
+
+  const totalPos = posPaidTotal - posRefundsTotal;
+
+  // 4. Pendiente: Pedidos no cancelados de la sesión que NO están pagados ni reembolsados ni por verificar
+  const totalPendiente = useMemo(() => sessionOrders
+    .filter(o => o.status !== 'cancelado' && o.payment_status !== 'pagado' && o.payment_status !== 'reembolsado' && o.payment_status !== 'por_verificar')
+    .reduce((s, o) => s + (o.financials?.total || 0), 0), [sessionOrders]);
+
+  // 5. Alerta de pagos por verificar Yape/Plin (global sobre todos los pedidos de la sucursal, no solo la sesión)
+  const porVerificar = useMemo(() => allOrders.filter(o => o.payment_status === 'por_verificar'), [allOrders]);
+  const totalPorVerificar = useMemo(() => porVerificar.reduce((s, o) => s + (o.financials?.total || 0), 0), [porVerificar]);
+
   const totalIngresos = totalEfectivo + totalYapePlin + totalPos;
 
   const handleOpenSession = async () => {
+    const openingVal = parseFloat(cashOpeningBalance);
+    if (cashOpeningBalance.trim() === '' || isNaN(openingVal) || openingVal < 0) {
+      showToast('Por favor, ingresa un monto inicial válido (mayor o igual a 0)', 'error');
+      return;
+    }
     try {
       const result = await cashService.openSession(activeBranchId, {
-        openingBalance: parseFloat(cashOpeningBalance) || 0,
+        openingBalance: openingVal,
         openedBy: user?.email || 'admin',
         notes: cashNotes,
       });
@@ -52,11 +92,15 @@ export default function CajaTab({ cashSessions, allOrders, activeBranchId, user 
   };
 
   const handleCloseSession = async (session) => {
-    const balance = parseFloat(cashClosingBalance) || 0;
+    const balanceVal = parseFloat(cashClosingBalance);
+    if (cashClosingBalance.trim() === '' || isNaN(balanceVal) || balanceVal < 0) {
+      showToast('Por favor, ingresa un monto final válido (mayor o igual a 0)', 'error');
+      return;
+    }
     const expectedCash = (session.openingBalance || 0) + totalEfectivo;
     try {
       const result = await cashService.closeSession(activeBranchId, session.id, {
-        closingBalance: balance,
+        closingBalance: balanceVal,
         expectedCash,
         closedBy: user?.email || 'admin',
         notes: cashNotes,

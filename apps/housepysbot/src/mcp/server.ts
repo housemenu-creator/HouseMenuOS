@@ -17,6 +17,12 @@ import { deliveryTools } from "./tools/delivery.js";
 import { cajaTools } from "./tools/caja.js";
 import { sunatTools } from "./tools/sunat.js";
 import { branchTools } from "./tools/branch.js";
+import { analyticsTools } from "./tools/analytics.js";
+import { customerTools } from "./tools/clientes.js";
+import { predictTools } from "./tools/predict.js";
+import { systemTools } from "./tools/system.js";
+import { notificationTools } from "./tools/notificaciones.js";
+import { staffTools } from "./tools/staff.js";
 
 export function loadTools(): void {
   const all = [
@@ -27,15 +33,22 @@ export function loadTools(): void {
     ...cajaTools,
     ...sunatTools,
     ...branchTools,
+    ...analyticsTools,
+    ...customerTools,
+    ...predictTools,
+    ...systemTools,
+    ...notificationTools,
+    ...staffTools,
   ];
   for (const tool of all) {
     registry.register(tool);
   }
 }
 
-loadTools();
-
 // ── Standalone MCP stdio server ─────────────────────────
+// NOTE: loadTools() is NOT called at module level to avoid circular dependency:
+//   server.ts → system.ts → whatsapp.ts → agent/index.ts → server.ts
+// Entry points (http.ts, bot.ts) and agent/index.ts call loadTools() explicitly.
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -44,6 +57,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 async function startMcpServer() {
+  loadTools(); // Llamado aquí para standalone, no a nivel módulo
   const server = new Server(
     { name: "housepysbot-mcp", version: "0.1.0" },
     { capabilities: { tools: {} } },
@@ -59,7 +73,8 @@ async function startMcpServer() {
     if (!tool) {
       return { content: [{ type: "text", text: `Tool "${name}" no encontrado` }], isError: true };
     }
-    const branchId = process.env.HOUSEPYSBOT_BRANCH_ID || "default";
+    const { getPrimaryBranchId } = await import("../lib/branch.js");
+    const branchId = getPrimaryBranchId();
     const result = await tool.execute(args || {}, branchId);
     return {
       content: [{ type: "text", text: JSON.stringify(result) }],

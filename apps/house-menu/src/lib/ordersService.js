@@ -92,79 +92,89 @@ export const ordersService = {
         }
       }
 
-      const productsRef = ref(db, catalogProductsPath(branchId));
-      let stockError = null;
+      // ── Gestión de stock (opcional — falla silenciosamente sin permisos) ──
+      let stockManaged = false;
+      try {
+        const productsRef = ref(db, catalogProductsPath(branchId));
+        let stockError = null;
 
-      const transactionResult = await runTransaction(productsRef, (products) => {
-        if (!products) return products;
-        for (const [prodId, qtyNeeded] of Object.entries(qtyMap)) {
-          const product = products[prodId];
-          if (product && (product.trackStock === true || product.trackStock === 'true')) {
-            const currentStock = Number(product.stock || 0);
-            if (currentStock < qtyNeeded) {
-              stockError = `Stock insuficiente para ${product.name}. Disp: ${currentStock}, Solicitado: ${qtyNeeded}`;
-              return;
+        const transactionResult = await runTransaction(productsRef, (products) => {
+          if (!products) return products;
+          for (const [prodId, qtyNeeded] of Object.entries(qtyMap)) {
+            const product = products[prodId];
+            if (product && (product.trackStock === true || product.trackStock === 'true')) {
+              const currentStock = Number(product.stock || 0);
+              if (currentStock < qtyNeeded) {
+                stockError = `Stock insuficiente para ${product.name}. Disp: ${currentStock}, Solicitado: ${qtyNeeded}`;
+                return;
+              }
             }
           }
-        }
 
-        // Check option-level stock for wizard products
-        const wizardOptMap = buildWizardOptMap(orderData.items);
-        for (const [prodId, optMap] of Object.entries(wizardOptMap)) {
-          const product = products[prodId];
-          if (!product) continue;
-          for (const [optId, qtyNeeded] of Object.entries(optMap)) {
-            walkOptionInProduct(product, optId, (opt) => {
-              if ((opt.trackStock === true || opt.trackStock === 'true') && Number(opt.stock || 0) < qtyNeeded) {
-                stockError = `Stock insuficiente para "${opt.name}".`;
-              }
-            });
-            if (stockError) return;
+          const wizardOptMap = buildWizardOptMap(orderData.items);
+          for (const [prodId, optMap] of Object.entries(wizardOptMap)) {
+            const product = products[prodId];
+            if (!product) continue;
+            for (const [optId, qtyNeeded] of Object.entries(optMap)) {
+              walkOptionInProduct(product, optId, (opt) => {
+                if ((opt.trackStock === true || opt.trackStock === 'true') && Number(opt.stock || 0) < qtyNeeded) {
+                  stockError = `Stock insuficiente para "${opt.name}".`;
+                }
+              });
+              if (stockError) return;
+            }
           }
-        }
 
-        for (const [prodId, qtyNeeded] of Object.entries(qtyMap)) {
-          const product = products[prodId];
-          if (product && (product.trackStock === true || product.trackStock === 'true')) {
-            const currentStock = Number(product.stock || 0);
-            const newStock = Math.max(0, currentStock - qtyNeeded);
-            product.stock = newStock;
-            if (newStock <= 0) product.available = false;
+          for (const [prodId, qtyNeeded] of Object.entries(qtyMap)) {
+            const product = products[prodId];
+            if (product && (product.trackStock === true || product.trackStock === 'true')) {
+              const currentStock = Number(product.stock || 0);
+              const newStock = Math.max(0, currentStock - qtyNeeded);
+              product.stock = newStock;
+              if (newStock <= 0) product.available = false;
+            }
           }
-        }
 
-        // Decrement option-level stock
-        for (const [prodId, optMap] of Object.entries(wizardOptMap)) {
-          const product = products[prodId];
-          if (!product) continue;
-          for (const [optId, qtyNeeded] of Object.entries(optMap)) {
-            walkOptionInProduct(product, optId, (opt) => {
-              if (opt.trackStock === true || opt.trackStock === 'true') {
-                opt.stock = Math.max(0, Number(opt.stock || 0) - qtyNeeded);
-              }
-            });
+          for (const [prodId, optMap] of Object.entries(wizardOptMap)) {
+            const product = products[prodId];
+            if (!product) continue;
+            for (const [optId, qtyNeeded] of Object.entries(optMap)) {
+              walkOptionInProduct(product, optId, (opt) => {
+                if (opt.trackStock === true || opt.trackStock === 'true') {
+                  opt.stock = Math.max(0, Number(opt.stock || 0) - qtyNeeded);
+                }
+              });
+            }
           }
+
+          return products;
+        });
+
+        if (!transactionResult.committed) {
+          return {
+            success: false,
+            error: 'stock_insufficient',
+            message: stockError || 'Stock insuficiente o modificado.'
+          };
         }
-
-        return products;
-      });
-
-      if (!transactionResult.committed) {
-        return {
-          success: false,
-          error: 'stock_insufficient',
-          message: stockError || 'Stock insuficiente o modificado.'
-        };
+        stockManaged = true;
+      } catch (stockErr) {
+        // Si el usuario no tiene permisos para manage stock (anónimos, kiosko),
+        // ignoramos el error y creamos la orden igual
+        console.warn('Stock management skipped (no permissions):', stockErr.message);
       }
 
       const ordersRef = ref(db, ordersPath(branchId));
       const newOrderRef = push(ordersRef);
       const timestamp = nowISO();
 
+      // Si el pago requiere verificación (Yape/Plin), la orden no va a cocina todavía
+      const initialStatus = orderData.payment_status === 'por_verificar' ? 'pendiente_pago' : 'recibido';
+
       const order = {
         ...orderData,
         id: newOrderRef.key,
-        status: 'recibido',
+        status: initialStatus,
         deliveryDate: deliveryDate || nowISO().split('T')[0],
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -175,6 +185,26 @@ export const ordersService = {
       return { success: true, orderId: newOrderRef.key };
     } catch (error) {
       console.error('Error creating order:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Verificar pago Yape/Plin: cambia payment_status → 'pagado' y status → 'recibido'
+   * para que la cocina vea el pedido.
+   */
+  async verifyPayment(branchId, orderId, verifierEmail) {
+    try {
+      const orderRef = ref(db, `${ordersPath(branchId)}/${orderId}`);
+      await update(orderRef, {
+        payment_status: 'pagado',
+        status: 'recibido',
+        payment_verified_at: nowISO(),
+        payment_verified_by: verifierEmail || 'system',
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error verifying payment:', error);
       return { success: false, error: error.message };
     }
   },
@@ -294,8 +324,8 @@ export const ordersService = {
    */
   async batchUpdateOrderStatus(branchId, orderIds, newStatus) {
     try {
-      const updates = {};
       const timestamp = nowISO();
+      const updates = {};
       orderIds.forEach((orderId) => {
         updates[ordersStatusPath(branchId, orderId)] = newStatus;
         updates[ordersUpdatedAtPath(branchId, orderId)] = timestamp;
@@ -309,6 +339,28 @@ export const ordersService = {
   },
 
   /**
+   * Rechazar un pago Yape/Plin — revierte a pendiente
+   */
+  async rejectPayment(branchId, orderId, reason, rejectedBy) {
+    try {
+      const orderRef = ref(db, ordersPath(branchId, orderId));
+      await update(orderRef, {
+        payment_status: 'pendiente',
+        payment_rejected: {
+          reason: reason || 'Sin motivo',
+          rejectedAt: nowISO(),
+          rejectedBy: rejectedBy || 'admin',
+        },
+        updatedAt: nowISO(),
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error rejecting payment:', error);
+      return { success: false, error };
+    }
+  },
+
+  /**
    * Marcar un pedido Pendiente como pagado
    */
   async markAsPaid(branchId, orderId, paymentMethod, userEmail) {
@@ -317,6 +369,7 @@ export const ordersService = {
       await update(orderRef, {
         payment_method: paymentMethod,
         payment_status: 'pagado',
+        status: 'recibido',   // libera la orden a cocina si estaba pendiente_pago
         paidAt: nowISO(),
         updatedAt: nowISO(),
         ...(userEmail && { paidBy: userEmail }),

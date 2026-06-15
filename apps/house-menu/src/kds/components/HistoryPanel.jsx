@@ -1,5 +1,5 @@
 import { History, CalendarDays } from 'lucide-react';
-import KanbanTicket from '../../components/KanbanTicket';
+import KDSTicket from './KDSTicket';
 import AnalyticsPanel from './AnalyticsPanel';
 
 const DATE_FILTERS = [
@@ -40,7 +40,7 @@ export default function HistoryPanel({ orders, filteredOrders, dateFilter, onDat
           </div>
         ) : (
           filteredOrders.map((order) => (
-            <KanbanTicket key={order.id} order={order} isHistory={true} />
+            <KDSTicket key={order.id} order={order} isHistory={true} />
           ))
         )}
       </div>

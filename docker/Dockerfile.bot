@@ -1,0 +1,47 @@
+# ── Bot Service — WhatsApp + Telegram + Watchers ──
+# Stateful (Baileys session stored in /data). Run 1 instance only.
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache python3 make g++
+
+# 1. Dependencies (lockfile for reproducible installs)
+COPY package.json package-lock.json ./
+COPY apps/housepysbot/package.json ./apps/housepysbot/
+COPY packages/tokens/package.json ./packages/tokens/
+COPY packages/db/package.json ./packages/db/
+COPY packages/store/package.json ./packages/store/
+COPY packages/ui/package.json ./packages/ui/
+
+# --ignore-scripts: no postinstall / native compilation
+# --omit=optional: skip platform-specific deps (@rolldown/binding-win32-x64-msvc is optionalDependencies)
+RUN npm ci --ignore-scripts --omit=optional
+
+# 2. Source
+COPY tsconfig.base.json ./
+COPY apps/housepysbot/ ./apps/housepysbot/
+COPY packages/ ./packages/
+
+# 3. Build — tsc errors MUST fail the build (no || true) to avoid stale dist
+WORKDIR /app/apps/housepysbot
+RUN npx tsc -p tsconfig.json
+
+# ── Runtime ────────────────────────────────────────────
+FROM node:22-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+
+# No chromium needed — Baileys is pure JS, lightweight
+RUN apk add --no-cache tini
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/housepysbot ./apps/housepysbot
+COPY --from=builder /app/tsconfig.base.json ./
+
+# WhatsApp session data (persistent volume)
+VOLUME /app/apps/housepysbot/data
+VOLUME /app/apps/housepysbot/baileys_auth_info
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "apps/housepysbot/dist/entry/bot.js"]

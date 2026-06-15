@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Download, DollarSign, Trash2, ChevronDown, ChevronUp, Printer,
@@ -50,7 +50,7 @@ function ItemRow({ item, index, editMode, onChange }) {
   );
 }
 
-export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange, statusFilter, onStatusFilterChange, filteredOrders, onCancelOrder, exportToCSV, activeBranchId, activeBranchName }) {
+export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange, statusFilter, onStatusFilterChange, paymentFilter, onPaymentFilterChange, filteredOrders, onCancelOrder, exportToCSV, activeBranchId, activeBranchName }) {
   const { can, user } = useAuth();
   const { showToast } = useToast();
   const [expandedId, setExpandedId] = useState(null);
@@ -80,18 +80,54 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyOrder, setVerifyOrder] = useState(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectLoading, setRejectLoading] = useState(false);
+
+  const PAYMENT_STATUS_CONFIG = {
+    pendiente: { label: 'Pendiente', dot: 'bg-yellow-500', bg: 'bg-yellow-500/10 text-yellow-600' },
+    por_verificar: { label: 'Por verificar', dot: 'bg-cm-accent', bg: 'bg-cm-accent/10 text-cm-accent' },
+    pagado: { label: 'Pagado', dot: 'bg-green-500', bg: 'bg-green-500/10 text-green-600' },
+    reembolsado: { label: 'Reembolsado', dot: 'bg-orange-400', bg: 'bg-orange-400/10 text-orange-600' },
+  };
+
+  const paymentCounts = useMemo(() => {
+    const counts = { pendiente: 0, por_verificar: 0, pagado: 0, reembolsado: 0 };
+    allOrders.forEach(o => {
+      const ps = o.payment_status;
+      if (ps && ps in counts) counts[ps]++;
+    });
+    return counts;
+  }, [allOrders]);
 
   const handleVerifyPayment = async () => {
     if (!verifyOrder || !activeBranchId) return;
     setVerifyLoading(true);
     try {
-      const r = await ordersService.markAsPaid(activeBranchId, verifyOrder.id, 'Yape/Plin', user?.email);
-      if (r.success) { setShowVerifyModal(false); showToast('Pago verificado'); }
+      const r = await ordersService.verifyPayment(activeBranchId, verifyOrder.id, user?.email);
+      if (r.success) { setShowVerifyModal(false); showToast('Pago verificado — pedido enviado a cocina'); }
       else showToast('Error al verificar pago', 'error');
     } catch (err) {
       showToast(err.message || 'Error al verificar pago', 'error');
     }
     setVerifyLoading(false);
+  };
+
+  const handleRejectPayment = async () => {
+    if (!verifyOrder || !activeBranchId) return;
+    setRejectLoading(true);
+    try {
+      const r = await ordersService.rejectPayment(activeBranchId, verifyOrder.id, rejectReason, user?.email);
+      if (r.success) {
+        setShowVerifyModal(false);
+        setShowRejectInput(false);
+        setRejectReason('');
+        showToast('Pago rechazado — pendiente');
+      } else showToast('Error al rechazar pago', 'error');
+    } catch (err) {
+      showToast(err.message || 'Error al rechazar pago', 'error');
+    }
+    setRejectLoading(false);
   };
 
   const handleCobrar = async () => {
@@ -250,6 +286,37 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
           <option value="entregado">Entregado</option>
           <option value="cancelado">Cancelado</option>
         </select>
+        <select value={paymentFilter} onChange={e => onPaymentFilterChange(e.target.value)} className="px-3 py-2 bg-cm-surface border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors">
+          <option value="">Todos los pagos</option>
+          <option value="pendiente">Pendiente de pago</option>
+          <option value="por_verificar">Por verificar</option>
+          <option value="pagado">Pagado</option>
+          <option value="reembolsado">Reembolsado</option>
+        </select>
+      </div>
+
+      {/* Payment summary + quick filter pills */}
+      <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 bg-cm-bg-alt/50 rounded-lg">
+        <span className="text-[10px] font-black text-cm-text-secondary uppercase tracking-widest mr-1">Pagos:</span>
+        {[
+          { key: '', label: `Todos (${allOrders.length})` },
+          { key: 'pendiente', label: `Pendientes (${paymentCounts.pendiente})` },
+          { key: 'por_verificar', label: `Por verificar (${paymentCounts.por_verificar})` },
+          { key: 'pagado', label: `Pagados (${paymentCounts.pagado})` },
+          { key: 'reembolsado', label: `Reembolsados (${paymentCounts.reembolsado})` },
+        ].map(p => (
+          <button
+            key={p.key}
+            onClick={() => onPaymentFilterChange(p.key)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+              paymentFilter === p.key
+                ? 'bg-cm-accent text-white shadow-cm-sm'
+                : 'bg-cm-surface border border-cm-border text-cm-text-secondary hover:bg-cm-accent/5'
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       <div className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm overflow-hidden">
@@ -280,14 +347,24 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
                       {o.internalNote && <StickyNote className="w-3 h-3 inline ml-1 text-cm-warning" />}
                     </td>
                     <td className="px-3 py-3 text-cm-text-secondary hidden md:table-cell">{o.location || '-'}</td>
-                    <td className="px-3 py-3"><StatusBadge status={o.status} /></td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <StatusBadge status={o.status} />
+                        {o.payment_status && PAYMENT_STATUS_CONFIG[o.payment_status] && (
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold leading-tight ${PAYMENT_STATUS_CONFIG[o.payment_status].bg}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${PAYMENT_STATUS_CONFIG[o.payment_status].dot}`} />
+                            {PAYMENT_STATUS_CONFIG[o.payment_status].label}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-3 text-right font-semibold">{formatCurrency((o.financials?.total || o.total || 0))}</td>
                     <td className="px-3 py-3 text-right text-cm-text-secondary text-xs hidden md:table-cell">{new Date(o.createdAt).toLocaleString('es-PE')}</td>
                     <td className="px-3 py-3 text-center" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-1.5">
                         {o.payment_status === 'por_verificar' && can('orders:mark_paid') && (
                           <button
-                            onClick={() => { setVerifyOrder(o); setShowVerifyModal(true); }}
+                            onClick={() => { setVerifyOrder(o); setShowVerifyModal(true); setShowRejectInput(false); setRejectReason(''); }}
                             className="text-cm-accent hover:text-cm-accent/80 transition-colors p-1 animate-pulse"
                             title="Verificar pago Yape/Plin"
                           >
@@ -581,7 +658,7 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
                 </div>
               </div>
 
-              <div className="bg-cm-bg rounded-xl p-4 mb-4 space-y-2 border border-cm-border">
+              <div className="bg-cm-bg rounded-xl p-4 mb-4 space-y-3 border border-cm-border">
                 <div className="flex justify-between text-sm">
                   <span className="text-cm-text-secondary">Total a verificar</span>
                   <span className="font-black text-cm-text text-base">{formatCurrency((verifyOrder.financials?.total || 0))}</span>
@@ -598,33 +675,85 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
                         <span className="font-mono font-bold text-cm-text tracking-wider">{verifyOrder.payment_details.operation_number}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-xs">
-                      <span className="text-cm-text-secondary">Comprobante foto</span>
-                      <span className={`font-bold ${verifyOrder.payment_details.voucher_uploaded ? 'text-green-500' : 'text-orange-400'}`}>
-                        {verifyOrder.payment_details.voucher_uploaded ? '✅ Subido' : '❌ No subido'}
-                      </span>
-                    </div>
+
+                    {/* Voucher image */}
+                    {verifyOrder.payment_details.voucher_uploaded && verifyOrder.payment_details.voucher_url ? (
+                      <div className="pt-1">
+                        <p className="text-[10px] font-bold text-cm-text-secondary uppercase tracking-wider mb-1.5">Comprobante</p>
+                        <a href={verifyOrder.payment_details.voucher_url} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={verifyOrder.payment_details.voucher_url}
+                            alt="Voucher Yape/Plin"
+                            className="w-full h-40 object-cover rounded-xl border border-cm-border bg-cm-bg-alt hover:opacity-90 transition-opacity cursor-pointer"
+                          />
+                        </a>
+                        <p className="text-[10px] text-cm-text-tertiary mt-1">Click para ver completo</p>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-cm-text-secondary">Comprobante foto</span>
+                        <span className="font-bold text-orange-400">❌ No subido</span>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
 
-              <p className="text-xs text-cm-text-secondary text-center mb-4">
-                Al confirmar, el pedido quedará marcado como <strong>pagado</strong> y se contabilizará en caja.
-              </p>
-
-              <div className="flex gap-3">
-                <button onClick={() => setShowVerifyModal(false)} className="flex-1 py-2.5 border-2 border-cm-border text-sm font-bold text-cm-text rounded-xl hover:bg-cm-surface-hover transition-colors">
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleVerifyPayment}
-                  disabled={verifyLoading}
-                  className="flex-1 py-2.5 bg-cm-accent text-white text-sm font-black rounded-xl hover:bg-cm-accent/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                  {verifyLoading ? 'Verificando...' : 'Confirmar Pago'}
-                </button>
-              </div>
+              {/* Reject input */}
+              {showRejectInput ? (
+                <div className="mb-4 space-y-2">
+                  <p className="text-xs font-bold text-cm-error">¿Motivo del rechazo?</p>
+                  <input
+                    type="text"
+                    value={rejectReason}
+                    onChange={e => setRejectReason(e.target.value)}
+                    placeholder="Ej: N° operación inválido, monto incorrecto..."
+                    className="w-full bg-cm-bg-alt border border-cm-error/50 rounded-xl px-3 py-2.5 text-sm text-cm-text focus:outline-none focus:border-cm-error placeholder:text-cm-text-tertiary"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setShowRejectInput(false); setRejectReason(''); }}
+                      className="flex-1 py-2 border border-cm-border text-xs font-bold text-cm-text rounded-xl hover:bg-cm-surface-hover transition-colors"
+                    >
+                      Volver
+                    </button>
+                    <button
+                      onClick={handleRejectPayment}
+                      disabled={rejectLoading}
+                      className="flex-1 py-2 bg-cm-error text-white text-xs font-black rounded-xl hover:bg-cm-error/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      {rejectLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                      {rejectLoading ? 'Rechazando...' : 'Confirmar Rechazo'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-cm-text-secondary text-center mb-4">
+                    Al confirmar, el pedido quedará marcado como <strong>pagado</strong> y se contabilizará en caja.
+                  </p>
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={() => setShowRejectInput(true)}
+                      className="flex-1 py-2.5 border-2 border-cm-error/40 text-cm-error text-sm font-bold rounded-xl hover:bg-cm-error/5 transition-colors"
+                    >
+                      Rechazar
+                    </button>
+                    <button
+                      onClick={handleVerifyPayment}
+                      disabled={verifyLoading}
+                      className="flex-1 py-2.5 bg-cm-accent text-white text-sm font-black rounded-xl hover:bg-cm-accent/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                      {verifyLoading ? 'Verificando...' : 'Confirmar Pago'}
+                    </button>
+                  </div>
+                  <button onClick={() => setShowVerifyModal(false)} className="w-full py-2 text-xs font-bold text-cm-text-secondary hover:text-cm-text transition-colors">
+                    Cancelar
+                  </button>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}

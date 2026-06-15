@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import type { FirebaseApp } from "firebase/app";
 import type { Database } from "firebase/database";
 import { getDatabase, ref, get, child, set, push, update, remove, onChildAdded, onChildChanged, off } from "firebase/database";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import "dotenv/config";
 
 let _app: FirebaseApp | null = null;
@@ -36,6 +37,20 @@ export function initFirebase() {
   _app = initializeApp(config, "housepysbot");
   _db = getDatabase(_app);
   return _db;
+}
+
+/** Authenticate the bot user so DB operations pass security rules */
+export async function authenticateBot() {
+  if (!_app) throw new Error("initFirebase() debe llamarse antes que authenticateBot()");
+  const botEmail = process.env.BOT_FIREBASE_EMAIL;
+  const botPassword = process.env.BOT_FIREBASE_PASSWORD;
+  if (botEmail && botPassword) {
+    const auth = getAuth(_app);
+    await signInWithEmailAndPassword(auth, botEmail, botPassword);
+    console.log("🔐 Firebase Auth: bot autenticado como", botEmail);
+  } else {
+    throw new Error("Faltan BOT_FIREBASE_EMAIL y/o BOT_FIREBASE_PASSWORD en .env");
+  }
 }
 
 export function getDb(): Database {

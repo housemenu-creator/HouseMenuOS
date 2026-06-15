@@ -21,7 +21,18 @@ export const ordersTools: MCPTool[] = [
     description: "Crea un nuevo pedido con productos del menú. Calcula automáticamente el costo de delivery según la zona si aplica.",
     parameters: {
       cliente: { type: "string", description: "Nombre del cliente" },
-      items: { type: "string", description: "Lista de productos con cantidad, ej: \"2 Lomo Saltado, 1 Ceviche\"" },
+      items: {
+        type: "array",
+        description: "Lista de productos con nombre y cantidad (el LLM determina los nombres desde el mensaje del usuario)",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "Nombre del producto tal como aparece en el menú" },
+            quantity: { type: "number", description: "Cantidad del producto (default 1)" },
+          },
+          required: ["name"],
+        },
+      },
       direccion: { type: "string", description: "Dirección de entrega (opcional, solo para delivery)" },
       telefono: { type: "string", description: "Teléfono del cliente (opcional)" },
       metodo_pago: { type: "string", description: "Método de pago: efectivo, tarjeta, yape, plin (opcional, default efectivo)" },
@@ -34,20 +45,18 @@ export const ordersTools: MCPTool[] = [
         if (!catalogSnap.exists()) return { success: false, error: "El menú no está disponible" };
         const products = catalogSnap.val() as Record<string, any>;
 
-        const rawItems: string = String(args.items || "");
+        const rawItems: Array<{ name: string; quantity?: number }> = Array.isArray(args.items) ? args.items : [];
         const parsedItems: Array<{ productId: string; name: string; quantity: number; price: number }> = [];
 
-        for (const part of rawItems.split(",")) {
-          const trimmed = part.trim();
-          if (!trimmed) continue;
-          const match = trimmed.match(/^(\d+)\s+(.+)/);
-          const qty = match ? parseInt(match[1]) : 1;
-          const searchName = match ? match[2].toLowerCase().trim() : trimmed.toLowerCase().trim();
+        for (const item of rawItems) {
+          const searchName = (item.name || "").toLowerCase().trim();
+          if (!searchName) continue;
+          const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
 
           const found = Object.entries(products).find(
             ([, p]: [string, any]) => p.name?.toLowerCase().includes(searchName)
           );
-          if (!found) return { success: false, error: `No encontré "${trimmed}" en el menú` };
+          if (!found) return { success: false, error: `No encontré "${item.name}" en el menú. Los productos disponibles son: ${Object.values(products).map((p: any) => p.name).join(", ")}` };
           const [prodId, prod] = found as [string, any];
           parsedItems.push({ productId: prodId, name: prod.name, quantity: qty, price: Number(prod.base_price ?? prod.price ?? 0) });
         }
@@ -155,6 +164,140 @@ export const ordersTools: MCPTool[] = [
         return { success: true, message: `Pedido #${args.id} actualizado a: ${STATUS_LABELS[estado] || estado}` };
       } catch (e: any) {
         return { success: false, error: `Error al actualizar pedido: ${e.message}` };
+      }
+    },
+  },
+  {
+    name: "ver_pendientes_cocina",
+    description: "Muestra los pedidos pendientes que la cocina debe preparar. Lee de la cola de cocina y también busca pedidos en estado 'recibido' o 'preparando'.",
+    parameters: {},
+    async execute(_args, branchId) {
+      try {
+        // Try cocina queue first (real-time pushed by cocina watcher)
+        const cocinaSnap = await get(child(ref(db), `branches/${branchId}/system/cocina/pendientes`));
+        const cocinaOrders: string[] = [];
+
+        if (cocinaSnap.exists()) {
+          const entries = cocinaSnap.val();
+          for (const [id, order] of Object.entries(entries) as [string, any][]) {
+            cocinaOrders.push(
+              `  🆔 #${id.slice(-6).toUpperCase()} — ${order.cliente || "?"} — S/ ${Number(order.total || 0).toFixed(2)} — ${order.items?.map?.((i: any) => `${i.quantity}x ${i.name}`).join(", ") || "sin items"}`
+            );
+          }
+        }
+
+        // Also scan orders for any in 'recibido' or 'preparando' not in cocina queue
+        const ordersSnap = await get(child(ref(db), `branches/${branchId}/orders`));
+        const extraOrders: string[] = [];
+
+        if (ordersSnap.exists()) {
+          const orders = ordersSnap.val();
+          for (const [id, order] of Object.entries(orders) as [string, any][]) {
+            if (!order.status) continue;
+            if (order.status !== "recibido" && order.status !== "preparando") continue;
+            // Skip if already in cocina queue
+            if (cocinaSnap.exists() && cocinaSnap.val()[id]) continue;
+            extraOrders.push(
+              `  🆔 #${id.slice(-6).toUpperCase()} — ${order.cliente || "?"} — S/ ${Number(order.total || 0).toFixed(2)} — ${order.items?.map?.((i: any) => `${i.quantity}x ${i.name}`).join(", ") || "sin items"}`
+            );
+          }
+        }
+
+        const allOrders = [...cocinaOrders, ...extraOrders];
+        if (allOrders.length === 0) {
+          return { success: true, message: "🍳 *No hay pedidos pendientes* en cocina. ¡Todo al día!" };
+        }
+
+        return {
+          success: true,
+          data: { pendientes: allOrders.length },
+          message: `🍳 *Pedidos Pendientes: ${allOrders.length}*\n\n${allOrders.join("\n")}`,
+        };
+      } catch (e: any) {
+        return { success: false, error: `Error al obtener pendientes: ${e.message}` };
+      }
+    },
+  },
+  {
+    name: "consultar_pedidos",
+    description: "Busca pedidos con filtros por estado, fecha, cliente. Devuelve resumen con cantidades, totales y lista de pedidos. Ideal para generar reportes diarios, semanales, o por estado.",
+    parameters: {
+      desde: { type: "string", description: "Fecha inicio (ISO o 'hoy', 'ayer', 'esta_semana', 'este_mes'). Default: 'hoy'" },
+      hasta: { type: "string", description: "Fecha fin ISO. Default: ahora" },
+      estado: { type: "string", description: "Filtrar por estado: recibido, preparando, listo, en_camino, entregado, cancelado. Opcional." },
+      cliente: { type: "string", description: "Filtrar por nombre de cliente (búsqueda parcial). Opcional." },
+      limite: { type: "string", description: "Máximo de resultados. Default: '50'" },
+    },
+    async execute(args, branchId) {
+      try {
+        const now = Date.now();
+        const dayStart = (ts: number) => { const d = new Date(ts); d.setHours(0,0,0,0); return d.toISOString(); };
+
+        // Parse date filters
+        let desde: string;
+        switch (String(args.desde || "hoy")) {
+          case "hoy": desde = dayStart(now); break;
+          case "ayer": desde = dayStart(now - 86400000); break;
+          case "esta_semana": { const d = new Date(); d.setDate(d.getDate() - d.getDay()); d.setHours(0,0,0,0); desde = d.toISOString(); break; }
+          case "este_mes": { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); desde = d.toISOString(); break; }
+          default: desde = String(args.desde);
+        }
+        const hasta = String(args.hasta || new Date().toISOString());
+        const estado = String(args.estado || "").toLowerCase().trim();
+        const cliente = String(args.cliente || "").toLowerCase().trim();
+        const limite = parseInt(String(args.limite || "50"));
+
+        const snap = await get(child(ref(db), `branches/${branchId}/orders`));
+        if (!snap.exists()) return { success: true, message: "No hay pedidos registrados.", data: [] };
+
+        const orders = Object.entries(snap.val() as Record<string, any>)
+          .map(([id, o]) => ({ id, ...o }))
+          .filter((o: any) => {
+            const date = o.createdAt || "";
+            if (date < desde) return false;
+            if (date > hasta) return false;
+            if (estado && o.status !== estado) return false;
+            if (cliente && !(o.cliente || "").toLowerCase().includes(cliente)) return false;
+            return true;
+          })
+          .sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+          .slice(0, limite);
+
+        const totalVentas = orders
+          .filter((o: any) => o.status !== "cancelado")
+          .reduce((s: number, o: any) => s + Number(o.total || 0), 0);
+
+        const porEstado: Record<string, number> = {};
+        for (const o of orders) {
+          porEstado[o.status || "sin_estado"] = (porEstado[o.status || "sin_estado"] || 0) + 1;
+        }
+
+        let msg = `📊 *Pedidos encontrados: ${orders.length}*\n`;
+        msg += `💰 Total ventas: S/ ${totalVentas.toFixed(2)}\n\n`;
+        msg += `*Por estado:*\n`;
+        const STATUS_EMOJI: Record<string, string> = { recibido: "📥", preparando: "👨‍🍳", listo: "✅", en_camino: "🚚", entregado: "📦", cancelado: "❌" };
+        for (const [est, cnt] of Object.entries(porEstado)) {
+          msg += `  ${STATUS_EMOJI[est] || "📄"} ${STATUS_LABELS[est] || est}: ${cnt}\n`;
+        }
+
+        if (orders.length > 0) {
+          msg += `\n*Últimos pedidos:*\n`;
+          for (const o of orders.slice(0, 10)) {
+            const emoji = STATUS_EMOJI[o.status] || "📄";
+            const total = Number(o.total || 0).toFixed(2);
+            const items = (o.items || []).map((i: any) => i.name).join(", ");
+            msg += `  ${emoji} #${(o.id || "").slice(-6).toUpperCase()} — ${o.cliente || "?"} — S/ ${total} — ${items.slice(0, 60)}\n`;
+          }
+          if (orders.length > 10) msg += `  ... y ${orders.length - 10} más\n`;
+        }
+
+        return {
+          success: true,
+          data: { total: orders.length, totalVentas, porEstado, pedidos: orders },
+          message: msg,
+        };
+      } catch (e: any) {
+        return { success: false, error: `Error al consultar pedidos: ${e.message}` };
       }
     },
   },

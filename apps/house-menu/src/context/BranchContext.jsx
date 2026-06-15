@@ -1,39 +1,35 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
+import { useAppStore } from '@house/store';
 import { branchService } from '../lib/branchService';
 
 const BranchContext = createContext();
 
 export function BranchProvider({ children }) {
-  const [branches, setBranches] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const branches = useAppStore((s) => s.branches);
+  const setBranches = useAppStore((s) => s.setBranches);
+  const activeBranchId = useAppStore((s) => s.activeBranchId);
+  const setActiveBranchId = useAppStore((s) => s.setActiveBranchId);
+  const branchLoading = useAppStore((s) => s.branchLoading);
+  const branchError = useAppStore((s) => s.branchError);
+  const setBranchError = useAppStore((s) => s.setBranchError);
 
-  // Intentamos leer la ultima sucursal usada del localStorage, por defecto 'hq'
-  const [activeBranchId, setActiveBranchId] = useState(() => {
-    return localStorage.getItem('house_active_branch') || 'hq';
-  });
-
-  // Suscripcion en tiempo real a las sucursales desde Firebase
   useEffect(() => {
-    const unsubscribe = branchService.subscribeToBranches((data) => {
-      setBranches(data);
-      setIsLoading(false);
-    });
+    const unsubscribe = branchService.subscribeToBranches(
+      (data) => setBranches(data),
+      (error) => setBranchError(error)
+    );
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('house_active_branch', activeBranchId);
-  }, [activeBranchId]);
+  }, [setBranches, setBranchError]);
 
   const foundBranch = branches.find(b => b.id === activeBranchId);
   const activeBranch = foundBranch || branches[0] || null;
 
-  if (branches.length > 0 && !foundBranch) {
+  if (branches.length > 0 && !foundBranch && !branchLoading) {
     console.warn(`BranchContext: activeBranchId "${activeBranchId}" no encontrado, usando "${activeBranch?.id}"`);
   }
 
   return (
-    <BranchContext.Provider value={{ branches, activeBranchId, setActiveBranchId, activeBranch, isLoading }}>
+    <BranchContext.Provider value={{ branches, activeBranchId, setActiveBranchId, activeBranch, isLoading: branchLoading, error: branchError }}>
       {children}
     </BranchContext.Provider>
   );

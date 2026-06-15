@@ -3,7 +3,20 @@ import { Plus, Search } from 'lucide-react';
 import MenuCategoryBlock from './MenuCategoryBlock';
 import { PromptModal } from '../ConfirmModal';
 
-export default function MenuBuilder({ products, toggleAvailability, updateField, createProduct, deleteProduct, duplicateProduct, createCategory, renameCategory, onConfigureWizard }) {
+export default function MenuBuilder({
+  products,
+  toggleAvailability,
+  updateField,
+  createProduct,
+  deleteProduct,
+  duplicateProduct,
+  createCategory,
+  renameCategory,
+  onConfigureWizard,
+  activeBranchId,
+  categoriesConfig = {},
+  notify
+}) {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -78,6 +91,9 @@ export default function MenuBuilder({ products, toggleAvailability, updateField,
               duplicateProduct={duplicateProduct}
               onConfigureWizard={onConfigureWizard}
               renameCategory={renameCategory}
+              activeBranchId={activeBranchId}
+              categoriesConfig={categoriesConfig}
+              notify={notify}
             />
           ))
         )}

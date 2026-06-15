@@ -1,9 +1,11 @@
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from "@whiskeysockets/baileys";
 import pino from "pino";
-import { processMessage } from "../agent/index.js";
+import { processMessage, type SenderInfo } from "../agent/index.js";
 import { getHistory, pushHistory } from "../lib/session.js";
 import { qrEmitter } from "../services/http-server.js";
 import { checkRateLimit } from "../lib/rateLimit.js";
+import { routeWhatsApp } from "../agents/router.js";
+import { setWhatsAppStatus } from "../lib/wa-status.js";
 
 const SESSION_DIR = process.env.WHATSAPP_SESSION_DIR || "./wa_session";
 
@@ -15,11 +17,12 @@ type QueueItem = {
   sender: string;
   text: string;
   branchId: string;
+  agentId: string;
 };
 
 const queue: QueueItem[] = [];
 let activeCount = 0;
-const MAX_CONCURRENCY = 3;
+const MAX_CONCURRENCY = parseInt(process.env.WHATSAPP_MAX_CONCURRENCY || "5");
 
 function enqueue(item: QueueItem) {
   queue.push(item);
@@ -31,8 +34,12 @@ async function processItem(item: QueueItem) {
   try {
     try { await sock?.sendPresenceUpdate("composing", item.sender); } catch {}
 
-    const history = await getHistory(`wa:${item.sender}`);
-    const res = await processMessage(item.text, item.branchId, history.slice(-10), "atencion");
+    // Extract phone from JID (e.g. "51999888777@s.whatsapp.net" → "51999888777")
+    const senderPhone = item.sender.split("@")[0];
+    const senderInfo: SenderInfo = { phone: senderPhone, platform: "whatsapp" };
+
+    const history = await getHistory(`wa:${item.sender}:${item.agentId}`);
+    const res = await processMessage(item.text, item.branchId, history.slice(-10), item.agentId, senderInfo);
 
     try { await sock?.sendPresenceUpdate("paused", item.sender); } catch {}
 
@@ -83,6 +90,7 @@ export async function startWhatsApp(branchId: string): Promise<void> {
       qrEmitter.emit("qr", qr);
     }
     if (connection === "close") {
+      setWhatsAppStatus(false);
       const code = (lastDisconnect?.error as any)?.output?.statusCode;
       const shouldReconnect = code !== DisconnectReason.loggedOut;
       if (shouldReconnect) {
@@ -92,6 +100,8 @@ export async function startWhatsApp(branchId: string): Promise<void> {
         console.log("❌ WhatsApp: sesión cerrada. Escanea el QR de nuevo.");
       }
     } else if (connection === "open") {
+      const number = sock?.user?.id?.split(":")[0] || "";
+      setWhatsAppStatus(true, number);
       console.log("✅ WhatsApp conectado!");
       qrEmitter.emit("connected");
     }
@@ -102,21 +112,55 @@ export async function startWhatsApp(branchId: string): Promise<void> {
       if (msg.key.fromMe) continue;
       if (!msg.message) continue;
 
-      const text = extractText(msg.message);
-      if (!text) continue;
-
       const sender = msg.key.remoteJid || "unknown";
-      if (!checkRateLimit(sender)) {
-        await sock?.sendMessage(sender, { text: "⏳ Espera un momento antes de enviar otro mensaje." });
+      const { agentId } = routeWhatsApp(sender);
+      const rateKey = `wa:${sender}:${agentId}`;
+
+      // ── Handle non-text media types ──────────────────
+      const mediaType = detectMediaType(msg.message);
+      if (mediaType !== "text" && mediaType !== "image_caption") {
+        const responses: Record<string, string> = {
+          image: "📷 Recibí tu imagen. No puedo procesar imágenes todavía. Escribime qué necesitás.",
+          voice: "🎤 Recibí tu nota de voz. No puedo procesar audios todavía. Escribime el mensaje.",
+          video: "🎬 Recibí tu video. No puedo procesar videos todavía.",
+          document: "📄 Recibí tu documento. No puedo procesar documentos todavía.",
+          audio: "🎵 Recibí tu audio. No puedo procesar audios todavía. Escribime el mensaje.",
+          sticker: "", // silent ignore stickers
+        };
+        const reply = responses[mediaType];
+        if (reply) {
+          await sock?.sendMessage(sender, { text: reply });
+        }
         continue;
       }
 
-      enqueue({ sender, text, branchId });
+      const text = extractText(msg.message);
+      if (!text) continue;
+
+      if (!checkRateLimit(rateKey)) {
+        await sock?.sendMessage(sender, { text: "⏳ Espera un momento antes de enviar otro mensaje." });
+        continue;
+      }
+      enqueue({ sender, text, branchId, agentId });
     }
   });
 }
 
 // ── Helpers ────────────────────────────────────────────
+
+type MediaType = "text" | "image" | "image_caption" | "voice" | "video" | "document" | "audio" | "sticker";
+
+function detectMediaType(msg: any): MediaType {
+  if (msg.conversation || msg.extendedTextMessage) return "text";
+  if (msg.imageMessage?.caption) return "image_caption";
+  if (msg.imageMessage) return "image";
+  if (msg.voiceMessage) return "voice";
+  if (msg.videoMessage) return "video";
+  if (msg.documentMessage) return "document";
+  if (msg.audioMessage) return "audio";
+  if (msg.stickerMessage) return "sticker";
+  return "text"; // fallback
+}
 
 function extractText(msg: any): string | null {
   if (msg.conversation) return msg.conversation;
@@ -125,10 +169,24 @@ function extractText(msg: any): string | null {
   return null;
 }
 
-export function getWhatsAppStatus(): string {
-  const state = sock?.user ? "connected" : "disconnected";
-  const number = sock?.user?.id?.split(":")[0] || null;
-  return JSON.stringify({ status: state, number });
+export { getWhatsAppStatus } from "../lib/wa-status.js";
+
+export async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
+  if (!sock) {
+    console.warn("⚠️ WhatsApp no conectado, no se pudo enviar mensaje a", to);
+    return false;
+  }
+  try {
+    // Normalize phone: remove +, spaces, ensure JID format
+    const phone = to.replace(/[^0-9]/g, "");
+    if (phone.length < 10) return false;
+    const jid = `${phone}@s.whatsapp.net`;
+    await sock.sendMessage(jid, { text });
+    return true;
+  } catch (err) {
+    console.error("❌ sendWhatsAppMessage error:", err);
+    return false;
+  }
 }
 
 export function getDrainPromise(): Promise<void> {

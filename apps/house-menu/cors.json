@@ -1,0 +1,33 @@
+[
+  {
+    "origin": [
+      "http://localhost",
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:80",
+      "http://localhost:8080",
+      "http://localhost:4000",
+      "https://house-menuapp.web.app",
+      "https://house-menuapp.firebaseapp.com"
+    ],
+    "method": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "HEAD",
+      "OPTIONS",
+      "PATCH"
+    ],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Disposition",
+      "Cache-Control",
+      "X-Requested-With",
+      "Authorization",
+      "x-goog-*",
+      "x-firebase-storage-*"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

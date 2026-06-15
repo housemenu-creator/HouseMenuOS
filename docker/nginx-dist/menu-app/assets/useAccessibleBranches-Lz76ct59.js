@@ -1,0 +1,1 @@
+import{a as e}from"./rolldown-runtime-BYbx6iT9.js";import{V as t}from"./kds-Bgt_ELzj.js";import{o as n}from"./framer-kAoMvScr.js";import{d as r}from"./index-BzdaSi-W.js";var i=e(n(),1);function a(){let{branches:e}=t(),{hasBranchAccess:n}=r();return(0,i.useMemo)(()=>n?e.filter(e=>n(e.id)):e,[e,n])}export{a as t};

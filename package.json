@@ -6,20 +6,17 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:hub": "npm run dev -w apps/househub",
     "dev:menu": "npm run dev -w apps/house-menu",
-    "dev:worker": "npm run dev -w apps/worker-portal",
-    "dev:sorteos": "npm run dev -w apps/sorteos-automaticos",
-    "dev:26play": "npm run dev -w apps/26play",
-    "dev:chaly": "npm run dev -w apps/housepysbot",
-    "dev:portal-hub": "npm run dev -w apps/portal-hub",
-    "dev:cleaning": "npm run dev -w apps/house-cleaning",
-    "dev:laundry": "npm run dev -w apps/house-laundry",
-    "dev:piramid": "npm run dev -w apps/piramid-game",
-    "build:hub": "npm run build -w apps/househub",
-    "dev:core": "concurrently \"npm run dev:hub\" \"npm run dev:menu\" \"npm run dev:worker\"",
-    "dev:all": "concurrently \"npm run dev:hub\" \"npm run dev:menu\" \"npm run dev:worker\" \"npm run dev:sorteos\" \"npm run dev:26play\" \"npm run dev:chaly\" \"npm run dev:portal-hub\" \"npm run dev:cleaning\" \"npm run dev:laundry\" \"npm run dev:piramid\"",
-    "dev": "npm run dev:core",
+    "dev:bot": "npm run dev -w apps/housepysbot",
+    "dev:portal": "npm run dev -w apps/portal-hub",
+    "dev:ui": "npm run storybook -w packages/ui",
+    "dev": "npm run dev:portal",
+    "build:menu": "npm run build -w apps/house-menu",
+    "build:bot": "npm run build -w apps/housepysbot",
+    "build:portal": "npm run build -w apps/portal-hub",
+    "build": "npm run build:portal",
+    "test:menu": "npm run test -w apps/house-menu",
+    "test:bot": "npm run test -w apps/housepysbot",
     "generate:view": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-view.ps1"
   },
   "devDependencies": {
@@ -32,10 +29,12 @@
     "react-dom": "^19.2.6"
   },
   "dependencies": {
-    "@rolldown/binding-win32-x64-msvc": "^1.0.3",
     "dotenv": "^17.4.2",
     "framer-motion": "^12.40.0",
     "jspdf": "^4.2.1",
     "zustand": "^5.0.13"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-win32-x64-msvc": "^1.0.3"
   }
 }

@@ -6,16 +6,29 @@ import {
   CreditCard, FileText, ChevronLeft, Package, ChevronDown, ChevronUp,
   ArrowRight, Tag, Heart, Copy, Image, Clock4,
 } from 'lucide-react';
-import { useAppStore } from '@house/store';
+import { useAppStore, appStore } from '@house/store';
 import { ordersService } from '../lib/ordersService';
 import { deliveryService } from '../lib/deliveryService';
 import { geoService } from '../lib/geoService';
 import { storageService } from '../lib/storageService';
 import { useBranch } from '../context/BranchContext';
+import { useMarketing } from '../context/MarketingContext';
+import { findOrCreateCustomer, addCustomerPoints } from '../lib/customerService';
+import { getAnonymousToken } from '../lib/anonymousAuth';
+import { isEmail, isPhone, isTime, isRequired } from '@house/validation';
+import { marketingService } from '../lib/marketingService';
 
 /* ───────── Subcomponentes ───────── */
 
-function CartItemsList({ cart, removeFromCart, itemsByDate, formatDateLabel }) {
+function CartItemsList({ cart, removeFromCart, updateCartItemQty, itemsByDate, formatDateLabel }) {
+  const handleUpdateQty = (itemId, newQty) => {
+    if (newQty <= 0) {
+      removeFromCart(itemId);
+    } else {
+      updateCartItemQty(itemId, newQty);
+    }
+  };
+
   return Object.entries(itemsByDate).sort(([a], [b]) => a.localeCompare(b)).map(([dateStr, items]) => (
     <div key={dateStr} className="space-y-3">
       <h4 className="text-xs font-bold text-cm-accent uppercase tracking-widest border-b border-cm-border pb-2 flex items-center gap-2">
@@ -26,7 +39,9 @@ function CartItemsList({ cart, removeFromCart, itemsByDate, formatDateLabel }) {
           <motion.div key={item.id} layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.05 }}
             className="bg-cm-surface rounded-2xl shadow-cm-md border-2 border-cm-border p-4 flex justify-between items-start group hover:border-cm-accent transition-colors">
             <div className="space-y-1.5 flex-1 pr-3">
-              <h4 className="text-base font-black text-cm-text group-hover:text-cm-accent transition-colors leading-tight">{item.name}</h4>
+              <h4 className="text-base font-black text-cm-text group-hover:text-cm-accent transition-colors leading-tight">
+                {item.name}
+              </h4>
               {item.details?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
                   {item.details.map((d, dIdx) => (
@@ -34,7 +49,29 @@ function CartItemsList({ cart, removeFromCart, itemsByDate, formatDateLabel }) {
                   ))}
                 </div>
               )}
-              <p className="text-cm-accent font-black text-lg pt-1">S/ {item.price.toFixed(2)}</p>
+              
+              <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/5">
+                <p className="text-cm-accent font-black text-base">S/ {item.price.toFixed(2)}</p>
+                
+                {/* Micro Quantity Adjuster */}
+                <div className="flex items-center gap-1 bg-cm-bg p-1 rounded-xl border border-cm-border shrink-0">
+                  <button 
+                    onClick={() => handleUpdateQty(item.id, (item.quantity || 1) - 1)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-cm-text-secondary hover:bg-cm-surface hover:text-cm-text transition-all font-bold text-sm"
+                    type="button"
+                  >
+                    −
+                  </button>
+                  <span className="w-6 text-center text-xs font-black text-white tabular-nums">{item.quantity || 1}</span>
+                  <button 
+                    onClick={() => handleUpdateQty(item.id, (item.quantity || 1) + 1)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-cm-text-secondary hover:bg-cm-surface hover:text-cm-text transition-all font-bold text-sm"
+                    type="button"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
             <button onClick={() => removeFromCart(item.id)} className="text-cm-text-secondary hover:text-cm-error hover:bg-cm-error/10 rounded-full p-2 transition-all shrink-0">
               <Trash2 className="w-5 h-5" />
@@ -91,16 +128,16 @@ function PackagingSelector({ packagingItems, packaging, setPackaging, getPackagi
   );
 }
 
-function OrderTypeSelector({ orderType, setOrderType, setLocation, setMesa, setDeliveryFeeOverride, setPackaging }) {
+function OrderTypeSelector({ orderType, setOrderType, setLocation, setMesa, setDeliveryFeeOverride, setPackaging, showMesa = true }) {
   const types = [
-    { key: 'mesa', label: 'Mesa', icon: Utensils },
-    { key: 'llevar', label: 'Llevar', icon: Coffee },
+    ...(showMesa ? [{ key: 'mesa', label: 'Mesa', icon: Utensils }] : []),
+    { key: 'llevar', label: showMesa ? 'Llevar' : 'Recoger en local', icon: Coffee },
     { key: 'delivery', label: 'Delivery', icon: MapPin },
   ];
   return (
     <div className="space-y-2">
       <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase">1. Tipo de Pedido</label>
-      <div className="grid grid-cols-3 gap-2 bg-cm-bg-alt p-1.5 rounded-2xl border border-cm-border">
+      <div className={`grid ${showMesa ? 'grid-cols-3' : 'grid-cols-2'} gap-2 bg-cm-bg-alt p-1.5 rounded-2xl border border-cm-border`}>
         {types.map(type => {
           const Icon = type.icon;
           const isActive = orderType === type.key;
@@ -124,12 +161,11 @@ function PaymentSelector({ paymentMethod, setPaymentMethod }) {
     { key: 'yape_plin', label: 'Yape/Plin', icon: Smartphone },
     { key: 'efectivo', label: 'Efectivo', icon: Banknote },
     { key: 'pos', label: 'Tarjeta', icon: CreditCard },
-    { key: 'pendiente', label: 'Pendiente', icon: Clock },
   ];
   return (
     <div className="space-y-2">
       <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase">3. Método de Pago</label>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {methods.map(method => {
           const Icon = method.icon;
           const isActive = paymentMethod === method.key;
@@ -222,8 +258,8 @@ function StepYapePlin({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase block">2. Comprobante (Opcional)</label>
-          <div className="relative border-2 border-dashed border-cm-border rounded-2xl p-5 hover:border-cm-accent transition-colors bg-cm-surface/20 flex flex-col items-center justify-center text-center cursor-pointer">
+          <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase block">2. Comprobante <span className="text-cm-error">(Obligatorio)</span></label>
+          <div className={`relative border-2 border-dashed rounded-2xl p-5 transition-colors bg-cm-surface/20 flex flex-col items-center justify-center text-center cursor-pointer ${!voucherUploaded && !isUploading ? 'border-cm-error/50 hover:border-cm-error' : 'border-cm-border hover:border-cm-accent'}`}>
             <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
             {isUploading ? (
               <div className="space-y-2 py-2 flex flex-col items-center">
@@ -239,8 +275,9 @@ function StepYapePlin({
             ) : (
               <div className="space-y-1.5 py-2 flex flex-col items-center text-cm-text-secondary">
                 <Image className="w-8 h-8 opacity-60" />
-                <p className="text-xs font-bold text-cm-text">Seleccionar foto o comprobante</p>
+                <p className="text-xs font-bold text-cm-text">Seleccionar foto del voucher</p>
                 <p className="text-[10px] opacity-75">PNG, JPG hasta 5MB</p>
+                <p className="text-[10px] font-bold text-cm-error mt-1">⬆ Necesario para validar el pago</p>
               </div>
             )}
           </div>
@@ -258,7 +295,7 @@ function StepYapePlin({
         <button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl border-2 border-cm-border font-bold bg-cm-surface text-cm-text hover:bg-cm-accent/5 transition-all" type="button">
           ATRÁS
         </button>
-        <button disabled={operationNumber.trim().length < 4 && !voucherUploaded || isSubmitting}
+        <button disabled={operationNumber.trim().length < 4 || !voucherUploaded || isSubmitting}
           className="flex-1 rounded-xl border-2 border-cm-border bg-cm-accent disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleConfirmOrder} type="button">
           <div className="py-4 px-5 flex justify-between items-center text-white font-black tracking-widest text-sm">
@@ -279,24 +316,43 @@ function StepYapePlin({
 
 /* ───────── Componente Principal ───────── */
 
-export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
+export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMesa = null, showMesa = true }) {
   const { cart, removeFromCart, clearCart } = useAppStore();
   const { activeBranchId, activeBranch } = useBranch();
+  const { validatePromoCode, addLoyaltyPoints, trackPixel } = useMarketing();
 
   const [step, setStep] = useState(1);
   const [zones, setZones] = useState([]);
   const [customerName, setCustomerName] = useState(() => localStorage.getItem('cm_customer_name') || '');
   const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem('cm_customer_phone') || '');
+  const [customerEmail, setCustomerEmail] = useState(() => localStorage.getItem('cm_customer_email') || '');
   const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [orderType, setOrderType] = useState('mesa');
+  const [orderType, setOrderType] = useState(showMesa ? 'mesa' : 'llevar');
   const [paymentMethod, setPaymentMethod] = useState('yape_plin');
   const [observaciones, setObservaciones] = useState('');
-  const [mesa, setMesa] = useState(null);
+  const [mesa, setMesa] = useState(initialMesa);
   const [deliveryFeeOverride, setDeliveryFeeOverride] = useState(null);
   const [packaging, setPackaging] = useState({});
   const [selectedZoneId, setSelectedZoneId] = useState(null);
+
+  const updateCartItemQty = (id, newQuantity) => {
+    const updatedCart = cart.map(item => {
+      if (item.id === id) {
+        const unit = item.unitPrice ?? (item.price / (item.quantity || 1));
+        return {
+          ...item,
+          quantity: newQuantity,
+          price: unit * newQuantity,
+          unitPrice: unit
+        };
+      }
+      return item;
+    });
+    appStore.setState({ cart: updatedCart });
+  };
+
   const [tariffConfig, setTariffConfig] = useState(null);
   const [geoLocation, setGeoLocation] = useState(null);
   const [distanceKm, setDistanceKm] = useState(null);
@@ -314,57 +370,86 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
   const [copiedStatus, setCopiedStatus] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const geoTimeout = useRef(null);
-  const inputRef = useRef(null);
+  // ── Validation state ──
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [locationError, setLocationError] = useState('');
 
+  const geoTimeout = useRef(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestRef = useRef(null);
+
+  // Nominatim autocomplete: debounced search as user types
+  useEffect(() => {
+    if (orderType !== 'delivery' || !location.trim() || location.trim().length < 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=pe&q=${encodeURIComponent(location.trim())}`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'HouseMenuApp/1.0' } });
+        if (!res.ok) return;
+        const data = await res.json();
+        setSuggestions(data || []);
+        setShowSuggestions((data || []).length > 0);
+      } catch { /* ignore */ }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [orderType, location]);
+
+  // Close suggestions on outside click
   useEffect(() => {
     if (orderType !== 'delivery') return;
-    if (window.google?.maps?.places) return;
-    const existingScript = document.getElementById('google-maps-sdk');
-    if (existingScript) return;
-    const script = document.createElement('script');
-    script.id = 'google-maps-sdk';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env?.VITE_GOOGLE_MAPS_API_KEY || ''}&libraries=places`;
-    script.async = true; script.defer = true;
-    document.head.appendChild(script);
+    const handler = (e) => { if (suggestRef.current && !suggestRef.current.contains(e.target)) setShowSuggestions(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [orderType]);
 
-  useEffect(() => {
-    if (orderType !== 'delivery' || !inputRef.current) return;
-    let autocomplete = null;
-    const initAutocomplete = () => {
-      if (!window.google?.maps?.places || !inputRef.current) return;
-      autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['address'], componentRestrictions: { country: 'pe' },
-        fields: ['address_components', 'geometry', 'formatted_address'],
-      });
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) setLocation(place.formatted_address);
-        if (place.geometry?.location) {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          setGeoLocation({ lat, lng, displayName: place.formatted_address });
-          if (activeBranch?.coordinates?.lat && activeBranch?.coordinates?.lng) {
-            setDistanceKm(geoService.calcKm(activeBranch.coordinates.lat, activeBranch.coordinates.lng, lat, lng));
-          }
-        }
-      });
-    };
-    if (window.google?.maps?.places) initAutocomplete();
-    else {
-      const interval = setInterval(() => { if (window.google?.maps?.places) { initAutocomplete(); clearInterval(interval); } }, 500);
-      return () => clearInterval(interval);
+  const handleSelectSuggestion = (place) => {
+    setLocation(place.display_name);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setGeoLocation({ lat: parseFloat(place.lat), lng: parseFloat(place.lon), displayName: place.display_name });
+    if (activeBranch?.coordinates?.lat && activeBranch?.coordinates?.lng) {
+      setDistanceKm(geoService.calcKm(activeBranch.coordinates.lat, activeBranch.coordinates.lng, parseFloat(place.lat), parseFloat(place.lon)));
     }
-    return () => { if (autocomplete) window.google.maps.event.clearInstanceListeners(autocomplete); };
-  }, [orderType, activeBranch?.coordinates?.lat, activeBranch?.coordinates?.lng]);
+  };
 
   useEffect(() => {
-    if (!isOpen) setTimeout(() => { setStep(1); setTipPercentage(0); setOperationNumber(''); setVoucherUploaded(false); setVoucherUrl(''); setFileName(''); }, 300);
-  }, [isOpen]);
+    if (!isOpen) {
+      setTimeout(() => {
+        setStep(1);
+        setTipPercentage(0);
+        setOperationNumber('');
+        setVoucherUploaded(false);
+        setVoucherUrl('');
+        setFileName('');
+        if (initialMesa) {
+          setOrderType('mesa');
+          setMesa(initialMesa);
+        } else {
+          setMesa(null);
+        }
+      }, 300);
+    }
+  }, [isOpen, initialMesa]);
+
+  useEffect(() => {
+    if (initialMesa) {
+      setOrderType('mesa');
+      setMesa(initialMesa);
+    }
+  }, [initialMesa]);
+
+  // Clear location error when order type changes (validación cambia)
+  useEffect(() => { setLocationError(''); }, [orderType]);
 
   useEffect(() => { localStorage.setItem('cm_customer_name', customerName); }, [customerName]);
   useEffect(() => { localStorage.setItem('cm_customer_phone', customerPhone); }, [customerPhone]);
+  useEffect(() => { localStorage.setItem('cm_customer_email', customerEmail); }, [customerEmail]);
 
   useEffect(() => { if (!activeBranchId) return; const u = deliveryService.subscribeToZones(activeBranchId, setZones); return () => u(); }, [activeBranchId]);
   useEffect(() => { if (!activeBranchId) return; const u = deliveryService.subscribeToTariffConfig(activeBranchId, setTariffConfig); return () => u(); }, [activeBranchId]);
@@ -416,8 +501,21 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
 
   const handleApplyDiscount = () => {
     if (!discountCode.trim()) return;
-    if (discountCode.toUpperCase() === 'HOUSE10') { setAppliedDiscount(0.10); setDiscountSuccess(true); setDiscountError(''); }
-    else { setAppliedDiscount(0); setDiscountSuccess(false); setDiscountError('Código inválido o expirado'); }
+    const promo = validatePromoCode(discountCode);
+    if (promo) {
+      const subtotal = cart.reduce((acc, item) => acc + item.price, 0);
+      const ratio = promo.type === 'fixed'
+        ? Math.min(promo.value / (subtotal || 1), 1)
+        : promo.value / 100;
+      setAppliedDiscount(ratio);
+      setDiscountSuccess(true);
+      setDiscountError('');
+      marketingService.incrementPromoUse(activeBranchId, promo.id).catch(() => {});
+    } else {
+      setAppliedDiscount(0);
+      setDiscountSuccess(false);
+      setDiscountError('Código inválido o expirado');
+    }
   };
 
   const removeDiscount = () => { setDiscountCode(''); setAppliedDiscount(0); setDiscountSuccess(false); setDiscountError(''); };
@@ -444,11 +542,46 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
   const tipAmount = (subtotalWithDiscount * tipPercentage) / 100;
   const total = subtotalWithDiscount + totalPackaging + effectiveDeliveryFee + tipAmount;
 
+  /**
+   * Valida campos del formulario y actualiza errores en UI.
+   * Retorna true si hay errores, false si todo ok.
+   */
+  const validateForm = () => {
+    let hasErr = false;
+
+    const emailCheck = isEmail(customerEmail);
+    setEmailError(emailCheck.valid ? '' : emailCheck.error);
+    if (!emailCheck.valid) hasErr = true;
+
+    if (customerPhone.trim()) {
+      const phoneCheck = isPhone(customerPhone);
+      setPhoneError(phoneCheck.valid ? '' : phoneCheck.error);
+      if (!phoneCheck.valid) hasErr = true;
+    } else {
+      setPhoneError('');
+    }
+
+    if (orderType === 'llevar' && location.trim()) {
+      const timeCheck = isTime(location);
+      setLocationError(timeCheck.valid ? '' : timeCheck.error);
+      if (!timeCheck.valid) hasErr = true;
+    } else {
+      setLocationError('');
+    }
+
+    return hasErr;
+  };
+
   const handleConfirmOrder = async () => {
+    // ── Basic required fields ──
     if (!customerName?.trim()) return;
     if (orderType === 'mesa' && !mesa && !location.trim()) return;
     if (orderType !== 'mesa' && !location.trim()) return;
     if (orderType === 'delivery' && !customerPhone.trim()) return;
+
+    // ── Format validations ──
+    if (validateForm()) return;
+
     setSubmitError('');
     setIsSubmitting(true);
 
@@ -461,6 +594,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
     const orderData = {
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
+      customerEmail: customerEmail.trim(),
       location: orderType === 'mesa' ? `Mesa ${mesa || location}` : `${orderType === 'llevar' ? 'Recojo: ' : 'Envío: '}${location}`,
       items: cart,
       deliveryDate,
@@ -482,12 +616,58 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
       payment_status: paymentMethod === 'yape_plin' ? 'por_verificar' : (paymentMethod === 'pendiente' ? 'pendiente' : 'pagado'),
       payment_details: paymentMethod === 'yape_plin' ? { operation_number: operationNumber.trim(), wallet_type: selectedWallet, voucher_uploaded: !!voucherUploaded, voucher_url: voucherUrl || null } : null,
       order_type: OT_LABELS[orderType] || 'Mesa',
+      type: OT_LABELS[orderType] || 'Mesa',
     };
 
-    const result = await ordersService.createOrder(activeBranchId, orderData);
+    let result;
+    try {
+      // Retry logic: if 401, refresh token and retry once
+      let retried = false;
+      const doFetch = async () => {
+        const token = await getAnonymousToken();
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const response = await fetch("/api/orders", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ branchId: activeBranchId, ...orderData, source: "web" }),
+        });
+        if (!response.ok && response.status === 401 && !retried) {
+          retried = true;
+          // Force re-auth and retry once
+          await getAnonymousToken();
+          return doFetch();
+        }
+        return response.json();
+      };
+      result = await doFetch();
+    } catch (err) {
+      console.error("Error al enviar pedido:", err);
+      setIsSubmitting(false);
+      setSubmitError('Error de conexión. Verifica tu internet e intenta nuevamente.');
+      return;
+    }
     setIsSubmitting(false);
     if (result.success) {
-      clearCart(); setLocation(''); setObservaciones(''); setMesa(null); setDeliveryFeeOverride(null);
+      // CRM post-order (opcional — puede fallar para usuarios anónimos sin permisos RTDB)
+      try {
+        const customer = await findOrCreateCustomer({
+          email: customerEmail.trim(),
+          phone: customerPhone.trim(),
+          name: customerName.trim(),
+          branchId: activeBranchId,
+          orderTotal: total,
+        });
+        const pointsEarned = Math.floor(total / 10);
+        if (customer?.id) {
+          await addCustomerPoints(customer.id, pointsEarned);
+        }
+      } catch (crmErr) {
+        console.warn("CRM post-order skipped (anonymous user or permissions):", crmErr);
+      }
+      trackPixel('Purchase', { value: total, currency: 'PEN' });
+      
+      clearCart(); setLocation(''); setObservaciones(''); setMesa(initialMesa || null); setDeliveryFeeOverride(null);
       setPackaging({}); setSelectedZoneId(null); setSubmitError(''); setStep(1);
       setOperationNumber(''); setVoucherUploaded(false); setVoucherUrl(''); setFileName(''); removeDiscount(); setTipPercentage(0);
       onOrderComplete(result.orderId);
@@ -566,7 +746,26 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
                         </motion.div>
                       ) : (
                         <>
-                          <CartItemsList cart={cart} removeFromCart={removeFromCart} itemsByDate={itemsByDate} formatDateLabel={formatDateLabel} />
+                          {zoneFreeThreshold > 0 && (
+                            <div className="bg-cm-surface border-2 border-cm-border rounded-2xl p-4 space-y-2 mb-4 shadow-cm-sm">
+                              <div className="flex justify-between items-center text-xs font-bold">
+                                <span className="text-cm-text-secondary">
+                                  {subtotal >= zoneFreeThreshold 
+                                    ? "🎉 ¡Felicidades! Tienes Delivery GRATIS"
+                                    : `Te faltan S/ ${(zoneFreeThreshold - subtotal).toFixed(2)} para Delivery GRATIS`
+                                  }
+                                </span>
+                                <span className="text-cm-accent">{subtotal >= zoneFreeThreshold ? '100%' : `${Math.min((subtotal / zoneFreeThreshold) * 100, 100).toFixed(0)}%`}</span>
+                              </div>
+                              <div className="h-2 w-full bg-cm-bg-alt rounded-full overflow-hidden border border-cm-border">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-cm-accent to-orange-500 transition-all duration-500 ease-out"
+                                  style={{ width: `${Math.min((subtotal / zoneFreeThreshold) * 100, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          <CartItemsList cart={cart} removeFromCart={removeFromCart} updateCartItemQty={updateCartItemQty} itemsByDate={itemsByDate} formatDateLabel={formatDateLabel} />
                           <div className="space-y-1.5 pt-2">
                             <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase flex items-center gap-1"><FileText className="w-3 h-3" /> Observaciones</label>
                             <textarea value={observaciones} onChange={e => setObservaciones(e.target.value.slice(0, 200))}
@@ -604,7 +803,19 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
                   <motion.div key="step2" custom={1} variants={animVariants} initial="hidden" animate="visible" exit="exit"
                     className="absolute inset-0 flex flex-col">
                     <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-hide pb-[280px]">
-                      <OrderTypeSelector orderType={orderType} setOrderType={setOrderType} setLocation={setLocation} setMesa={setMesa} setDeliveryFeeOverride={setDeliveryFeeOverride} setPackaging={setPackaging} />
+                      {initialMesa ? (
+                        <div className="bg-cm-surface border-2 border-cm-accent/30 rounded-2xl p-4 flex items-center gap-3 shadow-cm-sm">
+                          <div className="w-10 h-10 rounded-xl bg-cm-accent/10 border border-cm-accent/20 flex items-center justify-center shrink-0">
+                            <Utensils className="w-5 h-5 text-cm-accent" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-cm-accent uppercase tracking-widest">Pedido en Local</p>
+                            <p className="text-sm font-bold text-cm-text">Mesa asignada: <span className="font-black text-cm-accent text-base">{initialMesa}</span></p>
+                          </div>
+                        </div>
+                      ) : (
+                        <OrderTypeSelector orderType={orderType} setOrderType={setOrderType} setLocation={setLocation} setMesa={setMesa} setDeliveryFeeOverride={setDeliveryFeeOverride} setPackaging={setPackaging} showMesa={showMesa} />
+                      )}
                       <div className="space-y-3">
                         <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase">2. Datos de Contacto</label>
                         <div className="relative">
@@ -615,31 +826,79 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
                         {orderType === 'delivery' && (
                           <div className="relative">
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-text-tertiary pointer-events-none" />
-                            <input type="tel" placeholder="Teléfono (Ej. 999 888 777)" maxLength={15} value={customerPhone} onChange={e => setCustomerPhone(e.target.value)}
-                              className="w-full bg-cm-bg-alt border border-cm-border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
+                            <input type="tel" placeholder="Teléfono (Ej. 999 888 777)" maxLength={15} value={customerPhone}
+                              onChange={e => { setCustomerPhone(e.target.value); if (phoneError) setPhoneError(''); }}
+                              onBlur={() => { const c = isPhone(customerPhone); setPhoneError(c.valid ? '' : c.error); }}
+                              className={`w-full bg-cm-bg-alt border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none text-cm-text placeholder:text-cm-text-tertiary ${phoneError ? 'border-cm-error' : 'border-cm-border focus:border-cm-accent'}`} />
+                            {phoneError && <p className="text-[0.65rem] font-bold text-cm-error mt-1.5 ml-1">{phoneError}</p>}
                           </div>
                         )}
-                        {orderType === 'mesa' && activeBranch?.tableCount > 0 ? (
-                          <div className="pt-2">
-                            <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase block mb-2">Selecciona tu Mesa</label>
-                            <div className="grid grid-cols-5 gap-2 mb-2">
-                              {Array.from({ length: activeBranch.tableCount }, (_, i) => i + 1).map(n => (
-                                <button key={n} type="button" onClick={() => { setMesa(n); setLocation(''); }}
-                                  className={`py-3 rounded-xl text-sm font-bold border transition-all ${mesa === n ? 'bg-cm-accent border-cm-accent text-white' : 'bg-cm-surface/50 border-cm-border text-cm-text-secondary hover:bg-cm-surface'}`}>
-                                  {n}
-                                </button>
-                              ))}
-                            </div>
-                            <input type="text" placeholder="Otra mesa (ej. VIP 1)" maxLength={100} value={location} onChange={e => { setLocation(e.target.value); setMesa(null); }}
-                              className="w-full bg-cm-bg-alt border border-cm-border rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
+                        <div className="relative">
+                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-text-tertiary pointer-events-none" />
+                            <input type="email" placeholder="Email (opcional — para historial y puntos)" maxLength={100} value={customerEmail}
+                              onChange={e => { setCustomerEmail(e.target.value); if (emailError) setEmailError(''); }}
+                              onBlur={() => { const c = isEmail(customerEmail); setEmailError(c.valid ? '' : c.error); }}
+                              className={`w-full bg-cm-bg-alt border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none text-cm-text placeholder:text-cm-text-tertiary ${emailError ? 'border-cm-error' : 'border-cm-border focus:border-cm-accent'}`} />
+                            {emailError && <p className="text-[0.65rem] font-bold text-cm-error mt-1.5 ml-1">{emailError}</p>}
                           </div>
+                        {orderType === 'mesa' ? (
+                          initialMesa ? null : (
+                            activeBranch?.tableCount > 0 ? (
+                              <div className="pt-2">
+                                <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase block mb-2">Selecciona tu Mesa</label>
+                                <div className="grid grid-cols-5 gap-2 mb-2">
+                                  {Array.from({ length: activeBranch.tableCount }, (_, i) => i + 1).map(n => (
+                                    <button key={n} type="button" onClick={() => { setMesa(n); setLocation(''); }}
+                                      className={`py-3 rounded-xl text-sm font-bold border transition-all ${mesa === n ? 'bg-cm-accent border-cm-accent text-white' : 'bg-cm-surface/50 border-cm-border text-cm-text-secondary hover:bg-cm-surface'}`}>
+                                      {n}
+                                    </button>
+                                  ))}
+                                </div>
+                                <input type="text" placeholder="Otra mesa (ej. VIP 1)" maxLength={100} value={location} onChange={e => { setLocation(e.target.value); setMesa(null); }}
+                                  className="w-full bg-cm-bg-alt border border-cm-border rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
+                              </div>
+                            ) : (
+                              <div className="relative pt-2">
+                                <MapPin className="absolute left-3 top-3 w-4 h-4 text-cm-text-tertiary pointer-events-none" />
+                                <input type="text" maxLength={200}
+                                  placeholder="Número de Mesa"
+                                  value={location} onChange={e => setLocation(e.target.value)}
+                                  className="w-full bg-cm-bg-alt border border-cm-border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
+                              </div>
+                            )
+                          )
                         ) : (
-                          <div className="relative pt-2">
-                            <MapPin className="absolute left-3 top-3 w-4 h-4 text-cm-text-tertiary pointer-events-none" />
-                            <input ref={orderType === 'delivery' ? inputRef : null} type="text" maxLength={200}
-                              placeholder={orderType === 'mesa' ? 'Número de Mesa' : orderType === 'llevar' ? 'Hora de recojo' : 'Dirección completa y referencias'}
-                              value={location} onChange={e => setLocation(e.target.value)}
-                              className="w-full bg-cm-bg-alt border border-cm-border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
+                          <div className="relative pt-2" ref={orderType === 'delivery' ? suggestRef : null}>
+                            <MapPin className="absolute left-3 top-3 w-4 h-4 text-cm-text-tertiary pointer-events-none z-10" />
+                            <input type="text" maxLength={200}
+                              placeholder={orderType === 'llevar' ? 'Hora de recojo (ej. 14:30)' : 'Dirección completa y referencias'}
+                              value={location}
+                              onChange={e => { setLocation(e.target.value); if (locationError) setLocationError(''); }}
+                              onBlur={() => {
+                                if (orderType === 'llevar' && location.trim()) {
+                                  const c = isTime(location);
+                                  setLocationError(c.valid ? '' : c.error);
+                                } else {
+                                  setLocationError('');
+                                }
+                                // Delay closing suggestions so click registers
+                                setTimeout(() => setShowSuggestions(false), 200);
+                              }}
+                              className={`w-full bg-cm-bg-alt border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none text-cm-text placeholder:text-cm-text-tertiary ${locationError ? 'border-cm-error' : 'border-cm-border focus:border-cm-accent'}`} />
+                            {locationError && orderType === 'llevar' && <p className="text-[0.65rem] font-bold text-cm-error mt-1.5 ml-1">{locationError}</p>}
+                            {orderType === 'delivery' && showSuggestions && suggestions.length > 0 && (
+                              <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-cm-surface border border-cm-border rounded-xl shadow-cm-lg overflow-hidden max-h-60 overflow-y-auto">
+                                {suggestions.map((place, i) => (
+                                  <li key={i}>
+                                    <button type="button" onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(place); }}
+                                      className="w-full text-left px-4 py-3 text-sm text-cm-text hover:bg-cm-accent/10 border-b border-cm-border/50 last:border-b-0 transition-colors">
+                                      <span className="font-medium">{place.display_name?.split(',')[0]}</span>
+                                      <span className="text-cm-text-tertiary block text-xs truncate">{place.display_name}</span>
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
                         )}
                       </div>
@@ -675,43 +934,29 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
                                 <CheckCircle className="w-4 h-4" /> Delivery gratis.
                               </div>
                             ) : (
-                              <div className="relative">
-                                <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-sm font-bold text-cm-text-secondary">S/</span>
-                                <input type="number" step="0.5" min="0"
-                                  value={deliveryFeeOverride ?? (calculatedKmFee ?? (selectedZone ? zoneFee : activeBranch?.deliveryFee ?? 5))}
-                                  onChange={e => setDeliveryFeeOverride(parseFloat(e.target.value) || 0)}
-                                  className="w-full bg-cm-bg-alt border border-cm-border rounded-xl pl-10 pr-3 py-3 text-sm font-bold focus:outline-none focus:border-cm-accent text-cm-text" />
-                                {zoneEta && <p className="text-xs text-cm-accent mt-2 flex items-center gap-1 font-bold"><Clock className="w-3.5 h-3.5" /> ~{zoneEta} min</p>}
+                              <div className="space-y-2">
+                                <div className="w-full bg-cm-bg-alt border border-cm-border rounded-xl px-4 py-3 text-sm font-black text-cm-text flex items-center justify-between">
+                                  <span className="text-cm-text-secondary font-bold">Monto calculado</span>
+                                  <span className="text-cm-accent text-base">
+                                    S/ {(deliveryFeeOverride ?? (calculatedKmFee ?? (selectedZone ? zoneFee : activeBranch?.deliveryFee ?? 5))).toFixed(2)}
+                                  </span>
+                                </div>
+                                {zoneEta && <p className="text-xs text-cm-accent flex items-center gap-1 font-bold"><Clock className="w-3.5 h-3.5" /> ~{zoneEta} min</p>}
                               </div>
                             )}
                           </div>
                         </div>
                       )}
                       <PaymentSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
-                      {orderType === 'mesa' ? (
-                        packagingItems.length > 0 && <PackagingSelector packagingItems={packagingItems} packaging={packaging} setPackaging={setPackaging} getPackagingQty={getPackagingQty} />
-                      ) : (
+                      {orderType !== 'mesa' && (
                         <div className="bg-cm-success/10 border border-cm-success/20 rounded-2xl p-4 flex items-start gap-3">
                           <Package className="w-5 h-5 text-cm-success shrink-0 mt-0.5" />
                           <div className="space-y-0.5">
                             <p className="text-xs font-black text-cm-success uppercase tracking-widest">Empaques Incluidos</p>
-                            <p className="text-[11px] text-cm-success/80">Hemos incluido automáticamente todos los envases térmicos y cubiertos sin costo adicional.</p>
+                            <p className="text-[11px] text-cm-success/80">Envases térmicos y cubiertos incluidos sin costo adicional.</p>
                           </div>
                         </div>
                       )}
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase flex items-center gap-1">
-                          <Heart className="w-3 h-3 text-cm-error" /> Propina (Opcional)
-                        </label>
-                        <div className="flex gap-2">
-                          {[0, 10, 15].map(pct => (
-                            <button key={pct} type="button" onClick={() => setTipPercentage(pct)}
-                              className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all border ${tipPercentage === pct ? 'bg-cm-accent border-cm-accent text-white' : 'bg-cm-surface/50 border-cm-border text-cm-text-secondary hover:bg-cm-surface'}`}>
-                              {pct === 0 ? 'Sin Propina' : `${pct}%`}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
                       {submitError && (
                         <div className="flex items-start gap-2 p-3 bg-cm-error/10 border border-cm-error/30 rounded-xl text-sm text-cm-error font-medium">
                           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -732,7 +977,11 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete }) {
                       </div>
                       <button disabled={!customerName?.trim() || (orderType === 'mesa' ? !mesa && !location.trim() : !location.trim()) || (orderType === 'delivery' && !customerPhone.trim()) || isSubmitting}
                         className="w-full rounded-xl border-2 border-cm-border bg-cm-accent disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={() => { if (paymentMethod === 'yape_plin') setStep(3); else handleConfirmOrder(); }}>
+                        onClick={() => {
+                          if (validateForm()) return; // no pasar si hay errores de formato
+                          if (paymentMethod === 'yape_plin') setStep(3);
+                          else handleConfirmOrder();
+                        }}>
                         <div className="py-4 px-5 flex justify-between items-center text-white font-black tracking-widest text-sm">
                           {isSubmitting ? (
                             <div className="flex items-center gap-2 text-sm justify-center w-full">

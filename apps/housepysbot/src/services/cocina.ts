@@ -1,37 +1,54 @@
 import { initFirebase, ref, child, set, push, onChildAdded, off } from "../lib/firebase.js";
+import { getAllBranchIds } from "../lib/branch.js";
 import { reportToolCall } from "../lib/telemetry.js";
+import { retry } from "../lib/retry.js";
 
 const db = initFirebase();
-const BRANCH = process.env.HOUSEPYSBOT_BRANCH_ID || "default";
 
 export function startCocinaWatcher() {
-  const ordersRef = ref(db, `branches/${BRANCH}/orders`);
+  const branchIds = getAllBranchIds();
+  const cleanups: (() => void)[] = [];
 
-  const unsub = onChildAdded(ordersRef, (snap) => {
-    const order = snap.val();
-    if (!order || order.status !== "recibido") return;
+  for (const branchId of branchIds) {
+    const ordersRef = ref(db, `branches/${branchId}/orders`);
 
-    (async () => {
-      try {
-        const cocinaRef = child(ref(db), `branches/${BRANCH}/system/cocina/pendientes/${snap.key}`);
-        await set(cocinaRef, {
-          ...order,
-          notifiedAt: Date.now(),
-        });
+    const unsub = onChildAdded(ordersRef, (snap) => {
+      const order = snap.val();
+      if (!order || order.status !== "recibido") return;
 
-        await reportToolCall(
-          "atencion",
-          "crear_pedido",
-          { id: snap.key, cliente: order.cliente, total: order.total },
-          "success",
-          `🍳 Nuevo pedido: ${order.cliente} — S/ ${Number(order.total).toFixed(2)}`,
-          0,
-        );
-      } catch (e) {
-        console.error("cocina watcher error:", e);
-      }
-    })();
-  });
+      (async () => {
+        try {
+          const cocinaRef = child(ref(db), `branches/${branchId}/system/cocina/pendientes/${snap.key}`);
+          await retry(() =>
+            set(cocinaRef, {
+              ...order,
+              notifiedAt: Date.now(),
+              branchId,
+            }),
+            {
+              maxAttempts: 3,
+              onRetry: (attempt, err) =>
+                console.warn(`cocina watch retry ${attempt}/${3} [${branchId}]: ${err.message}`),
+            },
+          );
 
-  return () => off(ordersRef);
+          await reportToolCall(
+            "atencion",
+            "crear_pedido",
+            { id: snap.key, branchId, cliente: order.cliente, total: order.total },
+            "success",
+            `🍳 Nuevo pedido [${branchId}]: ${order.cliente} — S/ ${Number(order.total).toFixed(2)}`,
+            0,
+          );
+        } catch (e) {
+          console.error(`cocina watcher error [${branchId}] tras ${3} intentos:`, e);
+        }
+      })();
+    });
+
+    cleanups.push(() => off(ordersRef));
+  }
+
+  console.log(`🍳 Cocina Watcher: ${branchIds.length} sucursal(es)`);
+  return () => cleanups.forEach((fn) => fn());
 }

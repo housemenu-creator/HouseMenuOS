@@ -9,7 +9,7 @@ import { useBranch } from '../../context/BranchContext';
 export default function SucursalesTab({ branches }) {
   const [showBranchModal, setShowBranchModal] = useState(false);
   const [editingBranch, setEditingBranch] = useState(null);
-  const [branchForm, setBranchForm] = useState({ name: '', address: '', phone: '', schedule: '', lat: '', lng: '' });
+  const [branchForm, setBranchForm] = useState({ name: '', address: '', phone: '', schedule: '', lat: '', lng: '', whatsappNumber: '' });
 
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [cloneSource, setCloneSource] = useState('');
@@ -36,6 +36,7 @@ export default function SucursalesTab({ branches }) {
         name: branch.name || '',
         address: branch.address || '',
         phone: branch.phone || '',
+        whatsappNumber: branch.whatsappNumber || '',
         schedule: branch.schedule || '',
         lat: branch.coordinates?.lat != null ? String(branch.coordinates.lat) : '',
         lng: branch.coordinates?.lng != null ? String(branch.coordinates.lng) : '',
@@ -48,7 +49,7 @@ export default function SucursalesTab({ branches }) {
       setTablesConfig(branch.tables || Array.from({ length: parseInt(branch.tableCount) || 0 }, (_, i) => i + 1));
     } else {
       setEditingBranch(null);
-      setBranchForm({ name: '', address: '', phone: '', schedule: '', lat: '', lng: '', tableCount: '0', deliveryEnabled: false, deliveryFee: '5', freeThreshold: '0', packagingItems: [] });
+      setBranchForm({ name: '', address: '', phone: '', whatsappNumber: '', schedule: '', lat: '', lng: '', tableCount: '0', deliveryEnabled: false, deliveryFee: '5', freeThreshold: '0', packagingItems: [] });
       setTablesConfig([]);
     }
     setShowBranchModal(true);
@@ -60,6 +61,7 @@ export default function SucursalesTab({ branches }) {
       name: branchForm.name,
       address: branchForm.address,
       phone: branchForm.phone,
+      whatsappNumber: branchForm.whatsappNumber,
       schedule: branchForm.schedule,
       coordinates: { lat: branchForm.lat ? parseFloat(branchForm.lat) : null, lng: branchForm.lng ? parseFloat(branchForm.lng) : null },
       tableCount: parseInt(branchForm.tableCount) || 0,
@@ -208,6 +210,12 @@ export default function SucursalesTab({ branches }) {
                     <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Telefono</label>
                     <input type="text" value={branchForm.phone} onChange={e => setBranchForm({ ...branchForm, phone: e.target.value })} className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors" />
                   </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">WhatsApp</label>
+                    <input type="text" value={branchForm.whatsappNumber} onChange={e => setBranchForm({ ...branchForm, whatsappNumber: e.target.value })} placeholder="+51999000000" className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Horario</label>
                     <input type="text" value={branchForm.schedule} onChange={e => setBranchForm({ ...branchForm, schedule: e.target.value })} className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors" />

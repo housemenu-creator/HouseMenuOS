@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { ShoppingCart, ArrowLeft, UtensilsCrossed, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, UtensilsCrossed, ChevronRight, ArrowUp } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import { menuService } from '../lib/menuService';
 import { dailyMenuService } from '../lib/dailyMenuService';
+import logo from '../assets/logo.jpg';
 
 
 import { useAppStore } from '@house/store';
@@ -13,22 +14,51 @@ import { useNavigate } from 'react-router-dom';
 
 import MenuCard from '../components/MenuCard';
 import { useBranch } from '../context/BranchContext';
-import CartDrawer from '../components/CartDrawer';
 import DateSelector from '../components/DateSelector';
-import KioskMode from '../kds/components/KioskMode';
 
-import HeroBanner from '../customer/components/HeroBanner';
 import SearchBar from '../customer/components/SearchBar';
 import CategoryRibbon from '../customer/components/CategoryRibbon';
 import ProductGrid from '../customer/components/ProductGrid';
-import WizardFlow from '../customer/components/WizardFlow';
-import FlatProductFlow from '../customer/components/FlatProductFlow';
-import OrderConfirmation from '../customer/components/OrderConfirmation';
 import BentoDailyMenu from '../customer/components/BentoDailyMenu';
+import MarketingHighlights from '../customer/components/MarketingHighlights';
+import UrgencyBar from '../customer/components/UrgencyBar';
+import ProductSkeleton from '../customer/components/ProductSkeleton';
+import HeroBanner from '../customer/components/HeroBanner';
+import FlashOffer from '../customer/components/FlashOffer';
+
+// ── Lazy-loaded heavy sub-views ──────────────────────────
+const CartDrawer = lazy(() => import('../components/CartDrawer'));
+const KioskMode = lazy(() => import('../kds/components/KioskMode'));
+const WizardFlow = lazy(() => import('../customer/components/WizardFlow'));
+const FlatProductFlow = lazy(() => import('../customer/components/FlatProductFlow'));
+const OrderConfirmation = lazy(() => import('../customer/components/OrderConfirmation'));
 
 export default function CustomerView() {
   const navigate = useNavigate();
   const { branches, activeBranchId, setActiveBranchId } = useBranch();
+  const { cart, addToCart: addStoreCart } = useAppStore();
+
+  const [cartLength, setCartLength] = useState(cart.length);
+  const [shouldAnimateCart, setShouldAnimateCart] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    if (cart.length > cartLength) {
+      setShouldAnimateCart(true);
+      const timer = setTimeout(() => setShouldAnimateCart(false), 600);
+      return () => clearTimeout(timer);
+    }
+    setCartLength(cart.length);
+  }, [cart.length, cartLength]);
+
+  useEffect(() => {
+    const handleScrollVisibility = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScrollVisibility);
+    return () => window.removeEventListener('scroll', handleScrollVisibility);
+  }, []);
+
   const [kioskEnabled, setKioskEnabled] = useState(false);
   useEffect(() => {
     if (!activeBranchId) return;
@@ -62,8 +92,19 @@ export default function CustomerView() {
 
   const [dailyMenus, setDailyMenus] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [layoutConfig, setLayoutConfig] = useState({
+    landingShowHero: true,
+    landingShowFlashOffer: true,
+    landingShowStats: true,
+    landingShowValues: true,
+    landingShowHighlights: true,
+    cartaShowHero: false,
+    cartaShowFlashOffer: false,
+    cartaShowDailyMenu: true,
+    cartaShowHighlights: false,
+  });
 
-  const { cart, addToCart: addStoreCart } = useAppStore();
+
 
   const liveProduct = useMemo(() => {
     if (!selectedProduct?.id || !catalog.products) return selectedProduct;
@@ -93,15 +134,23 @@ export default function CustomerView() {
   }, [catalog.products]);
 
   const categoryImages = useMemo(() => {
-    if (!catalog.products) return {};
     const images = {};
-    Object.values(catalog.products).forEach(p => {
-      if (p.available !== false && p.category && p.image && !images[p.category]) {
-        images[p.category] = p.image;
-      }
-    });
+    if (catalog.products) {
+      Object.values(catalog.products).forEach(p => {
+        if (p.available !== false && p.category && p.image && !images[p.category]) {
+          images[p.category] = p.image;
+        }
+      });
+    }
+    if (catalog.categories) {
+      Object.entries(catalog.categories).forEach(([_, catData]) => {
+        if (catData && catData.image && catData.name) {
+          images[catData.name] = catData.image;
+        }
+      });
+    }
     return images;
-  }, [catalog.products]);
+  }, [catalog.products, catalog.categories]);
 
   // All products filtered only by search query (not category — scrollspy handles category nav)
   const filteredProducts = useMemo(() => {
@@ -116,8 +165,11 @@ export default function CustomerView() {
     });
   }, [catalog.products, searchQuery]);
 
+  const [activeCategory, setActiveCategory] = useState('todos');
+
   // Scrollspy: scroll to category section
   const handleCategoryClick = useCallback((cat) => {
+    setActiveCategory(cat);
     if (cat === 'todos') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -126,6 +178,52 @@ export default function CustomerView() {
     const el = document.getElementById(sectionId);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
+
+  // IntersectionObserver to auto-update activeCategory on scroll
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-100px 0px -60% 0px',
+      threshold: 0,
+    };
+
+    const handleIntersection = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id;
+          const categoryKey = sectionId.replace('cat-section-', '');
+          const matchedCategory = categoriesList.find(
+            (c) => c.toLowerCase().replace(/\s+/g, '-') === categoryKey
+          );
+          if (matchedCategory) {
+            setActiveCategory(matchedCategory);
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersection, observerOptions);
+
+    categoriesList.forEach((cat) => {
+      if (cat === 'todos') return;
+      const sectionId = `cat-section-${cat.toLowerCase().replace(/\s+/g, '-')}`;
+      const el = document.getElementById(sectionId);
+      if (el) observer.observe(el);
+    });
+
+    const handleScroll = () => {
+      if (window.scrollY < 200) {
+        setActiveCategory('todos');
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [categoriesList]);
+
 
   // Cart total for FAB
   const cartTotal = useMemo(() => cart.reduce((s, i) => s + (i.price || 0), 0), [cart]);
@@ -141,13 +239,19 @@ export default function CustomerView() {
     [catalog.modifiers]
   );
 
+  const [urlMesa, setUrlMesa] = useState(null);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlBranch = params.get('branch');
     if (urlBranch && branches.some(b => b.id === urlBranch)) {
       setActiveBranchId(urlBranch);
     }
-  }, []);
+    const mesaParam = params.get('mesa') || params.get('table');
+    if (mesaParam) {
+      setUrlMesa(mesaParam);
+    }
+  }, [branches]);
 
   useEffect(() => {
     setLoading(true);
@@ -168,6 +272,18 @@ export default function CustomerView() {
     return unsub;
   }, [activeBranchId]);
 
+  useEffect(() => {
+    if (!activeBranchId) return;
+    const layoutRef = ref(db, `branches_config/${activeBranchId}/marketingLayout`);
+    const unsub = onValue(layoutRef, (snap) => {
+      const val = snap.val();
+      if (val) {
+        setLayoutConfig((prev) => ({ ...prev, ...val }));
+      }
+    });
+    return unsub;
+  }, [activeBranchId]);
+
   const handleSelectProduct = (id, product) => {
     setSelectedProduct({ id, ...product });
     setSelectedVariation(null);
@@ -183,7 +299,7 @@ export default function CustomerView() {
     );
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (quantity = 1) => {
     let itemTotal = liveProduct.base_price || 0;
     let details = [];
 
@@ -240,7 +356,9 @@ export default function CustomerView() {
       productId: liveProduct.id,
       name: liveProduct.name,
       details,
-      price: itemTotal,
+      price: itemTotal * quantity,
+      unitPrice: itemTotal,
+      quantity: Number(quantity),
       packaging: 0,
       deliveryDate: selectedDate,
       ...(liveProduct.isWizard ? {
@@ -278,19 +396,41 @@ export default function CustomerView() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-cm-bg flex flex-col items-center justify-center z-50">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-          <h1 className=" text-2xl mb-8">
-            <span className="text-cm-text">HOUSE</span><br/>
-            <span className="text-cm-accent text-3xl">ALMUERZOS</span>
-          </h1>
-          <div className="w-48 h-2 bg-white/10 rounded-full overflow-hidden mb-4">
-            <motion.div className="h-full bg-cm-accent" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 1.2 }} />
+      <div className="min-h-screen bg-cm-bg flex flex-col">
+        {/* Header Shimmer */}
+        <div className="sticky top-0 z-40 bg-cm-bg/85 backdrop-blur-lg border-b border-cm-accent/15 px-6 py-4 flex justify-between items-center animate-pulse">
+          <div className="h-5 bg-cm-muted/20 w-24 rounded-full" />
+          <div className="h-9 bg-cm-muted/10 w-24 rounded-full" />
+        </div>
+        
+        <div className="max-w-2xl mx-auto w-full px-6 pt-10 pb-24 space-y-8">
+          {/* Bento Daily Menu Shimmer */}
+          <div className="h-48 bg-cm-surface border border-cm-border rounded-3xl p-6 relative overflow-hidden animate-pulse flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="h-4 bg-cm-muted/25 w-32 rounded-full" />
+              <div className="h-8 bg-cm-muted/25 w-56 rounded-full" />
+              <div className="h-4 bg-cm-muted/20 w-3/4 rounded-full" />
+            </div>
+            <div className="h-8 bg-cm-muted/15 w-36 rounded-full" />
           </div>
-        </motion.div>
+
+          {/* SearchBar Shimmer */}
+          <div className="h-12 bg-cm-surface border border-cm-border rounded-xl animate-pulse" />
+
+          {/* Categories Ribbon Shimmer */}
+          <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-8 bg-cm-muted/15 w-20 rounded-full shrink-0 animate-pulse" />
+            ))}
+          </div>
+
+          {/* Product Cards Shimmer */}
+          <ProductSkeleton />
+        </div>
       </div>
     );
   }
+
 
   if (!loading && (!catalog?.products || Object.keys(catalog.products).length === 0)) {
     return (
@@ -305,100 +445,157 @@ export default function CustomerView() {
   }
 
   if (kioskEnabled) {
-    return <KioskMode />;
+    return <Suspense fallback={<div className="min-h-screen bg-cm-bg flex items-center justify-center"><div className="w-8 h-8 border-4 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}><KioskMode /></Suspense>;
   }
 
   return (
     <div className="transition-all duration-300 flex flex-col min-h-screen">
-      <nav className="sticky top-0 z-40 bg-cm-bg/80 backdrop-blur-lg border-b border-cm-accent/20 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="text-[0.8rem] font-black tracking-widest text-cm-accent">HOUSE</div>
-          <span className="text-[0.6rem] font-bold bg-cm-accent/10 text-cm-accent px-2 py-0.5 rounded-full uppercase tracking-wider">
-            {branches.find(b => b.id === activeBranchId)?.name || 'Principal'}
-          </span>
+      <UrgencyBar />
+      <nav className="sticky top-0 z-40 bg-cm-bg/75 backdrop-blur-md border-b border-cm-border/60 px-6 py-3.5 flex justify-between items-center shadow-sm">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/')} className="p-1.5 hover:bg-cm-accent/10 rounded-full transition-colors text-cm-text shrink-0" title="Volver al inicio">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="House Logo" className="w-7 h-7 rounded-lg object-cover border border-cm-border shadow-cm-sm" />
+            <div className="text-[0.8rem] font-black tracking-widest text-cm-accent">HOUSE</div>
+            <span className="text-[0.6rem] font-bold bg-cm-accent/10 text-cm-accent px-2 py-0.5 rounded-full uppercase tracking-wider">
+              {branches.find(b => b.id === activeBranchId)?.name || 'Principal'}
+            </span>
+          </div>
         </div>
 
         <button
           onClick={() => setIsCartOpen(true)}
-          className="relative flex items-center gap-2 px-4 py-2 border-2 border-cm-border hover:border-cm-accent hover:bg-cm-accent/5 rounded-full transition-all text-sm font-bold text-cm-text"
+          className="relative flex items-center gap-2 px-4 py-2 border border-cm-border hover:border-cm-accent/40 hover:bg-cm-accent/5 rounded-full transition-all text-xs font-black uppercase tracking-wider text-cm-text"
         >
           <ShoppingCart className="w-4 h-4" />
           <span>Carrito</span>
           {cart.length > 0 && (
-            <span className="bg-cm-accent text-white text-[0.6rem] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-cm-sm">
+            <span className="bg-cm-accent text-white text-[0.65rem] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-cm-sm animate-pulse">
               {cart.length}
             </span>
           )}
         </button>
       </nav>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full px-6 pt-10 pb-24">
-        <motion.div key="landing" className="space-y-8">
-          <HeroBanner branchName={branches.find(b => b.id === activeBranchId)?.name} />
+      <main className="flex-1 max-w-2xl mx-auto w-full px-6 pt-6 pb-24">
+        <motion.div key="menu" className="space-y-8">
+          {layoutConfig.cartaShowHero && (
+            <HeroBanner 
+              branchName={branches.find(b => b.id === activeBranchId)?.name}
+            />
+          )}
           <DateSelector selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-          <BentoDailyMenu 
-            menu={dailyMenus[selectedDate]} 
-            catalog={catalog} 
-            onSelectProduct={handleSelectProduct} 
-          />
+          {layoutConfig.cartaShowDailyMenu && (
+            <BentoDailyMenu 
+              menu={dailyMenus[selectedDate]} 
+              catalog={catalog} 
+              onSelectProduct={handleSelectProduct} 
+            />
+          )}
+          {layoutConfig.cartaShowFlashOffer && (
+            <FlashOffer />
+          )}
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          <CategoryRibbon categories={categoriesList} selected={'todos'} onSelect={handleCategoryClick} categoryImages={categoryImages} />
+          <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} categoryImages={categoryImages} />
           <ProductGrid products={filteredProducts} onSelectProduct={handleSelectProduct} searchQuery={searchQuery} />
+          {layoutConfig.cartaShowHighlights && (
+            <MarketingHighlights />
+          )}
         </motion.div>
       </main>
 
       <AnimatePresence>
         {view === 'wizard' && (
-          <motion.div
-            key="wizard-overlay"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 250 }}
-            className="fixed inset-0 z-[60] bg-cm-bg flex flex-col"
-          >
-            <div className="sticky top-0 bg-cm-bg/90 backdrop-blur-md border-b border-cm-accent/10 px-6 py-4 flex items-center z-10">
-              <button onClick={() => setView('landing')} className="p-2 -ml-2 hover:bg-cm-accent/10 rounded-full transition-colors mr-3">
-                <ArrowLeft className="w-6 h-6 text-cm-text" />
-              </button>
-              <h2 className="text-lg font-black text-cm-text truncate flex-1">{liveProduct?.name}</h2>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto px-6 pt-8 pb-32 max-w-2xl mx-auto w-full">
-              <div className="text-center mb-10">
-                <h2 className="text-4xl font-black text-cm-accent tracking-tight">{liveProduct?.name}</h2>
-                {liveProduct?.description && (
-                  <p className="text-base text-cm-muted mt-4 max-w-md mx-auto leading-relaxed">{liveProduct.description}</p>
-                )}
+          <>
+            {/* Backdrop Blur Overlay */}
+            <motion.div
+              key="wizard-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              onClick={() => setView('landing')}
+              className="fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm"
+            />
+
+            {/* Bottom Sheet Container */}
+            <motion.div
+              key="wizard-overlay"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-[60] flex flex-col h-[90vh] sm:h-auto sm:max-h-[88vh] sm:top-auto sm:bottom-0 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-2xl sm:w-full bg-cm-bg/95 backdrop-blur-xl rounded-t-[2rem] sm:rounded-t-[2.5rem] border-t border-x border-cm-border/60 shadow-cm-lg overflow-hidden"
+            >
+              {/* Drag Handle Indicator */}
+              <div className="flex justify-center pt-3 pb-1 shrink-0">
+                <div className="w-10 h-1 rounded-full bg-cm-border/60" />
               </div>
 
-              {liveProduct?.isWizard ? (
-                <WizardFlow
-                  product={flowProduct}
-                  wizardSelections={wizardSelections}
-                  onOptionToggle={handleWizardOptionToggle}
-                  currentStepIndex={currentStepIndex}
-                  onStepChange={setCurrentStepIndex}
-                  onComplete={handleAddToCart}
-                  isOutOfStock={isOutOfStockDetail}
-                  qtyInCart={qtyInCart}
-                />
-              ) : (
-                <FlatProductFlow
-                  product={liveProduct}
-                  variationsList={variationsList}
-                  modifiersList={modifiersList}
-                  selectedVariation={selectedVariation}
-                  selectedModifiers={selectedModifiers}
-                  onSelectVariation={setSelectedVariation}
-                  onToggleModifier={handleToggleModifier}
-                  onAddToCart={handleAddToCart}
-                  isOutOfStock={isOutOfStockDetail}
-                  qtyInCart={qtyInCart}
-                />
-              )}
-            </div>
-          </motion.div>
+              {/* Glassmorphic Header */}
+              <div className="sticky top-0 bg-cm-bg/80 backdrop-blur-md border-b border-cm-border/40 px-6 py-3 flex items-center z-10 shrink-0">
+                <button onClick={() => setView('landing')} className="p-2 -ml-2 hover:bg-cm-accent/10 rounded-full transition-colors mr-3">
+                  <ArrowLeft className="w-5 h-5 text-cm-text" />
+                </button>
+                <h2 className="text-base font-black text-cm-text truncate flex-1">{liveProduct?.name}</h2>
+                <span className="text-xs font-black text-cm-accent bg-cm-accent/10 px-2.5 py-1 rounded-full border border-cm-accent/20 shrink-0">
+                  S/ {(liveProduct?.base_price ?? liveProduct?.price ?? 0).toFixed(2)}
+                </span>
+              </div>
+              
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto px-6 pt-6 pb-32 overscroll-contain">
+                <div className="max-w-2xl mx-auto w-full">
+                  {/* Product Hero */}
+                  {liveProduct?.image && (
+                    <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-cm-border/60 shadow-cm-md mb-6">
+                      <img src={liveProduct.image} alt={liveProduct.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-cm-bg/70 via-transparent to-transparent" />
+                    </div>
+                  )}
+
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl sm:text-3xl font-black text-cm-accent tracking-tight">{liveProduct?.name}</h2>
+                    {liveProduct?.description && (
+                      <p className="text-sm text-cm-text-secondary mt-3 max-w-md mx-auto leading-relaxed">{liveProduct.description}</p>
+                    )}
+                  </div>
+
+                  {liveProduct?.isWizard ? (
+                    <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-3 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}>
+                      <WizardFlow
+                        product={flowProduct}
+                        wizardSelections={wizardSelections}
+                        onOptionToggle={handleWizardOptionToggle}
+                        currentStepIndex={currentStepIndex}
+                        onStepChange={setCurrentStepIndex}
+                        onComplete={handleAddToCart}
+                        isOutOfStock={isOutOfStockDetail}
+                        qtyInCart={qtyInCart}
+                      />
+                    </Suspense>
+                  ) : (
+                    <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-3 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}>
+                      <FlatProductFlow
+                        product={liveProduct}
+                        variationsList={variationsList}
+                        modifiersList={modifiersList}
+                        selectedVariation={selectedVariation}
+                        selectedModifiers={selectedModifiers}
+                        onSelectVariation={setSelectedVariation}
+                        onToggleModifier={handleToggleModifier}
+                        onAddToCart={handleAddToCart}
+                        isOutOfStock={isOutOfStockDetail}
+                        qtyInCart={qtyInCart}
+                      />
+                    </Suspense>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -408,49 +605,79 @@ export default function CustomerView() {
           <motion.button
             key="cart-fab"
             initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            animate={
+              shouldAnimateCart 
+                ? { scale: [1, 1.08, 0.95, 1.02, 1], y: [0, -12, 2, -3, 0], opacity: 1 } 
+                : { scale: 1, y: 0, opacity: 1 }
+            }
             exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            transition={shouldAnimateCart ? { duration: 0.5 } : { type: 'spring', stiffness: 400, damping: 30 }}
             onClick={() => setIsCartOpen(true)}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 bg-cm-accent text-white rounded-2xl shadow-cm-lg border-2 border-cm-border hover:-translate-y-1 hover:shadow-cm-xl transition-all"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cm-accent to-amber-500 text-white rounded-2xl shadow-cm-lg hover:-translate-y-0.5 hover:shadow-cm-xl transition-all border border-white/10"
             style={{ maxWidth: 'calc(100vw - 3rem)', minWidth: '260px' }}
           >
-            <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center font-black text-sm shrink-0">
-              {cart.length}
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center font-black text-xs shrink-0 relative">
+              <span className="absolute inset-0 rounded-full bg-white/20 animate-ping" />
+              <span className="relative z-10">{cart.length}</span>
             </div>
-            <span className="font-black text-sm flex-1 text-left">Ver Carrito</span>
+            <span className="font-black text-sm flex-1 text-left tracking-wide">Ver Pedido</span>
             <span className="font-black text-sm">S/ {cartTotal.toFixed(2)}</span>
             <ChevronRight className="w-4 h-4 shrink-0" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        onOrderComplete={(id) => {
-          setOrderId(id);
-          setOrderComplete(true);
-          setIsCartOpen(false);
-        }}
-      />
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && view === 'landing' && (
+          <motion.button
+            key="scroll-top"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-24 right-6 z-40 p-3 bg-cm-surface border-2 border-cm-border text-cm-accent rounded-xl shadow-cm-md hover:border-cm-accent transition-colors"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-      <OrderConfirmation
-        open={orderComplete}
-        orderId={orderId}
-        cartItems={cart}
-        branchId={activeBranchId}
-        onTrackOrder={(id) => {
-          setOrderComplete(false);
-          setOrderId('');
-          navigate(`/rastreo?id=${id}&branch=${activeBranchId}`);
-        }}
-        onNewOrder={() => {
-          setOrderComplete(false);
-          setOrderId('');
-          setView('landing');
-        }}
-      />
+
+      <Suspense fallback={null}>
+        <CartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          initialMesa={urlMesa}
+          showMesa={false}
+          onOrderComplete={(id) => {
+            setOrderId(id);
+            setOrderComplete(true);
+            setIsCartOpen(false);
+          }}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <OrderConfirmation
+          open={orderComplete}
+          orderId={orderId}
+          cartItems={cart}
+          branchId={activeBranchId}
+          onTrackOrder={(id) => {
+            setOrderComplete(false);
+            setOrderId('');
+            navigate(`/rastreo?id=${id}&branch=${activeBranchId}`);
+          }}
+          onNewOrder={() => {
+            setOrderComplete(false);
+            setOrderId('');
+            setView('landing');
+          }}
+        />
+      </Suspense>
     </div>
   );
 }

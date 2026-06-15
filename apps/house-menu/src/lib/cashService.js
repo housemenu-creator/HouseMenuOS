@@ -18,6 +18,10 @@ export const cashService = {
 
   async openSession(branchId, { openingBalance, openedBy, notes }) {
     try {
+      const active = await this.getActiveSession(branchId);
+      if (active) {
+        return { success: false, error: 'Ya existe una sesión de caja abierta' };
+      }
       const sessionsRef = ref(db, cashSessionsPath(branchId));
       const newSessionRef = push(sessionsRef);
       await set(newSessionRef, {

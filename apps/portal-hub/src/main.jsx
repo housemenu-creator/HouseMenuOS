@@ -1,7 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import '@house/db'; // Ensure Firebase initializes at root level
+import '@house/db';
+import '@house/tokens';
+import './style.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -1,21 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, Trash2 } from 'lucide-react';
+import { X, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 import MenuBuilder from '../components/menu-builder/MenuBuilder';
 import WizardConfigModal from '../components/menu-builder/WizardConfigModal';
+import { menuService } from '../../lib/menuService';
+import { dailyMenuService } from '../../lib/dailyMenuService';
 
 export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateField }) {
   const [selectedDailyDate, setSelectedDailyDate] = useState(new Date().toISOString().split('T')[0]);
   const [dailyMenuForm, setDailyMenuForm] = useState({ name: '', description: '', basePrice: '' });
   const [showDailyMenuModal, setShowDailyMenuModal] = useState(false);
   const [wizardProduct, setWizardProduct] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const notify = (message, type = 'success') => setToast({ message, type });
 
   const todayMenu = dailyMenus[selectedDailyDate];
   const products = Object.entries(catalog.products || {}).map(([id, p]) => ({ id, ...p }));
 
   const handleSaveDailyMenu = async () => {
+    setSaving(true);
     try {
-      const { dailyMenuService } = await import('../../lib/dailyMenuService');
       const result = await dailyMenuService.setDailyMenu(activeBranchId, selectedDailyDate, {
         name: dailyMenuForm.name,
         description: dailyMenuForm.description,
@@ -24,17 +37,18 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
       });
       if (result.success) {
         setShowDailyMenuModal(false);
+        notify('Menú del día guardado');
       } else {
-        alert('Error al guardar: ' + result.error);
+        notify('Error al guardar: ' + result.error, 'error');
       }
     } catch (err) {
-      alert('Error al guardar: ' + (err.message || 'Error inesperado'));
+      notify('Error al guardar: ' + (err.message || 'Error inesperado'), 'error');
     }
+    setSaving(false);
   };
 
   const toggleProductInDailyMenu = async (productId) => {
     try {
-      const { dailyMenuService } = await import('../../lib/dailyMenuService');
       const current = todayMenu?.productIds || [];
       if (current.includes(productId)) {
         await dailyMenuService.removeProductFromDailyMenu(activeBranchId, selectedDailyDate, productId);
@@ -42,17 +56,17 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
         await dailyMenuService.addProductToDailyMenu(activeBranchId, selectedDailyDate, productId);
       }
     } catch (err) {
-      console.error('Error toggling daily menu product:', err);
+      notify('Error al cambiar producto del menú', 'error');
     }
   };
 
   const removeDailyMenu = async () => {
-    if (!window.confirm('Eliminar el menu del dia seleccionado?')) return;
+    if (!window.confirm('Eliminar el menú del día seleccionado?')) return;
     try {
-      const { dailyMenuService } = await import('../../lib/dailyMenuService');
       await dailyMenuService.removeDailyMenu(activeBranchId, selectedDailyDate);
+      notify('Menú del día eliminado');
     } catch (err) {
-      console.error('Error removing daily menu:', err);
+      notify('Error al eliminar menú del día', 'error');
     }
   };
 
@@ -60,55 +74,49 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
     const product = catalog.products[productId];
     if (!product) return;
     try {
-      const { menuService } = await import('../../lib/menuService');
       await menuService.updateProductAvailability(activeBranchId, productId, !product.available);
     } catch (err) {
-      console.error('Error toggling availability:', err);
+      notify('Error al cambiar disponibilidad', 'error');
     }
   };
 
   const createProduct = async (category) => {
     try {
-      const { menuService } = await import('../../lib/menuService');
       await menuService.createProduct(activeBranchId, category);
     } catch (err) {
-      console.error('Error creating product:', err);
+      notify('Error al crear producto', 'error');
     }
   };
 
   const deleteProduct = async (productId) => {
     try {
-      const { menuService } = await import('../../lib/menuService');
       await menuService.deleteProduct(activeBranchId, productId);
     } catch (err) {
-      console.error('Error deleting product:', err);
+      notify('Error al eliminar producto', 'error');
     }
   };
 
   const duplicateProduct = async (productId) => {
     try {
-      const { menuService } = await import('../../lib/menuService');
       await menuService.duplicateProduct(activeBranchId, productId);
     } catch (err) {
-      console.error('Error duplicating product:', err);
+      notify('Error al duplicar producto', 'error');
     }
   };
 
   const createCategory = async (name) => {
     try {
-      const { menuService } = await import('../../lib/menuService');
       await menuService.createCategory(activeBranchId, name);
     } catch (err) {
-      console.error('Error creating category:', err);
+      notify('Error al crear categoría', 'error');
     }
   };
 
   const renameCategory = async (oldName, newName) => {
     try {
-      const { menuService } = await import('../../lib/menuService');
       await menuService.renameCategory(activeBranchId, oldName, newName);
     } catch (err) {
-      console.error('Error renaming category:', err);
+      notify('Error al renombrar categoría', 'error');
     }
   };
 
@@ -138,7 +146,7 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
                   </button>
                 )}
                 <button onClick={() => { setDailyMenuForm({ name: todayMenu?.name || '', description: todayMenu?.description || '', basePrice: todayMenu?.basePrice || '' }); setShowDailyMenuModal(true); }}
-                  className="px-3 py-1.5 bg-cm-accent text-white text-xs font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors">
+                  className="px-3 py-1.5 bg-cm-accent text-cm-primary text-xs font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors">
                   {todayMenu ? 'Editar' : 'Crear menu'}
                 </button>
               </div>
@@ -197,6 +205,9 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
             createCategory={createCategory}
             renameCategory={renameCategory}
             onConfigureWizard={handleConfigureWizard}
+            activeBranchId={activeBranchId}
+            categoriesConfig={catalog.categories || {}}
+            notify={notify}
           />
         </>
       ) : (
@@ -230,10 +241,29 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button onClick={() => setShowDailyMenuModal(false)} className="flex-1 py-2 border border-cm-border text-sm font-semibold text-cm-text rounded-lg hover:bg-cm-surface-hover transition-colors">Cancelar</button>
-                  <button onClick={handleSaveDailyMenu} className="flex-1 py-2 bg-cm-accent text-white text-sm font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors">Guardar</button>
+                  <button onClick={handleSaveDailyMenu} disabled={saving} className="flex-1 py-2 bg-cm-accent text-cm-primary text-sm font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">{saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando</> : 'Guardar'}</button>
                 </div>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast de notificación */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-5 py-3 rounded-xl shadow-cm-lg border text-sm font-semibold flex items-center gap-2 ${
+              toast.type === 'error'
+                ? 'bg-cm-error-soft text-cm-error border-cm-error/20'
+                : 'bg-cm-success-soft text-cm-success border-cm-success/20'
+            }`}
+          >
+            {toast.type === 'error' ? <X className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+            {toast.message}
           </motion.div>
         )}
       </AnimatePresence>

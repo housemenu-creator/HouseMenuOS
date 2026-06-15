@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { ref, onValue } from 'firebase/database';
 import { Wifi, WifiOff } from 'lucide-react';
+import { realtimeDB } from '@house/db';
 
 export default function ConnectionStatus({ className = '' }) {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    const connectedRef = ref(realtimeDB, '.info/connected');
+    const unsub = onValue(connectedRef, (snap) => {
+      setIsOnline(snap.val() === true);
+    });
+    return () => unsub();
   }, []);
 
   return (

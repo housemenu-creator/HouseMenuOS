@@ -1,11 +1,19 @@
-const PEPPER = import.meta.env.VITE_ENCRYPTION_PEPPER;
-if (!PEPPER) throw new Error('VITE_ENCRYPTION_PEPPER env var is required');
+let _PEPPER = null;
+function getPepper() {
+  if (_PEPPER) return _PEPPER;
+  try { const v = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_ENCRYPTION_PEPPER : undefined; if (v) { _PEPPER = v; return v; } } catch {}
+  const p = typeof process !== 'undefined' ? process.env?.VITE_ENCRYPTION_PEPPER : undefined;
+  if (p) { _PEPPER = p; return p; }
+  const g = typeof globalThis !== 'undefined' ? globalThis.__VITE_ENCRYPTION_PEPPER : undefined;
+  if (g) { _PEPPER = g; return g; }
+  throw new Error('VITE_ENCRYPTION_PEPPER env var is required');
+}
 
 async function deriveKey(salt) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    enc.encode(PEPPER + salt),
+    enc.encode(getPepper() + salt),
     { name: 'PBKDF2' },
     false,
     ['deriveKey']

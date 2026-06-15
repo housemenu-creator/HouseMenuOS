@@ -10,8 +10,22 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.js'],
-    include: ['src/**/*.test.{js,jsx}'],
+    env: {
+      VITE_ENCRYPTION_PEPPER: 'house_portal_os_dev_pepper_2026_segura',
+    },
+    setupFiles: ['./src/test/env-setup.js', './src/test/setup.js'],
+    include: ['src/**/*.test.{js,jsx,ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      exclude: [
+        'src/**/*.test.*',
+        'src/test/**',
+        'src/**/*.d.ts',
+        'src/main.jsx',
+      ],
+    },
     server: {
       deps: {
         inline: ['@house/ui', '@house/db', '@house/store'],

@@ -1,5 +1,5 @@
 export default function InventoryTab({ catalog }) {
-  const products = Object.values(catalog.products || {});
+  const products = Object.entries(catalog.products || {}).map(([id, p]) => ({ ...p, id }));
   const tracked = products.filter(p => p.trackStock);
   return (
     <div className="space-y-4">

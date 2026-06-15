@@ -1,15 +1,28 @@
 :root {
+  /* Backgrounds */
   --cm-bg: #F5F5F7;
   --cm-bg-alt: #EEEEF0;
   --cm-surface: #FFFFFF;
   --cm-surface-hover: #F8F8FA;
-  --cm-text: #1D1D1F;
-  --cm-text-secondary: #86868B;
-  --cm-text-tertiary: #B0B0B5;
-  --cm-accent: #C2410C;
-  --cm-accent-hover: #9A330A;
-  --cm-accent-light: rgba(194, 65, 12, 0.1);
-  --cm-accent-surface: rgba(194, 65, 12, 0.06);
+
+  /* Brand Primary — Institutional authority (dark blue) */
+  --cm-primary: #1E2B38;
+  --cm-primary-hover: #15202B;
+  --cm-primary-light: rgba(30, 43, 56, 0.1);
+  --cm-primary-surface: rgba(30, 43, 56, 0.06);
+
+  /* Brand Accent — Warm energy (mustard gold) */
+  --cm-accent: #F2B71A;
+  --cm-accent-hover: #D9A417;
+  --cm-accent-light: rgba(242, 183, 26, 0.12);
+  --cm-accent-surface: rgba(242, 183, 26, 0.06);
+
+  /* Text */
+  --cm-text: #1E2B38;
+  --cm-text-secondary: #6B7280;
+  --cm-text-tertiary: #9CA3AF;
+
+  /* Borders */
   --cm-border: rgba(0, 0, 0, 0.06);
   --cm-border-hover: rgba(0, 0, 0, 0.1);
 
@@ -46,7 +59,7 @@
   --cm-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.08);
   --cm-shadow-xl: 0 20px 80px rgba(0, 0, 0, 0.12);
 
-  --cm-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cm-font: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --cm-font-mono: 'SF Mono', ui-monospace, monospace;
   --cm-font-size-base: 17px;
   --cm-font-size-xs: 0.7rem;
@@ -62,17 +75,30 @@
 }
 
 [data-theme="dark"] {
-  --cm-bg: #000000;
-  --cm-bg-alt: #111113;
-  --cm-surface: #1C1C1E;
-  --cm-surface-hover: #262628;
+  /* Backgrounds — Brand dark blue, not black */
+  --cm-bg: #1E2B38;
+  --cm-bg-alt: #243544;
+  --cm-surface: #2A3D4E;
+  --cm-surface-hover: #334759;
+
+  /* Brand Primary — Light text on dark bg */
+  --cm-primary: #F5F5F7;
+  --cm-primary-hover: #FFFFFF;
+  --cm-primary-light: rgba(245, 245, 247, 0.1);
+  --cm-primary-surface: rgba(245, 245, 247, 0.06);
+
+  /* Brand Accent — Same warm gold, brighter hover */
+  --cm-accent: #F2B71A;
+  --cm-accent-hover: #FFC933;
+  --cm-accent-light: rgba(242, 183, 26, 0.15);
+  --cm-accent-surface: rgba(242, 183, 26, 0.08);
+
+  /* Text */
   --cm-text: #F5F5F7;
-  --cm-text-secondary: #98989D;
-  --cm-text-tertiary: #636366;
-  --cm-accent: #E06B30;
-  --cm-accent-hover: #F07940;
-  --cm-accent-light: rgba(224, 107, 48, 0.15);
-  --cm-accent-surface: rgba(224, 107, 48, 0.08);
+  --cm-text-secondary: #9CA3AF;
+  --cm-text-tertiary: #6B7280;
+
+  /* Borders */
   --cm-border: rgba(255, 255, 255, 0.08);
   --cm-border-hover: rgba(255, 255, 255, 0.15);
 
@@ -81,7 +107,7 @@
   --cm-error-soft: rgba(220, 38, 38, 0.15);
   --cm-info-soft: rgba(37, 99, 235, 0.15);
 
-  --cm-glass-bg: rgba(28, 28, 30, 0.72);
+  --cm-glass-bg: rgba(42, 61, 78, 0.72);
   --cm-glass-border: rgba(255, 255, 255, 0.08);
   --cm-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 

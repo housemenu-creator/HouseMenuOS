@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Clock, User, Hash, Package, UtensilsCrossed, Bike } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { formatTimer } from '../utils/formatTimer';
 import useTimerStore from '../store/timerStore';
 
 const SOURCE_ICONS = {
@@ -15,16 +16,6 @@ const SOURCE_LABELS = {
   'pickup': 'Recojo',
   'dine-in': 'Mesa',
 };
-
-function formatTimer(ms) {
-  const sec = Math.floor(ms / 1000) % 60;
-  const min = Math.floor(ms / 60000);
-  if (min >= 60) {
-    const h = Math.floor(min / 60);
-    return `${h}h ${min % 60}m`;
-  }
-  return `${min}:${sec.toString().padStart(2, '0')}`;
-}
 
 function ExpoCard({ order, onDeliver }) {
   const elapsedMs = useTimerStore((s) => s.elapsed[order.id] || 0);

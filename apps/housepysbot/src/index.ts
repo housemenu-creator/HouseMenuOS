@@ -3,18 +3,27 @@ import { createBot } from "./bot/telegram.js";
 import { startWhatsApp, getDrainPromise } from "./bot/whatsapp.js";
 import { startHttpServer } from "./services/http-server.js";
 import { startCocinaWatcher } from "./services/cocina.js";
+import { startOrderNotifier } from "./services/orderNotifier.js";
 import { startMonitor } from "./services/monitor.js";
-import { initFirebase } from "./lib/firebase.js";
+import { startScheduler } from "./services/scheduler.js";
+import { initFirebase, authenticateBot } from "./lib/firebase.js";
 import { reportHeartbeat, reportSystemHealth } from "./lib/telemetry.js";
+import { getPrimaryBranchId, getAllBranchIds } from "./lib/branch.js";
 
-const branchId = process.env.HOUSEPYSBOT_BRANCH_ID || process.env.CHALY_BRANCH_ID || process.env.VITE_HOUSEPYSBOT_BRANCH_ID || "default";
+const branchId = getPrimaryBranchId();
+const allBranchIds = getAllBranchIds();
 let telegramBot: ReturnType<typeof createBot> | null = null;
 
 // ── Firebase ──────────────────────────────────────────
 try {
   initFirebase();
+  await authenticateBot();
 } catch (e: any) {
-  console.error("❌ Firebase:", e.message);
+  if (e.message?.includes("Faltan")) {
+    console.error("❌ Firebase Auth:", e.message);
+  } else {
+    console.error("❌ Firebase:", e.message);
+  }
   console.error("Configura las variables de Firebase en el .env");
   process.exit(1);
 }
@@ -52,9 +61,17 @@ if (process.env.WHATSAPP_ENABLED === "true") {
 const stopCocina = startCocinaWatcher();
 console.log("🍳 Cocina Watcher: ✅");
 
+// ── Order Notifier (WhatsApp status alerts) ────────
+const stopOrderNotifier = startOrderNotifier();
+console.log("💬 Order Notifier: ✅");
+
 // ── Monitor ─────────────────────────────────────────
 const stopMonitor = startMonitor();
 console.log("📊 Monitor: ✅");
+
+// ── Task Scheduler ────────────────────────────────────
+const stopScheduler = startScheduler();
+console.log("⏰ Scheduler: ✅");
 
 // ── Telemetry Heartbeat ───────────────────────────────
 const telemetryInterval = setInterval(() => {
@@ -64,7 +81,9 @@ const telemetryInterval = setInterval(() => {
 }, 30000);
 
 // ── Status ─────────────────────────────────────────────
-console.log(`\n📡 HousePySbot — Branch: ${branchId}`);
+console.log(`\n📡 HousePySbot`);
+console.log(`   Sucursales: ${allBranchIds.join(", ")}`);
+console.log(`   Primaria: ${branchId}`);
 console.log(`   Modelo: ${process.env.OPENROUTER_MODEL || "openrouter/free"}`);
 
 // ── Graceful shutdown ──────────────────────────────────
@@ -81,9 +100,11 @@ async function shutdown(signal: string) {
     console.warn("Drain timeout:", e);
   }
 
-  // Stop cocina watcher and monitor
+  // Stop services
   if (typeof stopCocina === "function") stopCocina();
+  if (typeof stopOrderNotifier === "function") stopOrderNotifier();
   if (typeof stopMonitor === "function") stopMonitor();
+  if (typeof stopScheduler === "function") stopScheduler();
 
   // Stop Telegram
   if (telegramBot) {

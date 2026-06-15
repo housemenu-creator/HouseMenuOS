@@ -8,7 +8,7 @@ const STATION_TONES = {
 
 let sharedCtx = null;
 
-function getAudioContext() {
+export function getAudioContext() {
   if (!sharedCtx || sharedCtx.state === 'closed') {
     sharedCtx = new (window.AudioContext || window.webkitAudioContext)();
   }

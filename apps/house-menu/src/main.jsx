@@ -4,12 +4,10 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
+import { initAnonymousAuth } from './lib/anonymousAuth'
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/firebase-messaging-sw.js')
-    .then((reg) => { if (import.meta.env.DEV) console.log('SW registered:', reg.scope) })
-    .catch((err) => console.warn('SW registration failed:', err));
-}
+// Init anonymous auth for public ordering (CartDrawer → POST /api/orders)
+initAnonymousAuth();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

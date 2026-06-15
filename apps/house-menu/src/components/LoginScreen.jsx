@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LogIn, Loader2, AlertCircle, Mail } from 'lucide-react';
+import logo from '../assets/logo.jpg';
 
 export default function LoginScreen({
   title,
@@ -27,11 +28,9 @@ export default function LoginScreen({
         onSubmit={handleSubmit}
         className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border p-8 max-w-sm w-full text-center space-y-6 bg-white"
       >
-        {Icon && (
-          <div className="w-16 h-16 rounded-2xl bg-cm-accent/10 flex items-center justify-center mx-auto">
-            <Icon className="w-8 h-8 text-cm-accent" />
-          </div>
-        )}
+        <div className="flex flex-col items-center">
+          <img src={logo} alt="House Logo" className="w-20 h-20 rounded-2xl object-cover border border-cm-border shadow-cm-md mx-auto" />
+        </div>
 
         <div>
           <h1 className="text-2xl text-cm-accent">{title}</h1>

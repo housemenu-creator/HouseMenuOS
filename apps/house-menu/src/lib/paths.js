@@ -44,6 +44,11 @@ export function catalogFieldPath(branchId, productId, field) {
   return `${BRANCH_PREFIX(branchId)}/catalog/products/${productId}/${field}`;
 }
 
+export function catalogCategoryPath(branchId, slug) {
+  const base = `${BRANCH_PREFIX(branchId)}/catalog/categories`;
+  return slug ? `${base}/${slug}` : base;
+}
+
 export function dailyMenusPath(branchId, dateStr) {
   const base = `${BRANCH_PREFIX(branchId)}/daily_menus`;
   return dateStr ? `${base}/${dateStr}` : base;
@@ -166,6 +171,71 @@ export function storageProductImagesPath(branchId) {
   return `branches/${branchId || 'hq'}/product-images`;
 }
 
+export function storageCategoryImagesPath(branchId) {
+  return `branches/${branchId || 'hq'}/category-images`;
+}
+
 export function storageVouchersPath(branchId) {
   return `branches/${branchId || 'hq'}/vouchers`;
+}
+
+export function storageOptionImagesPath(branchId) {
+  return `branches/${branchId || 'hq'}/option-images`;
+}
+
+export function flashOfferPath(branchId) {
+  return `${BRANCH_PREFIX(branchId)}/flash_offers`;
+}
+
+export function flashOfferItemsPath(branchId, offerId) {
+  return `${BRANCH_PREFIX(branchId)}/flash_offers/${offerId}/items`;
+}
+
+export function flashOfferActivePath(branchId) {
+  return `${BRANCH_PREFIX(branchId)}/flash_offers_active`;
+}
+
+// --- Marketing Module ---
+
+export function marketingCampaignsPath(branchId, campaignId) {
+  const base = `${BRANCH_PREFIX(branchId)}/marketing/campaigns`;
+  return campaignId ? `${base}/${campaignId}` : base;
+}
+
+export function marketingCampaignCreativesPath(branchId, campaignId) {
+  return `${BRANCH_PREFIX(branchId)}/marketing/campaigns/${campaignId}/creatives`;
+}
+
+export function marketingCampaignRulesPath(branchId, campaignId) {
+  return `${BRANCH_PREFIX(branchId)}/marketing/campaigns/${campaignId}/rules`;
+}
+
+export function marketingCampaignAnalyticsPath(branchId, campaignId) {
+  return `${BRANCH_PREFIX(branchId)}/marketing/campaigns/${campaignId}/analytics`;
+}
+
+export function marketingBannersPath(branchId, bannerId) {
+  const base = `${BRANCH_PREFIX(branchId)}/marketing/banners`;
+  return bannerId ? `${base}/${bannerId}` : base;
+}
+
+export function marketingPromosPath(branchId, promoId) {
+  const base = `${BRANCH_PREFIX(branchId)}/marketing/promos`;
+  return promoId ? `${base}/${promoId}` : base;
+}
+
+export function marketingTestimonialsPath(branchId, testimonialId) {
+  const base = `${BRANCH_PREFIX(branchId)}/marketing/testimonials`;
+  return testimonialId ? `${base}/${testimonialId}` : base;
+}
+
+export function marketingStatsPath(branchId) {
+  return `${BRANCH_PREFIX(branchId)}/marketing/stats`;
+}
+
+// --- Vendedor Module ---
+
+export function cuentasPath(branchId, cuentaId) {
+  const base = `${BRANCH_PREFIX(branchId)}/cuentas`;
+  return cuentaId ? `${base}/${cuentaId}` : base;
 }

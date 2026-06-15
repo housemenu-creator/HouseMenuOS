@@ -20,7 +20,7 @@ export function CardSkeleton() {
   );
 }
 
-export function KanbanSkeleton() {
+export function KDSSkeleton() {
   return (
     <div className="flex gap-4 overflow-x-auto p-4">
       {[1, 2, 3].map((col) => (

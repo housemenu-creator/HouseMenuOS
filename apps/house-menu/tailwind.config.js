@@ -23,6 +23,11 @@ export default {
         "cm-warning": "var(--cm-warning)",
         "cm-error": "var(--cm-error)",
         "cm-info": "var(--cm-info)",
+        "cm-primary": "var(--cm-primary)",
+        "cm-primary-hover": "var(--cm-primary-hover)",
+        "cm-muted": "var(--cm-text-tertiary)",
+        "cm-success-soft": "var(--cm-success-soft)",
+        "cm-error-soft": "var(--cm-error-soft)",
 
       },
       fontFamily: {

@@ -12,6 +12,19 @@ export default function DateSelector({ selectedDate, onSelectDate }) {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const calendarRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  const handleScrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -79,43 +92,67 @@ export default function DateSelector({ selectedDate, onSelectDate }) {
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
-        {quickDays.map((date) => {
-          const dateStr = formatDateStr(date);
-          const selected = isSelected(date);
-          const todayMark = isToday(date);
-          const dayName = todayMark ? 'HOY' : date.toLocaleDateString('es-PE', { weekday: 'short' }).toUpperCase();
-
-          return (
-            <motion.button
-              key={dateStr}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { onSelectDate(dateStr); setShowCalendar(false); }}
-              style={{ scrollSnapAlign: 'start' }}
-              className={`flex flex-col items-center justify-center min-w-[60px] h-16 rounded-xl border-2 transition-all cursor-pointer flex-shrink-0 ${
-                selected
-                  ? 'border-cm-accent bg-cm-accent text-white shadow-cm-md'
-                  : todayMark
-                    ? 'border-cm-accent/30 bg-cm-accent/5 text-cm-accent'
-                    : 'border-white/10 bg-black/20 text-cm-muted hover:border-white/30'
-              }`}
-            >
-              <span className="text-[0.5rem] font-bold tracking-wider mb-0.5">{dayName}</span>
-              <span className={`text-sm font-black ${selected ? 'text-white' : todayMark ? 'text-cm-accent' : 'text-white/80'}`}>
-                {date.getDate()}
-              </span>
-            </motion.button>
-          );
-        })}
-
+      <div className="relative group">
+        {/* Left Scroll Button */}
         <button
-          onClick={() => setShowCalendar(!showCalendar)}
-          className={`flex flex-col items-center justify-center min-w-[60px] h-16 rounded-xl border-2 border-dashed transition-all cursor-pointer flex-shrink-0 ${
-            showCalendar ? 'border-cm-accent bg-cm-accent/10 text-cm-accent' : 'border-white/20 text-cm-muted hover:border-white/40 hover:text-cm-muted'
-          }`}
+          onClick={handleScrollLeft}
+          type="button"
+          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-cm-surface/90 border border-cm-border text-cm-text hover:bg-cm-accent hover:text-white opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center justify-center shadow-cm-md cursor-pointer"
         >
-          <CalendarDays className="w-4 h-4 mb-0.5" />
-          <span className="text-[0.5rem] font-bold">OTRO</span>
+          <ChevronLeft className="w-4.5 h-4.5" />
+        </button>
+
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+          style={{ scrollSnapType: 'x mandatory' }}
+        >
+          {quickDays.map((date) => {
+            const dateStr = formatDateStr(date);
+            const selected = isSelected(date);
+            const todayMark = isToday(date);
+            const dayName = todayMark ? 'HOY' : date.toLocaleDateString('es-PE', { weekday: 'short' }).toUpperCase();
+
+            return (
+              <motion.button
+                key={dateStr}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { onSelectDate(dateStr); setShowCalendar(false); }}
+                style={{ scrollSnapAlign: 'start' }}
+                className={`flex flex-col items-center justify-center min-w-[60px] h-16 rounded-xl border-2 transition-all cursor-pointer flex-shrink-0 ${
+                  selected
+                    ? 'border-cm-accent bg-cm-accent text-white shadow-cm-md'
+                    : todayMark
+                      ? 'border-cm-accent/30 bg-cm-accent/5 text-cm-accent hover:border-cm-accent/50'
+                      : 'border-cm-border bg-cm-surface/40 text-cm-muted hover:border-cm-accent/30 hover:bg-cm-surface'
+                }`}
+              >
+                <span className="text-[0.5rem] font-bold tracking-wider mb-0.5">{dayName}</span>
+                <span className={`text-sm font-black ${selected ? 'text-white' : todayMark ? 'text-cm-accent' : 'text-cm-text'}`}>
+                  {date.getDate()}
+                </span>
+              </motion.button>
+            );
+          })}
+
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className={`flex flex-col items-center justify-center min-w-[60px] h-16 rounded-xl border border-dashed transition-all cursor-pointer flex-shrink-0 ${
+              showCalendar ? 'border-cm-accent bg-cm-accent/10 text-cm-accent' : 'border-cm-border bg-cm-surface/20 text-cm-muted hover:border-cm-accent/30 hover:text-cm-text'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4 mb-0.5" />
+            <span className="text-[0.5rem] font-bold">OTRO</span>
+          </button>
+        </div>
+
+        {/* Right Scroll Button */}
+        <button
+          onClick={handleScrollRight}
+          type="button"
+          className="absolute right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-cm-surface/90 border border-cm-border text-cm-text hover:bg-cm-accent hover:text-white opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center justify-center shadow-cm-md cursor-pointer"
+        >
+          <ChevronRight className="w-4.5 h-4.5" />
         </button>
       </div>
 
@@ -127,16 +164,16 @@ export default function DateSelector({ selectedDate, onSelectDate }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.15 }}
-              className="absolute top-2 left-0 z-50 bg-white rounded-xl shadow-2xl border border-cm-border p-4 w-[300px]"
+              className="absolute top-2 left-0 z-50 bg-cm-surface rounded-xl shadow-2xl border border-cm-border p-4 w-[300px]"
             >
               <div className="flex items-center justify-between mb-3">
-                <button onClick={() => { if (canGoPrev) setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1)); }} disabled={!canGoPrev} className={`p-1 rounded-lg ${canGoPrev ? 'text-cm-text hover:bg-cm-bg' : 'text-cm-muted cursor-not-allowed'}`}>
+                <button onClick={() => { if (canGoPrev) setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1)); }} disabled={!canGoPrev} className={`p-1 rounded-lg ${canGoPrev ? 'text-cm-text hover:bg-cm-bg-alt' : 'text-cm-muted cursor-not-allowed'}`}>
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="text-xs font-black text-cm-text uppercase tracking-wider">
                   {MONTHS_ES[calMonth.getMonth()]} {calMonth.getFullYear()}
                 </span>
-                <button onClick={() => { if (canGoNext) setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1)); }} disabled={!canGoNext} className={`p-1 rounded-lg ${canGoNext ? 'text-cm-text hover:bg-cm-bg' : 'text-cm-muted cursor-not-allowed'}`}>
+                <button onClick={() => { if (canGoNext) setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1)); }} disabled={!canGoNext} className={`p-1 rounded-lg ${canGoNext ? 'text-cm-text hover:bg-cm-bg-alt' : 'text-cm-muted cursor-not-allowed'}`}>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -156,10 +193,10 @@ export default function DateSelector({ selectedDate, onSelectDate }) {
                       disabled={past}
                       onClick={() => { onSelectDate(formatDateStr(date)); setShowCalendar(false); }}
                       className={`aspect-square rounded-lg text-xs font-bold transition-all ${
-                        selected ? 'bg-cm-accent text-white' :
-                        past ? 'text-cm-muted cursor-not-allowed' :
-                        todayMark ? 'bg-cm-accent/10 text-cm-accent border border-cm-accent/30' :
-                        'text-cm-muted hover:bg-cm-bg'
+                        selected ? 'bg-cm-accent text-white shadow-cm-sm' :
+                        past ? 'text-cm-muted/30 cursor-not-allowed' :
+                        todayMark ? 'bg-cm-accent/15 text-cm-accent border border-cm-accent/30' :
+                        'text-cm-text hover:bg-cm-bg-alt'
                       }`}
                     >
                       {date.getDate()}

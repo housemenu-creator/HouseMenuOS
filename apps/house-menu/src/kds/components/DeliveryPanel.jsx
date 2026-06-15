@@ -2,13 +2,8 @@ import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bike, MapPin, Clock, User, Hash, CheckCircle, Phone } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { formatTimer } from '../utils/formatTimer';
 import useTimerStore from '../store/timerStore';
-
-function formatTimer(ms) {
-  const sec = Math.floor(ms / 1000) % 60;
-  const min = Math.floor(ms / 60000);
-  return `${min}:${sec.toString().padStart(2, '0')}`;
-}
 
 function DeliveryCard({ order, onHandoff }) {
   const elapsedMs = useTimerStore((s) => s.elapsed[order.id] || 0);

@@ -5,7 +5,7 @@ import { PromptModal, ConfirmModal } from '../ConfirmModal';
 import { storageService } from '../../../lib/storageService';
 import { useBranch } from '../../../context/BranchContext';
 
-export default function MenuItemRow({ item, toggleAvailability, updateField, deleteProduct, duplicateProduct, onConfigureWizard }) {
+export default function MenuItemRow({ item, toggleAvailability, updateField, deleteProduct, duplicateProduct, onConfigureWizard, notify }) {
   const { activeBranchId } = useBranch();
   const isAvailable = item.available !== false;
   const isWizard = item.isWizard === true;
@@ -51,6 +51,7 @@ export default function MenuItemRow({ item, toggleAvailability, updateField, del
       updateField(item.id, 'image', result.url);
     } catch (err) {
       console.error('Error uploading image:', err);
+      notify?.('Error al subir imagen', 'error');
     }
     setUploading(false);
   };
@@ -124,7 +125,7 @@ export default function MenuItemRow({ item, toggleAvailability, updateField, del
                 />
                 <button
                   onClick={() => updateField(item.id, 'trackStock', false)}
-                  className="text-[9px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase px-1 py-0.5 rounded hover:bg-red-50"
+                  className="text-[9px] font-bold text-cm-error hover:text-cm-error/80 transition-colors uppercase px-1 py-0.5 rounded hover:bg-cm-error/10"
                   title="Desactivar control de stock (stock ilimitado)"
                 >
                   Ilimitado
@@ -140,11 +141,11 @@ export default function MenuItemRow({ item, toggleAvailability, updateField, del
           <button onClick={() => toggleAvailability(item.id, isAvailable)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all border ${
               isAvailable
-                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                ? 'bg-cm-success/10 text-cm-success border-cm-success/30 hover:bg-cm-success/20'
                 : 'bg-cm-bg text-cm-muted border-cm-border hover:bg-cm-border'
             }`}
           >
-            {isAvailable ? <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> : <span className="w-1.5 h-1.5 rounded-full bg-cm-text/30" />}
+            {isAvailable ? <span className="w-1.5 h-1.5 rounded-full bg-cm-success animate-pulse" /> : <span className="w-1.5 h-1.5 rounded-full bg-cm-text/30" />}
             {isAvailable ? 'Activo' : 'Agotado'}
           </button>
 
@@ -160,14 +161,14 @@ export default function MenuItemRow({ item, toggleAvailability, updateField, del
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl border-2 border-cm-border py-1.5 z-50 shadow-cm-md animate-[fadeIn_0.1s_ease]">
                   <button onClick={() => { updateField(item.id, 'isWizard', !isWizard); setMenuOpen(false); }}
                     className="w-full text-left px-4 py-2.5 text-sm font-bold text-cm-text hover:bg-cm-accent/5 hover:text-cm-accent flex items-center gap-2 transition-colors">
-                    <Sparkles className="w-4 h-4 text-indigo-500" />
+                    <Sparkles className="w-4 h-4 text-cm-info" />
                     {isWizard ? 'Quitar modo Combo' : 'Convertir a Combo'}
                   </button>
 
                   {isWizard && (
                     <button onClick={() => { onConfigureWizard(item.id); setMenuOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 transition-colors">
-                      <Settings2 className="w-4 h-4" />
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-cm-info hover:bg-cm-info/10 flex items-center gap-2 transition-colors">
+                      <Settings2 className="w-4 h-4 text-cm-info" />
                       Configurar Pasos
                     </button>
                   )}
@@ -189,8 +190,8 @@ export default function MenuItemRow({ item, toggleAvailability, updateField, del
                   <div className="h-px bg-cm-border my-1.5" />
 
                   <button onClick={handleDelete}
-                    className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors">
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    className="w-full text-left px-4 py-2.5 text-sm font-bold text-cm-error hover:bg-cm-error/10 flex items-center gap-2 transition-colors">
+                    <Trash2 className="w-4 h-4 text-cm-error" />
                     Eliminar permanentemente
                   </button>
                 </div>

@@ -106,6 +106,13 @@
     "engram": {
       "command": ["engram", "mcp", "--tools=agent"],
       "type": "local"
+    },
+    "stitch": {
+      "command": ["npx", "-y", "@_davideast/stitch-mcp", "proxy"],
+      "type": "local",
+      "env": {
+        "STITCH_API_KEY": "AQ.Ab8RN6KoWVETrXJMXdXD71Qx5RCuRndjqpeZXjiLL0ssnj0nRA"
+      }
     }
   },
   "permission": {

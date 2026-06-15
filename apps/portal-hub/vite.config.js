@@ -7,10 +7,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const monoRoot = path.resolve(__dirname, '../../');
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
+  base: command === 'build' ? '/empleados/' : '/',
   server: {
-    port: 5173,
+    port: 5177,
     host: true
   },
   envDir: path.resolve(__dirname, "../../"),
@@ -21,5 +22,19 @@ export default defineConfig({
       "react-dom": path.resolve(monoRoot, "node_modules/react-dom")
     },
     preserveSymlinks: true,
-  }
-})
+  },
+  optimizeDeps: {
+    exclude: ['@house/db', '@house/store', '@house/tokens', '@house/ui'],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/framer-motion') || id.includes('node_modules/lucide-react')) {
+            return 'vendor';
+          }
+        },
+      },
+    },
+  },
+}))

@@ -11,6 +11,24 @@ export interface BranchInfo {
   freeThreshold: number;
 }
 
+/**
+ * Get all configured branch IDs from env var.
+ * HOUSEPYSBOT_BRANCH_ID can be comma-separated: "casa-matriz,san-isidro,miraflores"
+ * Falls back to ["default"].
+ */
+export function getAllBranchIds(): string[] {
+  const raw = process.env.HOUSEPYSBOT_BRANCH_ID ||
+              process.env.CHALY_BRANCH_ID ||
+              process.env.VITE_HOUSEPYSBOT_BRANCH_ID ||
+              "default";
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+/** Alias for getPrimaryBranchId — first branch in the list */
+export function getPrimaryBranchId(): string {
+  return getAllBranchIds()[0];
+}
+
 export async function getBranchInfo(branchId: string): Promise<BranchInfo | null> {
   try {
     const snapshot = await get(child(ref(db), `branches_config/${branchId}`));

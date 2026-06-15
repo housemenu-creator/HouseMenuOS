@@ -1,30 +1,28 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { motion, Reorder } from 'framer-motion';
-import { get, ref } from 'firebase/database';
+import { Reorder } from 'framer-motion';
 import { ordersService } from '../lib/ordersService';
-import { realtimeDB as db } from '@house/db';
-import { History, BellRing, UtensilsCrossed, ListChecks, Search, FilterX, CheckCircle, Package } from 'lucide-react';
-import { KanbanSkeleton } from '../components/Skeleton';
+import { History, BellRing, UtensilsCrossed, ListChecks, Search, FilterX, CheckCircle, Package, Boxes } from 'lucide-react';
+import { KDSSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
 import { useBranch } from '../context/BranchContext';
 
-import KanbanColumn from '../components/KanbanColumn';
-import KanbanTicket from '../components/KanbanTicket';
+import KDSColumn from '../kds/components/KDSColumn';
+import KDSTicket from '../kds/components/KDSTicket';
 import StationFilter from '../kds/components/StationFilter';
 import BulkActionBar from '../kds/components/BulkActionBar';
 import ConnectionStatus from '../kds/components/ConnectionStatus';
 import VoiceCommandBar from '../kds/components/VoiceCommandBar';
 import WorkflowSettings from '../kds/components/WorkflowSettings';
 import StationSoundToggle from '../kds/components/StationSoundToggle';
-import useOrderStore from '../kds/store/orderStore';
+import useOrderStore from '../worker/store/orderStore';
 import useTimerStore from '../kds/store/timerStore';
-import { subscribeOrdersDelta } from '../kds/data/orderSubscription';
+import useOrderSync from '../worker/hooks/useOrderSync';
 import { useVoiceCommands } from '../kds/hooks/useVoiceCommands';
-import { KITCHEN_STATIONS } from '../kds/kdsTypes';
+import { KITCHEN_STATIONS, STATION_PREP_TIMES } from '../kds/kdsTypes';
+import { inferStationFromItem, inferOrderStation } from '../kds/utils/stationInference';
 import { useAuth } from '../context/AuthContext';
 
-import { playKitchenAlert } from '../kds/utils/kitchenSound';
 import NewOrderFlash from '../kds/components/NewOrderFlash';
 import BulkConfirmModal from '../kds/components/BulkConfirmModal';
 import HistoryPanel from '../kds/components/HistoryPanel';
@@ -33,15 +31,45 @@ import ExpoPanel from '../kds/components/ExpoPanel';
 import DeliveryPanel from '../kds/components/DeliveryPanel';
 import LiveStats from '../kds/components/LiveStats';
 import useUndoStack from '../kds/hooks/useUndoStack';
+import { useNotifications } from '../kds/hooks/useNotifications';
+import { playKitchenAlert, getAudioContext } from '../kds/utils/kitchenSound';
+
+// Nuevos imports agregados
+import ConsolidatedPanel from '../kds/components/ConsolidatedPanel';
+import InventoryPanel from '../kds/components/InventoryPanel';
+import useCatalogSync from '../worker/hooks/useCatalogSync';
+import useCatalogStore from '../worker/store/catalogStore';
+import useKDSKeyboard from '../kds/hooks/useKDSKeyboard';
 
 const TICKET_STYLE = { listStyle: 'none', contentVisibility: 'auto', containIntrinsicSize: '220px' };
+
+function announceOrderTTS(order) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel(); // Cancelar cualquier lectura anterior para que no se superpongan
+    
+    const itemsText = order.items
+      ?.map((item) => `${item.quantity || 1} ${item.name}`)
+      .join(', ');
+      
+    const text = `Nuevo pedido de ${order.customerName}. Detalle: ${itemsText}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    utterance.rate = 0.95; // Velocidad de lectura cómoda
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    console.warn('Text-to-speech announcement failed:', e);
+  }
+}
 
 export default function KitchenView() {
   const { activeBranchId } = useBranch();
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('kanban');
+  const [activeTab, setActiveTab] = useState('board');
   const [newOrderFlash, setNewOrderFlash] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
+  
+  // Persistencia de configuraciones de KDS
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
       const saved = localStorage.getItem('kds_visible_columns');
@@ -53,6 +81,7 @@ export default function KitchenView() {
       return { recibido: true, preparando: true, listo: true };
     }
   });
+
   const [columnOrder, setColumnOrder] = useState(() => {
     try {
       const saved = localStorage.getItem('kds_column_order');
@@ -61,31 +90,43 @@ export default function KitchenView() {
       return {};
     }
   });
+
+  const [fontSize, setFontSize] = useState(() => {
+    return localStorage.getItem('kds_font_size') || 'normal';
+  });
+
+  const [density, setDensity] = useState(() => {
+    return localStorage.getItem('kds_density') || 'cozy';
+  });
+
+  const [showConsolidated, setShowConsolidated] = useState(() => {
+    return localStorage.getItem('kds_show_consolidated') !== 'false';
+  });
+
+  const [stationFilter, setStationFilter] = useState(() => {
+    return localStorage.getItem('kds_station_filter') || 'all';
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [historyDateFilter, setHistoryDateFilter] = useState('today');
   const STATIONS_WITH_SOUND = KITCHEN_STATIONS.filter((s) => s !== 'all');
   const defaultSoundMap = Object.fromEntries(STATIONS_WITH_SOUND.map((s) => [s, true]));
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
-    try {
-      const saved = localStorage.getItem('kds_sound_enabled');
-      if (!saved) return { ...defaultSoundMap };
-      const parsed = JSON.parse(saved);
-      return { ...defaultSoundMap, ...parsed };
-    } catch {
-      return { ...defaultSoundMap };
-    }
+    const stored = localStorage.getItem('kds_sound_enabled');
+    return stored !== null ? JSON.parse(stored) : defaultSoundMap;
   });
-  const prevOrdersCount = useRef(0);
-  const soundEnabledRef = useRef(soundEnabled);
-  soundEnabledRef.current = soundEnabled;
 
-  const [stationFilter, setStationFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   const orderIndex = useOrderStore(s => s.orderIndex);
   const orderMap = useOrderStore(s => s.orders);
   const isLoading = useOrderStore(s => s.isLoading);
+
+  // Sincronización del catálogo para la pestaña de inventario
+  useCatalogSync();
+  const products = useCatalogStore((s) => s.products);
+  const catalog = useMemo(() => ({ products }), [products]);
 
   const toggleSelect = useCallback((orderId) => {
     setSelectedIds((prev) => {
@@ -102,7 +143,20 @@ export default function KitchenView() {
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
-  const enrichedOrders = useMemo(() => orderIndex.map((id) => orderMap[id] || null).filter(Boolean), [orderIndex, orderMap]);
+  const enrichedOrders = useMemo(() => {
+    function calcDueTime(order) {
+      const station = order.station || inferOrderStation(order);
+      const prepMin = STATION_PREP_TIMES[station] || 5;
+      const createdAt = order.createdAt ? new Date(order.createdAt).getTime() : Date.now();
+      return createdAt + prepMin * 60 * 1000;
+    }
+    return orderIndex.map((id) => {
+      const order = orderMap[id];
+      if (!order) return null;
+      const station = order.station || inferOrderStation(order);
+      return { ...order, station, dueTime: calcDueTime({ ...order, station }) };
+    }).filter(Boolean);
+  }, [orderIndex, orderMap]);
 
   const stationCounts = useMemo(() => {
     const counts = Object.fromEntries(KITCHEN_STATIONS.map((s) => [s, 0]));
@@ -121,6 +175,7 @@ export default function KitchenView() {
     });
   }, [enrichedOrders, stationFilter]);
 
+  // Persistir cambios en localStorage
   useEffect(() => {
     localStorage.setItem('kds_visible_columns', JSON.stringify(visibleColumns));
   }, [visibleColumns]);
@@ -132,6 +187,22 @@ export default function KitchenView() {
   useEffect(() => {
     localStorage.setItem('kds_column_order', JSON.stringify(columnOrder));
   }, [columnOrder]);
+
+  useEffect(() => {
+    localStorage.setItem('kds_font_size', fontSize);
+  }, [fontSize]);
+
+  useEffect(() => {
+    localStorage.setItem('kds_density', density);
+  }, [density]);
+
+  useEffect(() => {
+    localStorage.setItem('kds_show_consolidated', JSON.stringify(showConsolidated));
+  }, [showConsolidated]);
+
+  useEffect(() => {
+    localStorage.setItem('kds_station_filter', stationFilter);
+  }, [stationFilter]);
 
   const handleVoiceCommand = useCallback((idFragment, targetStatus) => {
     if (!idFragment) return;
@@ -152,72 +223,67 @@ export default function KitchenView() {
   const { isListening, toggleListening, transcript } = useVoiceCommands(handleVoiceCommand);
   const { history, push: pushUndo, undo: handleUndo, canUndo } = useUndoStack();
 
+  // FCM push notifications
+  const [flashMessage, setFlashMessage] = useState(null);
+  const { foregroundMsg, dismissForeground } = useNotifications(stationFilter === 'all' ? 'all' : stationFilter);
+  useEffect(() => {
+    if (!foregroundMsg) return;
+    const data = foregroundMsg.data || {};
+    const notif = foregroundMsg.notification || {};
+    const msg = notif.body || data.body || null;
+    setFlashMessage(msg);
+    setNewOrderFlash(true);
+    const t = setTimeout(() => { setNewOrderFlash(false); setFlashMessage(null); dismissForeground(); }, 3000);
+    return () => clearTimeout(t);
+  }, [foregroundMsg, dismissForeground]);
+
   const toggleColumn = useCallback((status) => {
     setVisibleColumns((prev) => ({ ...prev, [status]: prev[status] === false }));
   }, []);
 
+  useOrderSync({ branchId: activeBranchId });
+
+  const prevOrderCountRef = useRef(0);
   useEffect(() => {
-    if (!activeBranchId) return;
+    const count = useOrderStore.getState().orderIndex.length;
+    if (prevOrderCountRef.current > 0 && count > prevOrderCountRef.current) {
+      const orders = useOrderStore.getState().orders;
+      const newIds = useOrderStore.getState().orderIndex.slice(prevOrderCountRef.current);
+      for (const id of newIds) {
+        const o = orders[id];
+        if (o?.status === 'recibido') {
+          setNewOrderFlash(true);
+          setTimeout(() => setNewOrderFlash(false), 2000);
 
-    const store = useOrderStore.getState();
-    store.reset();
+          const station = inferOrderStation(o);
+          const stationMuted = soundEnabled[station] === false;
+          if (!stationMuted) {
+            playKitchenAlert(station);
+            
+            // Text to speech locución por voz
+            if (stationFilter === 'all' || station === stationFilter) {
+              announceOrderTTS(o);
+            }
+          }
 
-    const ordersPath = `branches/${activeBranchId}/orders`;
-    const ordersRefDb = ref(db, ordersPath);
-
-    let initialReceivedCount = 0;
-    let isInitialBatch = true;
-
-    get(ordersRefDb).then((snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const orderList = Object.keys(data).map((key) => ({ id: key, ...data[key] }));
-        store.setInitialOrders(orderList);
-      } else {
-        store.setInitialOrders([]);
+          break;
+        }
       }
+    }
+    prevOrderCountRef.current = count;
+  }, [orderIndex, soundEnabled, stationFilter]);
 
-      const recibidos = Object.values(data || {}).filter((o) => o.status === 'recibido');
-      initialReceivedCount = recibidos.length;
-      prevOrdersCount.current = initialReceivedCount;
-      isInitialBatch = false;
-    });
-
-    const unsub = subscribeOrdersDelta(activeBranchId, {
-      onAdd: (order) => {
-        store.applyAdd(order);
-        if (!isInitialBatch && order.status === 'recibido') {
-          prevOrdersCount.current += 1;
-          const station = order.station || 'grill';
-          if (soundEnabledRef.current[station]) {
-            playKitchenAlert(station);
-          }
-          setNewOrderFlash(true);
-          setTimeout(() => setNewOrderFlash(false), 2000);
-        }
-      },
-      onChange: (order) => {
-        store.applyChange(order);
-        if (order.status === 'recibido' && !isInitialBatch) {
-          prevOrdersCount.current += 1;
-          const station = order.station || 'grill';
-          if (soundEnabledRef.current[station]) {
-            playKitchenAlert(station);
-          }
-          setNewOrderFlash(true);
-          setTimeout(() => setNewOrderFlash(false), 2000);
-        }
-      },
-      onRemove: (orderId) => {
-        store.applyRemove(orderId);
-      },
-    });
-
-    return () => {
-      unsub();
-      store.reset();
+  useEffect(() => {
+    const initAudio = () => {
+      try { getAudioContext(); } catch {}
     };
-  }, [activeBranchId]);
+    document.addEventListener('click', initAudio, { once: true });
+    document.addEventListener('touchstart', initAudio, { once: true });
+    return () => {
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('touchstart', initAudio);
+    };
+  }, []);
 
   const handleUpdateStatus = async (orderId, currentStatus) => {
     let nextStatus = '';
@@ -261,9 +327,9 @@ export default function KitchenView() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     if (bulkConfirm.targetStatus === 'rush') {
-      for (const id of ids) {
-        await ordersService.updateOrderPriority(activeBranchId, id, 'rush', user?.email);
-      }
+      await Promise.all(ids.map((id) =>
+        ordersService.updateOrderPriority(activeBranchId, id, 'rush', user?.email)
+      ));
     } else {
       await ordersService.batchUpdateOrderStatus(activeBranchId, ids, bulkConfirm.targetStatus);
     }
@@ -303,7 +369,7 @@ export default function KitchenView() {
   );
 
   const filteredActive = useMemo(() => {
-    let result = filteredOrders.filter(o => o.status !== 'entregado');
+    let result = filteredOrders.filter(o => o.status !== 'entregado' && o.status !== 'pendiente_pago');
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(o =>
@@ -344,8 +410,7 @@ export default function KitchenView() {
     timer.recalcVisible(activeOrdersList);
     timer.tickVisible(activeOrdersList);
     return () => timer.stopTicker();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, filteredActive.length, stationFilter, searchQuery]);
+  }, [isLoading, filteredActive, stationFilter, searchQuery]);
 
   const columnOrders = useMemo(() => {
     const sortByDueTime = (list) =>
@@ -387,58 +452,85 @@ export default function KitchenView() {
     };
   }, [filteredActive, columnOrder]);
 
+  // Hook de atajos de teclado para Bump Bar
+  useKDSKeyboard({
+    columnOrders,
+    onUpdateStatus: handleUpdateStatus,
+    onUndo: () => handleUndo(activeBranchId),
+    activeStation: stationFilter,
+    onStationChange: setStationFilter,
+    activeTab,
+    setActiveTab,
+  });
+
   if (isLoading) {
-    return <KanbanSkeleton />;
+    return <KDSSkeleton />;
   }
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-cm-bg">
+    <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden bg-cm-bg select-none">
 
-      <NewOrderFlash show={newOrderFlash} />
+      <NewOrderFlash show={newOrderFlash} message={flashMessage} />
 
-      <header className="mb-4 flex flex-col shrink-0">
-        <div className="flex justify-between items-end mb-3">
+      <header className="mb-4 flex flex-col shrink-0 px-4 pt-4">
+        <div className="flex justify-between items-end mb-3 flex-wrap gap-4">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-cm-text flex items-center gap-3">
-              KDS <span className="text-cm-accent">Kanban</span>
+          <h1 className="text-2xl font-black tracking-tight text-cm-text flex items-center gap-2.5">
+              🍳 House <span className="text-cm-accent">KDS</span>
               {columnOrders.recibido.length > 0 && (
-                <span className="flex items-center gap-1.5 bg-cm-accent text-white text-sm font-black px-3 py-1 rounded-full animate-pulse">
-                  <BellRing className="w-4 h-4" /> {columnOrders.recibido.length}
+                <span className="flex items-center gap-1.5 bg-cm-accent text-white text-xs font-black px-2.5 py-1 rounded-full shadow-cm-md">
+                  <BellRing className="w-3.5 h-3.5 animate-pulse" /> {columnOrders.recibido.length} nuevo{columnOrders.recibido.length > 1 ? 's' : ''}
                 </span>
               )}
             </h1>
-            <div className="flex gap-4 mt-4">
+            <div className="flex gap-1.5 mt-4 flex-wrap p-1 bg-cm-bg rounded-xl border border-cm-border/60 w-fit">
               <button
-                onClick={() => setActiveTab('kanban')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                  activeTab === 'kanban' ? 'bg-cm-accent text-white shadow-cm-md' : 'bg-cm-accent/10 text-cm-muted hover:bg-cm-accent/20'
+                onClick={() => setActiveTab('board')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'board' ? 'bg-cm-surface text-cm-accent shadow-cm-sm border border-cm-border/80' : 'text-cm-muted/60 hover:text-cm-muted'
                 }`}
               >
-                <UtensilsCrossed className="w-4 h-4" /> Tablero ({activeOrders.length})
+                <UtensilsCrossed className="w-3.5 h-3.5" /> Tablero
+                <span className={`ml-1 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full ${
+                  activeTab === 'board' ? 'bg-cm-accent/15 text-cm-accent' : 'bg-cm-muted/10 text-cm-muted/40'
+                }`}>{activeOrders.length}</span>
               </button>
               <button
                 onClick={() => setActiveTab('historial')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                  activeTab === 'historial' ? 'bg-cm-accent text-white shadow-cm-md' : 'bg-cm-accent/10 text-cm-muted hover:bg-cm-accent/20'
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'historial' ? 'bg-cm-surface text-cm-accent shadow-cm-sm border border-cm-border/80' : 'text-cm-muted/60 hover:text-cm-muted'
                 }`}
               >
-                <History className="w-4 h-4" /> Historial Hoy
+                <History className="w-3.5 h-3.5" /> Historial
               </button>
               <button
                 onClick={() => setActiveTab('expo')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                  activeTab === 'expo' ? 'bg-cm-accent text-white shadow-cm-md' : 'bg-cm-accent/10 text-cm-muted hover:bg-cm-accent/20'
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'expo' ? 'bg-cm-surface text-cm-accent shadow-cm-sm border border-cm-border/80' : 'text-cm-muted/60 hover:text-cm-muted'
                 }`}
               >
-                <CheckCircle className="w-4 h-4" /> Expo ({columnOrders.listo.length})
+                <CheckCircle className="w-3.5 h-3.5" /> Expo
+                {columnOrders.listo.length > 0 && (
+                  <span className={`ml-1 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full ${
+                    activeTab === 'expo' ? 'bg-cm-success/15 text-cm-success' : 'bg-cm-success/10 text-cm-success/60'
+                  }`}>{columnOrders.listo.length}</span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('delivery')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                  activeTab === 'delivery' ? 'bg-cm-accent text-white shadow-cm-md' : 'bg-cm-accent/10 text-cm-muted hover:bg-cm-accent/20'
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'delivery' ? 'bg-cm-surface text-cm-accent shadow-cm-sm border border-cm-border/80' : 'text-cm-muted/60 hover:text-cm-muted'
                 }`}
               >
-                <Package className="w-4 h-4" /> Delivery
+                <Package className="w-3.5 h-3.5" /> Delivery
+              </button>
+              <button
+                onClick={() => setActiveTab('inventario')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'inventario' ? 'bg-cm-surface text-cm-accent shadow-cm-sm border border-cm-border/80' : 'text-cm-muted/60 hover:text-cm-muted'
+                }`}
+              >
+                <Boxes className="w-3.5 h-3.5" /> Inventario
               </button>
             </div>
           </div>
@@ -459,6 +551,12 @@ export default function KitchenView() {
               <WorkflowSettings
                 visibleColumns={visibleColumns}
                 onToggleColumn={toggleColumn}
+                fontSize={fontSize}
+                onFontSizeChange={setFontSize}
+                density={density}
+                onDensityChange={setDensity}
+                showConsolidated={showConsolidated}
+                onToggleConsolidated={setShowConsolidated}
               />
               <StationSoundToggle
                 soundEnabled={soundEnabled}
@@ -474,15 +572,6 @@ export default function KitchenView() {
                 <ListChecks className="w-3.5 h-3.5" />
                 Masivo
               </button>
-              <span className="hidden sm:inline text-xs font-bold text-cm-text-secondary px-2">{user?.name || user?.email}</span>
-              <span className="bg-cm-success/10 text-cm-success border border-cm-success/20 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest block text-center">EN SERVICIO</span>
-              <button
-                onClick={logout}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-cm-error/10 hover:bg-cm-error/20 border border-cm-error/20 rounded-full text-xs font-bold text-cm-error transition-colors"
-                title="Cerrar sesión"
-              >
-                Salir
-              </button>
             </div>
           </div>
         </div>
@@ -491,7 +580,7 @@ export default function KitchenView() {
           <LiveStats orders={orderMap} orderIndex={orderIndex} />
         </div>
 
-        {activeTab === 'kanban' && (
+        {activeTab === 'board' && (
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <StationFilter
               activeStation={stationFilter}
@@ -521,8 +610,8 @@ export default function KitchenView() {
         )}
       </header>
 
-      <div className="flex-1 overflow-hidden">
-        {activeTab === 'kanban' ? (
+      <div className="flex-1 min-h-0 overflow-hidden px-4">
+        {activeTab === 'board' ? (
           filteredActive.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <EmptyState
@@ -532,74 +621,95 @@ export default function KitchenView() {
               />
             </div>
           ) : (
-          <div className="grid grid-cols-1 gap-6 h-full pb-6" style={{
-            gridTemplateColumns: `repeat(${Object.values(visibleColumns).filter(Boolean).length || 1}, minmax(0, 1fr))`
-          }}>
-            {visibleColumns.recibido !== false && (
-              <KanbanColumn
-                title="Nuevos" status="recibido" count={columnOrders.recibido.length}
-                onDrop={handleDrop} className="border-cm-accent/20"
-                onReorder={(ids) => handleReorder('recibido', ids)}
-                orderedIds={columnOrders.recibido.map(o => o.id)}
-              >
-                {columnOrders.recibido.map(order => (
-                  <Reorder.Item key={order.id} value={order.id} style={TICKET_STYLE} whileDrag={{ scale: 1.03, zIndex: 50, opacity: 0.9 }}>
-                    <KanbanTicket
-                      order={order}
-                      onUpdateStatus={handleUpdateStatus}
-                      selected={selectedIds.has(order.id)}
-                      onToggleSelect={toggleSelect}
-                      isBulkMode={isBulkMode}
-                    />
-                  </Reorder.Item>
-                ))}
-              </KanbanColumn>
-            )}
+            <div className="flex flex-col md:flex-row gap-6 h-full pb-6 overflow-hidden">
+              {/* Panel Consolidado de Insumos */}
+              {showConsolidated && (
+                <div className="w-full md:w-80 shrink-0 flex flex-col max-h-[35vh] md:max-h-none md:h-full">
+                  <ConsolidatedPanel activeOrders={filteredActive} activeStation={stationFilter} />
+                </div>
+              )}
 
-            {visibleColumns.preparando !== false && (
-              <KanbanColumn
-                title="Preparando" status="preparando" count={columnOrders.preparando.length}
-                onDrop={handleDrop} className="border-cm-warning/20"
-                onReorder={(ids) => handleReorder('preparando', ids)}
-                orderedIds={columnOrders.preparando.map(o => o.id)}
-              >
-                {columnOrders.preparando.map(order => (
-                  <Reorder.Item key={order.id} value={order.id} style={TICKET_STYLE} whileDrag={{ scale: 1.03, zIndex: 50, opacity: 0.9 }}>
-                    <KanbanTicket
-                      order={order}
-                      onUpdateStatus={handleUpdateStatus}
-                      selected={selectedIds.has(order.id)}
-                      onToggleSelect={toggleSelect}
-                      isBulkMode={isBulkMode}
-                    />
-                  </Reorder.Item>
-                ))}
-              </KanbanColumn>
-            )}
+              {/* Columnas KDS Kanban */}
+              <div className="flex-1 min-h-0 h-full overflow-hidden">
+                <div className="grid grid-cols-1 gap-6 h-full" style={{
+                  gridTemplateColumns: `repeat(${Object.values(visibleColumns).filter(Boolean).length || 1}, minmax(0, 1fr))`
+                }}>
+                  {visibleColumns.recibido !== false && (
+                    <KDSColumn
+                      title="Nuevos" status="recibido" count={columnOrders.recibido.length}
+                      onDrop={handleDrop} className="border-cm-accent/20"
+                      onReorder={(ids) => handleReorder('recibido', ids)}
+                      orderedIds={columnOrders.recibido.map(o => o.id)}
+                    >
+                      {columnOrders.recibido.map(order => (
+                        <Reorder.Item key={order.id} value={order.id} style={TICKET_STYLE} whileDrag={{ scale: 1.03, zIndex: 50, opacity: 0.9 }}>
+                          <KDSTicket
+                            order={order}
+                            onUpdateStatus={handleUpdateStatus}
+                            selected={selectedIds.has(order.id)}
+                            onToggleSelect={toggleSelect}
+                            isBulkMode={isBulkMode}
+                            fontSize={fontSize}
+                            density={density}
+                            activeStation={stationFilter}
+                          />
+                        </Reorder.Item>
+                      ))}
+                    </KDSColumn>
+                  )}
 
-            {visibleColumns.listo !== false && (
-              <KanbanColumn
-                title="Listos" status="listo" count={columnOrders.listo.length}
-                onDrop={handleDrop} className="border-cm-success/20"
-                onReorder={(ids) => handleReorder('listo', ids)}
-                orderedIds={columnOrders.listo.map(o => o.id)}
-              >
-                {columnOrders.listo.map(order => (
-                  <Reorder.Item key={order.id} value={order.id} style={TICKET_STYLE} whileDrag={{ scale: 1.03, zIndex: 50, opacity: 0.9 }}>
-                    <KanbanTicket
-                      order={order}
-                      onUpdateStatus={handleUpdateStatus}
-                      selected={selectedIds.has(order.id)}
-                      onToggleSelect={toggleSelect}
-                      isBulkMode={isBulkMode}
-                    />
-                  </Reorder.Item>
-                ))}
-              </KanbanColumn>
-            )}
-          </div>
+                  {visibleColumns.preparando !== false && (
+                    <KDSColumn
+                      title="Preparando" status="preparando" count={columnOrders.preparando.length}
+                      onDrop={handleDrop} className="border-cm-warning/20"
+                      onReorder={(ids) => handleReorder('preparando', ids)}
+                      orderedIds={columnOrders.preparando.map(o => o.id)}
+                    >
+                      {columnOrders.preparando.map(order => (
+                        <Reorder.Item key={order.id} value={order.id} style={TICKET_STYLE} whileDrag={{ scale: 1.03, zIndex: 50, opacity: 0.9 }}>
+                          <KDSTicket
+                            order={order}
+                            onUpdateStatus={handleUpdateStatus}
+                            selected={selectedIds.has(order.id)}
+                            onToggleSelect={toggleSelect}
+                            isBulkMode={isBulkMode}
+                            fontSize={fontSize}
+                            density={density}
+                            activeStation={stationFilter}
+                          />
+                        </Reorder.Item>
+                      ))}
+                    </KDSColumn>
+                  )}
+
+                  {visibleColumns.listo !== false && (
+                    <KDSColumn
+                      title="Listos" status="listo" count={columnOrders.listo.length}
+                      onDrop={handleDrop} className="border-cm-success/20"
+                      onReorder={(ids) => handleReorder('listo', ids)}
+                      orderedIds={columnOrders.listo.map(o => o.id)}
+                    >
+                      {columnOrders.listo.map(order => (
+                        <Reorder.Item key={order.id} value={order.id} style={TICKET_STYLE} whileDrag={{ scale: 1.03, zIndex: 50, opacity: 0.9 }}>
+                          <KDSTicket
+                            order={order}
+                            onUpdateStatus={handleUpdateStatus}
+                            selected={selectedIds.has(order.id)}
+                            onToggleSelect={toggleSelect}
+                            isBulkMode={isBulkMode}
+                            fontSize={fontSize}
+                            density={density}
+                            activeStation={stationFilter}
+                          />
+                        </Reorder.Item>
+                      ))}
+                    </KDSColumn>
+                  )}
+                </div>
+              </div>
+            </div>
           )
-          ) : activeTab === 'expo' ? (
+        ) : activeTab === 'expo' ? (
           <ExpoPanel
             readyOrders={readyOrders}
             onDeliver={handleDeliver}
@@ -609,6 +719,10 @@ export default function KitchenView() {
             readyOrders={readyOrders}
             onHandoff={handleDeliver}
           />
+        ) : activeTab === 'inventario' ? (
+          <div className="h-full overflow-y-auto pr-2 pb-10 scrollbar-hide">
+            <InventoryPanel catalog={catalog} />
+          </div>
         ) : (
           <HistoryPanel
             orders={enrichedOrders}

@@ -99,9 +99,10 @@ export default function FinanzasTab({ allOrders, activeBranchId, activeBranchNam
   const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   const filteredOrders = useMemo(() => {
-    if (period === 'day') return allOrders.filter(o => (o.createdAt || '').startsWith(todayStr));
-    if (period === 'month') return allOrders.filter(o => (o.createdAt || '').startsWith(monthStr));
-    return allOrders;
+    const activeOrdersOnly = allOrders.filter(o => o.status !== 'cancelado');
+    if (period === 'day') return activeOrdersOnly.filter(o => (o.createdAt || '').startsWith(todayStr));
+    if (period === 'month') return activeOrdersOnly.filter(o => (o.createdAt || '').startsWith(monthStr));
+    return activeOrdersOnly;
   }, [allOrders, period, todayStr, monthStr]);
 
   const filteredExpenses = useMemo(() => {
@@ -111,7 +112,11 @@ export default function FinanzasTab({ allOrders, activeBranchId, activeBranchNam
   }, [expenses, period, todayStr, monthStr]);
 
   const revenue = useMemo(() =>
-    filteredOrders.reduce((s, o) => s + (o.financials?.total || 0), 0), [filteredOrders]);
+    filteredOrders.reduce((s, o) => {
+      const orderTotal = o.financials?.total || 0;
+      const refundAmt = o.refund?.amount || 0;
+      return s + (orderTotal - refundAmt);
+    }, 0), [filteredOrders]);
 
   const totalExpenses = useMemo(() =>
     filteredExpenses.reduce((s, e) => s + (e.amount || 0), 0), [filteredExpenses]);
@@ -120,7 +125,9 @@ export default function FinanzasTab({ allOrders, activeBranchId, activeBranchNam
     const methods = {};
     filteredOrders.forEach(o => {
       const m = o.payment_method || 'Sin metodo';
-      methods[m] = (methods[m] || 0) + (o.financials?.total || 0);
+      const orderTotal = o.financials?.total || 0;
+      const refundAmt = o.refund?.amount || 0;
+      methods[m] = (methods[m] || 0) + (orderTotal - refundAmt);
     });
     return methods;
   }, [filteredOrders]);
@@ -156,7 +163,7 @@ export default function FinanzasTab({ allOrders, activeBranchId, activeBranchNam
     const headers = ['Tipo', 'Descripcion', 'Monto', 'Metodo/Categoria', 'Fecha'];
     const rows = [
       ...filteredExpenses.map(e => ['Gasto', e.description, e.amount, e.category, e.date]),
-      ...filteredOrders.map(o => ['Ingreso', o.customerName, o.financials?.total || 0, o.payment_method, new Date(o.createdAt).toLocaleDateString('es-PE')]),
+      ...filteredOrders.map(o => ['Ingreso', o.customerName, (o.financials?.total || 0) - (o.refund?.amount || 0), o.payment_method, new Date(o.createdAt).toLocaleDateString('es-PE')]),
     ];
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });

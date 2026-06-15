@@ -1,9 +1,5 @@
 import { create } from 'zustand';
-
-const THRESHOLDS = {
-  warning: 8 * 60 * 1000,
-  critical: 12 * 60 * 1000,
-};
+import { STATION_THRESHOLDS } from '../kdsTypes';
 
 function calcElapsed(order, now) {
   const ts = order.statusTimestamps?.[order.status] || order.createdAt;
@@ -11,27 +7,62 @@ function calcElapsed(order, now) {
   return now - new Date(ts).getTime();
 }
 
+function getAlertLevelForOrder(order, elapsedMs) {
+  const station = order.station || 'all';
+  const thresholds = STATION_THRESHOLDS[station] || STATION_THRESHOLDS.all;
+  if (elapsedMs >= thresholds.critical) return 'critical';
+  if (elapsedMs >= thresholds.warning) return 'warning';
+  return 'safe';
+}
+
 const useTimerStore = create((set, get) => ({
-  elapsed: {},
+  alertLevels: {},
+  elapsed: {}, // Mantenido por compatibilidad
   intervalId: null,
 
   recalcVisible: (visibleOrders) => {
     const now = Date.now();
     const elapsed = {};
+    const alertLevels = {};
     for (const order of visibleOrders) {
-      elapsed[order.id] = calcElapsed(order, now);
+      const ms = calcElapsed(order, now);
+      elapsed[order.id] = ms;
+      alertLevels[order.id] = getAlertLevelForOrder(order, ms);
     }
-    set({ elapsed });
+    set({ elapsed, alertLevels });
   },
 
   tickVisible: (visibleOrders) => {
+    get().stopTicker();
     const intervalId = setInterval(() => {
       const now = Date.now();
+      const currentAlerts = get().alertLevels;
+      
       const elapsed = {};
+      const alertLevels = {};
+      let alertsChanged = false;
+
       for (const order of visibleOrders) {
-        elapsed[order.id] = calcElapsed(order, now);
+        const ms = calcElapsed(order, now);
+        elapsed[order.id] = ms;
+        
+        const lvl = getAlertLevelForOrder(order, ms);
+        alertLevels[order.id] = lvl;
+
+        if (currentAlerts[order.id] !== lvl) {
+          alertsChanged = true;
+        }
       }
-      set({ elapsed });
+
+      // Solo actualizamos alertLevels si realmente cambió el estado de alerta de algún pedido.
+      // Esto previene re-renders innecesarios en cascada.
+      set((state) => {
+        const nextState = { elapsed }; // elapsed siempre se actualiza por si alguien se suscribe directamente
+        if (alertsChanged || Object.keys(state.alertLevels).length !== Object.keys(alertLevels).length) {
+          nextState.alertLevels = alertLevels;
+        }
+        return nextState;
+      });
     }, 1000);
     set({ intervalId });
   },
@@ -44,15 +75,8 @@ const useTimerStore = create((set, get) => ({
     }
   },
 
-  getElapsed: (orderId) => get().elapsed[orderId] || 0,
-
-  getAlertLevel: (orderId) => {
-    const ms = get().elapsed[orderId] || 0;
-    if (ms >= THRESHOLDS.critical) return 'critical';
-    if (ms >= THRESHOLDS.warning) return 'warning';
-    return 'safe';
-  },
+  getAlertLevel: (orderId) => get().alertLevels[orderId] || 'safe',
 }));
 
-export { THRESHOLDS };
+export { STATION_THRESHOLDS };
 export default useTimerStore;

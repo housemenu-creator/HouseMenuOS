@@ -1,4 +1,4 @@
-import { Settings, ClipboardList, ChefHat, Truck, Bike, DollarSign } from 'lucide-react';
+import { Settings, ClipboardList, ChefHat, Truck, Bike, DollarSign, TrendingUp } from 'lucide-react';
 
 export const PERMISSIONS = {
   'orders:read': 'Ver pedidos',
@@ -20,6 +20,12 @@ export const PERMISSIONS = {
   'users:manage': 'Crear/editar/eliminar usuarios',
   'config:manage': 'Gestionar configuración',
   'kiosk:manage': 'Activar/desactivar modo kiosko',
+  'cuentas:read': 'Ver cuentas de clientes',
+  'cuentas:manage': 'Crear/editar cuentas de clientes',
+  'marketing:read': 'Ver módulo de marketing',
+  'marketing:manage': 'Crear/editar/eliminar contenido de marketing',
+  'system:audit': 'Ver auditoría del sistema',
+  'system:manage': 'Gestionar roles y configuración del sistema',
 };
 
 function allPermissions() {
@@ -27,13 +33,21 @@ function allPermissions() {
 }
 
 export const ROLE_REGISTRY = {
+  superadmin: {
+    name: 'Super Admin',
+    key: 'superadmin',
+    permissions: { ...allPermissions(), 'system:audit': true, 'system:manage': true },
+    loginScreen: { title: 'Admin Hub', subtitle: 'Gestión del Sistema · House', icon: Settings },
+    defaultUser: { email: 'super@house.local', name: 'Super Admin', pin: 'super' },
+    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'roles', 'audit'],
+  },
   admin: {
     name: 'Administrador',
     key: 'admin',
     permissions: allPermissions(),
     loginScreen: { title: 'Admin Hub', subtitle: 'Gestión y Analítica · House', icon: Settings },
     defaultUser: { email: 'admin@house.local', name: 'Admin', pin: 'admin' },
-    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users'],
+    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings'],
   },
   cajero: {
     name: 'Cajero',
@@ -63,7 +77,7 @@ export const ROLE_REGISTRY = {
       'chat:read': true,
       'chat:write': true,
     },
-    loginScreen: { title: 'KDS Hub', subtitle: 'Kitchen Display System', icon: ChefHat },
+    loginScreen: { title: 'House KDS', subtitle: 'Kitchen Display System', icon: ChefHat },
     defaultUser: { email: 'cocina@house.local', name: 'Cocina', pin: '1234' },
   },
   dispatch: {
@@ -101,6 +115,22 @@ export const ROLE_REGISTRY = {
     },
     loginScreen: { title: 'Mis Entregas', subtitle: 'Portal del Repartidor', icon: Bike },
     defaultUser: { email: 'delivery@house.local', name: 'Repartidor', pin: '1111' },
+  },
+  vendedor: {
+    name: 'Vendedor',
+    key: 'vendedor',
+    permissions: {
+      'orders:read': true,
+      'orders:create': true,
+      'orders:update_status': true,
+      'menu:read': true,
+      'cuentas:read': true,
+      'cuentas:manage': true,
+      'chat:read': true,
+      'chat:write': true,
+    },
+    loginScreen: { title: 'Ventas', subtitle: 'Portal del Vendedor · House', icon: TrendingUp },
+    defaultUser: { email: 'ventas@house.local', name: 'Vendedor', pin: '3333' },
   },
 };
 

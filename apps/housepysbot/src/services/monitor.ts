@@ -1,7 +1,7 @@
 import { initFirebase, ref, set, push, child } from "../lib/firebase.js";
+import { getAllBranchIds } from "../lib/branch.js";
 
 const db = initFirebase();
-const BRANCH = process.env.HOUSEPYSBOT_BRANCH_ID || "default";
 
 interface HealthState {
   firebase: "ok" | "error";
@@ -22,17 +22,32 @@ let health: HealthState = {
 export function startMonitor() {
   async function check() {
     const now = Date.now();
-    const checks: string[] = [];
+    const globalChecks: string[] = [];
+    const branchIds = getAllBranchIds();
 
-    // Check Firebase
-    try {
-      const testRef = ref(db, `branches/${BRANCH}/_health`);
-      await set(testRef, { lastPing: now });
-      health.firebase = "ok";
-    } catch {
-      health.firebase = "error";
-      checks.push("firebase");
+    // Check Firebase — ping ALL branches
+    let fbOk = true;
+    for (const branchId of branchIds) {
+      try {
+        const testRef = ref(db, `branches/${branchId}/_health`);
+        await set(testRef, { lastPing: now, monitor: "ok" });
+      } catch {
+        fbOk = false;
+        // Write error directly to the failing branch
+        try {
+          const errRef = push(child(ref(db), `branches/${branchId}/system/errors`));
+          await set(errRef, {
+            agentId: "monitor",
+            tool: "health_check",
+            message: `Firebase no responde en sucursal "${branchId}"`,
+            resolved: false,
+            timestamp: now,
+          });
+        } catch {}
+        globalChecks.push(`firebase[${branchId}]`);
+      }
     }
+    health.firebase = fbOk ? "ok" : "error";
 
     // Check OpenRouter
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -45,11 +60,11 @@ export function startMonitor() {
           health.openrouter = "ok";
         } else {
           health.openrouter = "error";
-          checks.push("openrouter");
+          globalChecks.push("openrouter");
         }
       } catch {
         health.openrouter = "error";
-        checks.push("openrouter");
+        globalChecks.push("openrouter");
       }
     }
 
@@ -57,24 +72,29 @@ export function startMonitor() {
     health.uptime = process.uptime();
     health.memory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
 
-    // Write health to Firebase
-    try {
-      const healthRef = child(ref(db), `branches/${BRANCH}/system/monitor/health`);
-      await set(healthRef, health);
-    } catch {}
-
-    // If something failed, create error alert
-    if (checks.length > 0) {
+    // Write health to ALL branches
+    for (const branchId of branchIds) {
       try {
-        const errRef = push(child(ref(db), `branches/${BRANCH}/system/errors`));
-        await set(errRef, {
-          agentId: "monitor",
-          tool: "health_check",
-          message: `Servicio caído: ${checks.join(", ")}`,
-          resolved: false,
-          timestamp: now,
-        });
+        const healthRef = child(ref(db), `branches/${branchId}/system/monitor/health`);
+        await set(healthRef, { ...health, branchId });
       } catch {}
+    }
+
+    // Global errors (OpenRouter, memory) → write to ALL branches
+    const globalErrors = globalChecks.filter((c) => !c.startsWith("firebase["));
+    if (globalErrors.length > 0) {
+      for (const branchId of branchIds) {
+        try {
+          const errRef = push(child(ref(db), `branches/${branchId}/system/errors`));
+          await set(errRef, {
+            agentId: "monitor",
+            tool: "health_check",
+            message: `Servicio compartido caído: ${globalErrors.join(", ")}`,
+            resolved: false,
+            timestamp: now,
+          });
+        } catch {}
+      }
     }
   }
 

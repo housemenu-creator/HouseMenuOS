@@ -58,10 +58,11 @@ export const sunatTools: MCPTool[] = [
   },
   {
     name: "historial_cpes",
-    description: "Muestra el historial de comprobantes electrónicos emitidos",
+    description: "Muestra el historial de comprobantes electrónicos emitidos, con paginación y filtro por fecha",
     parameters: {
       desde: { type: "string", description: "Fecha inicio en formato YYYY-MM-DD (opcional)" },
       hasta: { type: "string", description: "Fecha fin en formato YYYY-MM-DD (opcional)" },
+      pagina: { type: "string", description: "Número de página, ej: \"1\", \"2\" (opcional, default 1)" },
     },
     async execute(args, branchId) {
       try {
@@ -72,23 +73,36 @@ export const sunatTools: MCPTool[] = [
         const desde = args.desde ? String(args.desde) : null;
         const hasta = args.hasta ? String(args.hasta) : null;
 
-        const filtrados = cpes.filter((c: any) => {
+        let filtrados = cpes.filter((c: any) => {
           const d = (c.createdAt || "").split("T")[0];
           if (desde && d < desde) return false;
           if (hasta && d > hasta) return false;
           return true;
         });
 
+        // Sort newest first
+        filtrados.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+
         if (filtrados.length === 0) return { success: true, message: "No hay comprobantes en ese rango." };
 
-        let msg = `🧾 *COMPROBANTES* (${filtrados.length})\n\n`;
-        for (const c of filtrados.slice(-20).reverse()) {
+        // Pagination
+        const pageSize = 10;
+        const page = Math.max(1, parseInt(String(args.pagina || "1")));
+        const totalPages = Math.ceil(filtrados.length / pageSize);
+        const start = (page - 1) * pageSize;
+        const pageItems = filtrados.slice(start, start + pageSize);
+
+        let msg = `🧾 *COMPROBANTES* (pág ${page}/${totalPages} — ${filtrados.length} total)\n\n`;
+        for (const c of pageItems) {
           const serie = c.serie || "S/N";
           const num = c.numero || c.id?.slice(-8);
           msg += `• ${c.tipo?.toUpperCase() || "BOLETA"} #${serie}-${num} — S/ ${Number(c.total).toFixed(2)} — ${c.estado || "generado"}\n`;
           if (c.createdAt) msg += `  ${c.createdAt.split("T")[0]}\n`;
         }
-        return { success: true, data: filtrados, message: msg };
+        if (page < totalPages) {
+          msg += `\n📄 Usa "historial página ${page + 1}" para ver más`;
+        }
+        return { success: true, data: { page, totalPages, total: filtrados.length, items: pageItems }, message: msg };
       } catch (e: any) {
         return { success: false, error: `Error al obtener historial: ${e.message}` };
       }

@@ -45,8 +45,12 @@ vi.mock('@house/db', () => {
   const app = {};
   app.options = { projectId: 'test', apiKey: 'test' };
   app.automaticDataCollectionEnabled = false;
-  return { realtimeDB: {}, app };
+  return { realtimeDB: {}, app, auth: { currentUser: null } };
 });
+
+vi.mock('firebase/auth', () => ({
+  signInAnonymously: vi.fn(() => Promise.resolve({ user: { uid: 'anon-test' } })),
+}));
 
 // Use define from vitest to set up a factory that captures current store
 vi.mock('firebase/database', () => {
@@ -81,9 +85,9 @@ vi.mock('firebase/database', () => {
       const newVal = updateFn(oldVal);
       if (newVal !== undefined) {
         store.set(ref.path, newVal);
-        return { committed: true, data: newVal };
+        return { committed: true, snapshot: { val: () => newVal, exists: () => true } };
       }
-      return { committed: false };
+      return { committed: false, snapshot: { val: () => oldVal, exists: () => oldVal != null } };
     }),
   };
 });

@@ -12,8 +12,9 @@ export const branchService = {
   /**
    * Suscribe en tiempo real al listado completo de sucursales configuradas.
    */
-  subscribeToBranches(callback) {
+  subscribeToBranches(callback, onError) {
     const branchesRef = ref(db, branchesConfigPath());
+    const onErrorHandler = typeof onError === 'function' ? onError : undefined;
     return onValue(branchesRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
@@ -44,7 +45,7 @@ export const branchService = {
         ...data[key],
       }));
       callback(branchesArray);
-    });
+    }, onErrorHandler);
   },
 
   /**
@@ -54,6 +55,8 @@ export const branchService = {
     try {
       const branchesRef = ref(db, branchesConfigPath());
       const newBranchRef = push(branchesRef);
+      const branchId = newBranchRef.key;
+      const tableCount = branchData.tableCount ?? 0;
       await set(newBranchRef, {
         name: branchData.name || 'Nueva Sucursal',
         address: branchData.address || '',
@@ -64,7 +67,7 @@ export const branchService = {
         },
         schedule: branchData.schedule || '',
         active: true,
-        tableCount: branchData.tableCount ?? 0,
+        tableCount,
         deliveryEnabled: branchData.deliveryEnabled ?? false,
         deliveryFee: branchData.deliveryFee ?? 5,
         freeThreshold: branchData.freeThreshold ?? 0,
@@ -74,7 +77,12 @@ export const branchService = {
           { id: 'liter', name: '1 Litro', icon: '📦', price: 1.00 },
         ],
       });
-      return { success: true, branchId: newBranchRef.key };
+      // Auto-generate tables array for the Mozo module
+      if (tableCount > 0) {
+        const tablesRef = ref(db, `branches/${branchId}/tables`);
+        await set(tablesRef, Array.from({ length: tableCount }, (_, i) => i + 1));
+      }
+      return { success: true, branchId };
     } catch (error) {
       console.error('branchService.createBranch error:', error);
       return { success: false, branchId: null };

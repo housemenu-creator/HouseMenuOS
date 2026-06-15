@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Edit2 } from 'lucide-react';
+import { Edit2, Loader2 } from 'lucide-react';
 
 export default function InlineEdit({ value, onSave, type = "text", className = "" }) {
   const [isEditing, setIsEditing] = useState(false);
   const [val, setVal] = useState(value);
+  const [saving, setSaving] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -19,13 +20,19 @@ export default function InlineEdit({ value, onSave, type = "text", className = "
     }
   }, [isEditing, type]);
 
-  const handleSave = () => {
-    setIsEditing(false);
+  const handleSave = async () => {
     if (val !== value && val.toString().trim() !== '') {
-      onSave(val);
+      setSaving(true);
+      try {
+        await onSave(val);
+      } catch {
+        setVal(value); // revert on error
+      }
+      setSaving(false);
     } else {
       setVal(value);
     }
+    setIsEditing(false);
   };
 
   const handleKeyDown = (e) => {
@@ -38,16 +45,20 @@ export default function InlineEdit({ value, onSave, type = "text", className = "
 
   if (isEditing) {
     return (
-      <input
-        ref={inputRef}
-        type={type}
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onBlur={handleSave}
-        onKeyDown={handleKeyDown}
-        className={`bg-white border-2 border-cm-accent/40 rounded px-1 outline-none focus:border-cm-accent focus:ring-2 focus:ring-cm-accent/20 ${className}`}
-        style={{ minWidth: type === 'number' ? '4rem' : '100%' }}
-      />
+      <div className="relative inline-flex items-center">
+        <input
+          ref={inputRef}
+          type={type}
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          disabled={saving}
+          className={`bg-white border-2 border-cm-accent/40 rounded px-1 outline-none focus:border-cm-accent focus:ring-2 focus:ring-cm-accent/20 disabled:opacity-50 ${className}`}
+          style={{ minWidth: type === 'number' ? '4rem' : '100%' }}
+        />
+        {saving && <Loader2 className="w-3 h-3 ml-1 animate-spin text-cm-accent shrink-0" />}
+      </div>
     );
   }
 

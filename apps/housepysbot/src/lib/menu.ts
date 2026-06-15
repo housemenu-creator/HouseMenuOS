@@ -13,14 +13,14 @@ export async function searchMenu(branchId: string, term: string) {
 
   const results: any[] = [];
   const q = term.toLowerCase();
-  const products = Object.values(catalog.products) as Record<string, any>[];
 
-  for (const p of products) {
+  for (const [id, p] of Object.entries(catalog.products) as [string, any][]) {
+    if (p.available === false) continue;
     if (
       p.name?.toLowerCase().includes(q) ||
       p.description?.toLowerCase().includes(q)
     ) {
-      results.push(p);
+      results.push({ ...p, id });
     }
   }
   return results;

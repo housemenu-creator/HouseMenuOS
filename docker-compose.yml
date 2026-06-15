@@ -1,0 +1,74 @@
+# ═══════════════════════════════════════════════════════
+# House Portal OS — Docker Compose
+#
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose up -d --scale http=3  # Scale HTTP server
+#   docker compose logs -f bot        # Watch bot logs
+#   docker compose down               # Stop everything
+#
+# Required: Copy .env.example to .env and fill variables
+# ═══════════════════════════════════════════════════════
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  # ── Reverse Proxy + Static Files ─────────────────
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.nginx.local
+    ports:
+      - "80:80"
+    depends_on:
+      - http
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - house-network
+
+  # ── HTTP Server (stateless, scalable) ────────────
+  http:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.http
+    ports:
+      - "3000:3000"
+    env_file: .env
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - house-network
+    # healthcheck defined in Dockerfile.http
+
+  # ── Bot Service (stateful — 1 instance only) ─────
+  bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bot
+    expose:
+      - "3000"
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      # WhatsApp session persistence
+      - wa_session:/app/apps/housepysbot/data
+      - wa_auth:/app/apps/housepysbot/baileys_auth_info
+    logging: *default-logging
+    networks:
+      - house-network
+
+networks:
+  house-network:
+    driver: bridge
+
+volumes:
+  wa_session:
+    driver: local
+  wa_auth:
+    driver: local

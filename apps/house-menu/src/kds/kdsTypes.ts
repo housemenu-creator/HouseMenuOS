@@ -36,6 +36,16 @@ export const STATION_PREP_TIMES = {
   expo: 2,
 };
 
+export const STATION_THRESHOLDS = {
+  grill: { warning: 10 * 60 * 1000, critical: 15 * 60 * 1000 },
+  fryer: { warning: 8 * 60 * 1000, critical: 12 * 60 * 1000 },
+  cold: { warning: 5 * 60 * 1000, critical: 8 * 60 * 1000 },
+  bakery: { warning: 6 * 60 * 1000, critical: 10 * 60 * 1000 },
+  expo: { warning: 2 * 60 * 1000, critical: 4 * 60 * 1000 },
+  all: { warning: 8 * 60 * 1000, critical: 12 * 60 * 1000 },
+};
+
+
 export const ALLERGEN_MAP = {
   gluten: { label: 'Gluten', icon: 'Wheat', color: 'text-cm-warning' },
   lacteos: { label: 'Lácteos', icon: 'Milk', color: 'text-cm-info' },

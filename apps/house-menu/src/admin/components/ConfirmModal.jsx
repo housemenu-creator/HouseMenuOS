@@ -101,7 +101,7 @@ export function ConfirmModal({ open, title, message, confirmLabel = 'Eliminar', 
                 </button>
                 <button onClick={onConfirm}
                   className={`flex-1 py-2.5 rounded-xl text-white text-sm font-black transition-all shadow-cm-md ${
-                    danger ? 'bg-red-600 hover:bg-red-700' : 'bg-cm-accent hover:bg-cm-accent-hover'
+                    danger ? 'bg-cm-error hover:bg-cm-error/80' : 'bg-cm-accent hover:bg-cm-accent-hover'
                   }`}>
                   {confirmLabel}
                 </button>

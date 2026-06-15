@@ -1,7 +1,17 @@
 import { ref, onValue, set, push, remove, get, update } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { normalizeFirebaseData } from './normalizeFirebaseData';
-import { catalogPath, catalogProductsPath, catalogFieldPath } from './paths';
+import { catalogPath, catalogProductsPath, catalogFieldPath, catalogCategoryPath } from './paths';
+
+function getCategorySlug(categoryName) {
+  return (categoryName || '')
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
 
 export const menuService = {
   /**
@@ -134,6 +144,37 @@ export const menuService = {
         const productsUpdateRef = ref(db, catalogProductsPath(branchId));
         await update(productsUpdateRef, updates);
       }
+    }
+
+    // Migrar imagen de categoría si existe
+    const oldSlug = getCategorySlug(oldCategoryName);
+    const oldCategoryRef = ref(db, catalogCategoryPath(branchId, oldSlug));
+    const catSnapshot = await get(oldCategoryRef);
+    if (catSnapshot.exists()) {
+      const catData = catSnapshot.val();
+      const newSlug = getCategorySlug(cleanNewCategory);
+      const newCategoryRef = ref(db, catalogCategoryPath(branchId, newSlug));
+      await set(newCategoryRef, {
+        name: cleanNewCategory,
+        image: catData.image || ''
+      });
+      await remove(oldCategoryRef);
+    }
+  },
+
+  /**
+   * Guarda o actualiza la imagen de una categoría
+   */
+  async updateCategoryImage(branchId, categoryName, imageUrl) {
+    const slug = getCategorySlug(categoryName);
+    const categoryRef = ref(db, catalogCategoryPath(branchId, slug));
+    if (imageUrl) {
+      await set(categoryRef, {
+        name: categoryName,
+        image: imageUrl
+      });
+    } else {
+      await remove(categoryRef);
     }
   }
 };

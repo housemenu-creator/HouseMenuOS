@@ -3,7 +3,7 @@ import { cn } from '../../lib/utils'
 
 const variants = {
   primary:
-    'bg-[var(--cm-accent)] text-white hover:bg-[var(--cm-accent-hover)] active:scale-[0.94]',
+    'bg-[var(--cm-accent)] text-[var(--cm-primary)] hover:bg-[var(--cm-accent-hover)] active:scale-[0.94]',
   secondary:
     'bg-[rgba(0,0,0,0.05)] text-[var(--cm-text)] hover:bg-[rgba(0,0,0,0.08)] active:scale-[0.94] dark:bg-[rgba(255,255,255,0.08)] dark:hover:bg-[rgba(255,255,255,0.12)]',
   ghost:

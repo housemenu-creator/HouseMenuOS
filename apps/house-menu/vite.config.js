@@ -12,10 +12,17 @@ const monoRoot = path.resolve(__dirname, '../../');
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  envDir: path.resolve(__dirname, '../../'),
+  base: '/menu-app/',
+  envDir: path.resolve(__dirname, '.'),
   server: {
     port: 5176,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
   },
   resolve: {
     alias: {
@@ -28,7 +35,8 @@ export default defineConfig({
     preserveSymlinks: true,
   },
   optimizeDeps: {
-    include: ['clsx', 'react-router-dom', 'framer-motion', 'lucide-react', 'firebase/app', 'firebase/database'],
+    include: ['clsx', 'react-router-dom', 'framer-motion', 'lucide-react', 'firebase/app', 'firebase/database', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
+    exclude: ['@house/db', '@house/store', '@house/ui', '@house/tokens'],
   },
   build: {
     rollupOptions: {
@@ -39,7 +47,6 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react')) return 'icons';
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) return 'vendor';
           if (id.includes('kds/')) return 'kds';
-          if (id.includes('/customer/')) return 'customer';
         }
       }
     }

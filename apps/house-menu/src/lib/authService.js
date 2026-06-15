@@ -1,22 +1,53 @@
 import { ref, get, set, push, update, remove, onValue } from 'firebase/database';
-import { realtimeDB as db } from '@house/db';
+import { realtimeDB as db, auth } from '@house/db';
 import { getDefaultRoles, hasPermission } from './permissions';
 import { getDefaultUsers } from './roleRegistry';
 import { tenantRef, tenantPath } from './tenantService';
 import { nowISO } from './format';
+import { auditLog } from './auditService';
 import { hashPin, verifyPinHash } from './crypto';
 
 function genId() {
   return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-const DEFAULT_USERS = (typeof import.meta !== 'undefined' && import.meta.env?.DEV)
-  ? getDefaultUsers()
-  : [];
+/** Fallback users when RTDB is unreachable (no Firebase Auth session yet) */
+const DEFAULT_USERS = getDefaultUsers();
+
+/**
+ * Ensure Firebase Auth before reading RTDB (rules require auth != null).
+ * Does NOT re-init anonymous auth — relies on initAnonymousAuth() called at startup.
+ * If auth is null, RTDB read will fail and findUserByEmail returns null,
+ * allowing the DEFAULT_USERS fallback to handle PIN login.
+ */
+async function ensureFirebaseReadAccess() {
+  if (auth?.currentUser) return;
+  // No auth session — RTDB read will be rejected by rules, caught by findUserByEmail
+}
 
 export async function verifyPin(email, pin) {
+  // Default users first — always work for known email+pin combos
+  for (const du of DEFAULT_USERS) {
+    if (du.email === email && du.pin === pin) {
+      const roleDef = getDefaultRoles()[du.role];
+      return {
+        success: true,
+        user: {
+          id: du.id,
+          email: du.email,
+          name: du.name,
+          role: du.role,
+          permissions: roleDef.permissions,
+          membershipId: du.id + '-mem',
+          branchIds: { hq: true },
+        },
+      };
+    }
+  }
+
+  await ensureFirebaseReadAccess();
   const found = await findUserByEmail(email);
-  if (found) {
+  if (found && (found.pinHash || found.pin)) {
     let valid = false;
     if (found.pinHash) {
       valid = await verifyPinHash(pin, found.pinHash);
@@ -53,24 +84,6 @@ export async function verifyPin(email, pin) {
         branchIds: membership.branchIds || {},
       },
     };
-  }
-
-  for (const du of DEFAULT_USERS) {
-    if (du.email === email && du.pin === pin) {
-      const roleDef = getDefaultRoles()[du.role];
-      return {
-        success: true,
-        user: {
-          id: du.id,
-          email: du.email,
-          name: du.name,
-          role: du.role,
-          permissions: roleDef.permissions,
-          membershipId: du.id + '-mem',
-          branchIds: { hq: true },
-        },
-      };
-    }
   }
 
   return { success: false, error: 'Credenciales incorrectas' };
@@ -129,6 +142,37 @@ export async function ensureFirebaseUser(firebaseUser, defaultRole = 'kitchen', 
         id: existing.id,
         email: existing.email,
         name: existing.name,
+        role: membership.roleId,
+        permissions: roleDef?.permissions || {},
+        membershipId: membership.id,
+        branchIds: membership.branchIds || {},
+      },
+    };
+  }
+
+  // Not found by firebaseUid — search by email to link admin-created users
+  const existingByEmail = await findUserByEmail(firebaseUser.email);
+  if (existingByEmail) {
+    try {
+      await update(ref(db, tenantPath(`users/${existingByEmail.id}`)), {
+        firebaseUid: firebaseUser.uid,
+        name: existingByEmail.name || firebaseUser.displayName,
+      });
+    } catch (err) {
+      console.warn('authService.ensureFirebaseUser: error al vincular firebaseUid:', err);
+    }
+    const membership = await getUserActiveMembership(existingByEmail.id);
+    if (!membership) {
+      return { success: false, error: 'Usuario sin asignación a una sucursal' };
+    }
+    const roles = await getRoles();
+    const roleDef = roles[membership.roleId] || getDefaultRoles()[membership.roleId];
+    return {
+      success: true,
+      user: {
+        id: existingByEmail.id,
+        email: existingByEmail.email,
+        name: existingByEmail.name,
         role: membership.roleId,
         permissions: roleDef?.permissions || {},
         membershipId: membership.id,
@@ -242,13 +286,14 @@ export function subscribeUsers(callback) {
   });
 }
 
-export async function createUser({ email, name, role, pin, branchIds }) {
+export async function createUser({ email, name, role, pin, branchIds, actor }) {
   try {
     const usersRef = tenantRef('users');
     const newRef = push(usersRef);
     const pinHash = await hashPin(pin);
-    await set(newRef, { email, name, pinHash, role, active: true, createdAt: nowISO() });
+    await set(newRef, { email, name, pinHash, role, active: true, firebaseUid: null, createdAt: nowISO() });
     await createMembership(newRef.key, role, branchIds);
+    auditLog('user.created', { userId: newRef.key, email, name, role, branchIds }, actor || 'system');
     return { success: true, userId: newRef.key };
   } catch (err) {
     console.error('authService.createUser error:', err);
@@ -268,7 +313,7 @@ async function createMembership(userId, role, branchIds = { hq: true }) {
   }
 }
 
-export async function updateUser(userId, data) {
+export async function updateUser(userId, data, actor) {
   try {
     const updates = { ...data };
     if (updates.pin) {
@@ -290,6 +335,7 @@ export async function updateUser(userId, data) {
       }
     }
 
+    auditLog('user.updated', { userId, ...updates }, actor || 'system');
     return { success: true };
   } catch (err) {
     console.error('authService.updateUser error:', err);
@@ -297,7 +343,7 @@ export async function updateUser(userId, data) {
   }
 }
 
-export async function deleteUser(userId) {
+export async function deleteUser(userId, actor) {
   try {
     await remove(ref(db, tenantPath(`users/${userId}`)));
     const membershipsRef = tenantRef('memberships');
@@ -310,6 +356,7 @@ export async function deleteUser(userId) {
         }
       }
     }
+    auditLog('user.deleted', { userId }, actor || 'system');
     return { success: true };
   } catch (err) {
     console.error('authService.deleteUser error:', err);
@@ -343,6 +390,21 @@ export async function getRoles() {
   } catch (err) {
     console.warn('authService.getRoles error:', err);
     return getDefaultRoles();
+  }
+}
+
+export async function saveRole(roleKey, data) {
+  try {
+    const roleRef = ref(db, tenantPath(`roles/${roleKey}`));
+    await set(roleRef, {
+      name: data.name || roleKey,
+      key: roleKey,
+      permissions: data.permissions || {},
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('authService.saveRole error:', err);
+    return { success: false };
   }
 }
 

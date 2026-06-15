@@ -1,28 +1,89 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, ImageIcon, Loader2 } from 'lucide-react';
 import { normalizeFirebaseData } from '../../../lib/normalizeFirebaseData';
+import { storageService } from '../../../lib/storageService';
 import EmojiPicker from '../EmojiPicker';
+import { useBranch } from '../../../context/BranchContext';
 
 let idCounter = 0;
 const uid = (prefix) => `${prefix}_${Date.now()}_${++idCounter}`;
 
 function OptionRow({ opt, onChange, onRemove }) {
   const [showEmoji, setShowEmoji] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const { activeBranchId } = useBranch();
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeBranchId) return;
+    setUploading(true);
+    try {
+      const result = await storageService.uploadOptionImage(activeBranchId, opt.id, file);
+      onChange({ ...opt, image: result.url, imagePath: result.path });
+    } catch (err) {
+      console.error('Error uploading option image:', err);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveImage = () => {
+    if (opt.imagePath) {
+      storageService.deleteImage(opt.imagePath).catch(() => {});
+    }
+    onChange({ ...opt, image: null, imagePath: null });
+  };
 
   return (
     <div className="flex items-center gap-2 bg-cm-bg/50 rounded-lg p-2 border border-cm-border group hover:border-cm-border transition-colors">
       <GripVertical className="w-3 h-3 text-cm-muted shrink-0" />
 
-      <div className="relative">
-        <button
-          onClick={() => setShowEmoji(!showEmoji)}
-          className="w-7 h-7 rounded-lg bg-white border border-cm-border text-center text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all shrink-0 flex items-center justify-center"
-          title="Cambiar icono"
-        >
-          {opt.icon || '📍'}
-        </button>
+      {/* Image preview OR icon picker */}
+      <div className="relative shrink-0">
+        {opt.image ? (
+          <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-cm-border group/image">
+            <img src={opt.image} alt="" className="w-full h-full object-cover" />
+            <button
+              onClick={handleRemoveImage}
+              className="absolute inset-0 bg-black/50 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center"
+              title="Quitar imagen"
+            >
+              <X className="w-3.5 h-3.5 text-white" />
+            </button>
+          </div>
+        ) : uploading ? (
+          <div className="w-9 h-9 rounded-lg bg-cm-bg-alt border border-cm-border flex items-center justify-center">
+            <Loader2 className="w-4 h-4 text-cm-accent animate-spin" />
+          </div>
+        ) : (
+          <div className="flex gap-1">
+            <button
+              onClick={() => setShowEmoji(!showEmoji)}
+              className="w-7 h-7 rounded-lg bg-white border border-cm-border text-center text-sm hover:border-indigo-300 hover:bg-indigo-50 transition-all flex items-center justify-center"
+              title="Cambiar icono"
+            >
+              {opt.icon || '📍'}
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-7 h-7 rounded-lg bg-white border border-cm-border hover:border-emerald-300 hover:bg-emerald-50 transition-all flex items-center justify-center text-cm-muted hover:text-emerald-600"
+              title="Subir imagen"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         <EmojiPicker open={showEmoji} onSelect={(emoji) => { onChange({ ...opt, icon: emoji }); setShowEmoji(false); }} onClose={() => setShowEmoji(false)} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
       </div>
 
       <input

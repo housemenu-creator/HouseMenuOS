@@ -1,9 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { verifyPin, createSession, deleteSession, ensureFirebaseUser } from '../lib/authService';
 import { signInWithGoogle, signOut as fbSignOut, onAuthChange } from '../lib/firebaseAuth';
 import { hasPermission as checkPermission } from '../lib/permissions';
 
-const AuthContext = createContext(null);
+/** @typedef {{ id: string; email: string; name: string; role: string }} SessionUser */
+/** @typedef {{ user: SessionUser | null; session: Record<string, unknown> | null; isAuthenticated: boolean; isLoading: boolean; firebaseReady: boolean; error: unknown; login: (email: string, pin: string) => Promise<{success: boolean; error?: string}>; loginWithGoogle: () => Promise<{success: boolean; error?: string}>; logout: () => Promise<void>; can: (perm: string) => boolean; hasBranchAccess: (branchId: string) => boolean; clearError: () => void }} AuthContextValue */
+
+const AuthContext = createContext(/** @type {AuthContextValue | null} */ (null));
 
 const SESSION_KEY = 'house_session';
 
@@ -38,6 +41,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [firebaseReady, setFirebaseReady] = useState(false);
+  const googleLoginInProgress = React.useRef(false);
 
   const isAuthenticated = !!session;
 
@@ -45,10 +49,16 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       setFirebaseReady(true);
       if (firebaseUser) {
+        // Anonymous users (customer flow) don't need RTDB access
+        if (firebaseUser.isAnonymous) return;
+
         const existingSession = loadSession();
         if (existingSession && existingSession.firebaseUid === firebaseUser.uid) {
           return;
         }
+        // Si hay un loginWithGoogle en curso, ese se encarga de ensureFirebaseUser
+        if (googleLoginInProgress.current) return;
+
         const result = await ensureFirebaseUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
@@ -100,6 +110,7 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    googleLoginInProgress.current = true;
     try {
       const result = await signInWithGoogle();
       if (!result.success) {
@@ -125,6 +136,7 @@ export function AuthProvider({ children }) {
       return { success: false };
     } finally {
       setIsLoading(false);
+      googleLoginInProgress.current = false;
     }
   }, []);
 
@@ -140,13 +152,12 @@ export function AuthProvider({ children }) {
 
   const can = useCallback((permission) => {
     if (!session?.permissions) return false;
-    if (session.role === 'admin') return true;
     return checkPermission(session.permissions, permission);
   }, [session]);
 
   const hasBranchAccess = useCallback((branchId) => {
     if (!session?.branchIds) return false;
-    return session.role === 'admin' || session.branchIds[branchId];
+    return session.branchIds[branchId] || session.branchIds['*'];
   }, [session]);
 
   const clearError = useCallback(() => setError(null), []);

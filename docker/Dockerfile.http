@@ -1,0 +1,47 @@
+# ── HTTP Server — multi-stage build ──
+# Serves: QR Menu, KDS, Webhooks, Monitor, Health API
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache python3 make g++
+
+# 1. Dependencies (lockfile for reproducible installs)
+COPY package.json package-lock.json ./
+COPY apps/housepysbot/package.json ./apps/housepysbot/
+# Workspace packages
+COPY packages/tokens/package.json ./packages/tokens/
+COPY packages/db/package.json ./packages/db/
+COPY packages/store/package.json ./packages/store/
+COPY packages/ui/package.json ./packages/ui/
+
+# --ignore-scripts: no postinstall / native compilation
+# --omit=optional: skip platform-specific deps (@rolldown/binding-win32-x64-msvc is optionalDependencies)
+RUN npm ci --ignore-scripts --omit=optional
+
+# 2. Source code
+COPY tsconfig.base.json ./
+COPY apps/housepysbot/ ./apps/housepysbot/
+COPY packages/ ./packages/
+
+# 3. Build housepysbot — tsc errors MUST fail the build
+WORKDIR /app/apps/housepysbot
+RUN npx tsc -p tsconfig.json
+
+# ── Runtime ────────────────────────────────────────────
+FROM node:22-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+ENV HTTP_PORT=3000
+
+# Copy node_modules (all workspace packages needed for @house/* resolution)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+# Copy built output + source (tsx as runtime for simplicity with ESM)
+COPY --from=builder /app/apps/housepysbot ./apps/housepysbot
+COPY --from=builder /app/tsconfig.base.json ./
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${HTTP_PORT}/health || exit 1
+
+EXPOSE ${HTTP_PORT}
+CMD ["node", "apps/housepysbot/dist/entry/http.js"]

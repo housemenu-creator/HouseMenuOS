@@ -1,0 +1,23 @@
+{
+  "name": "piramid-game",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config frontend/vite.config.ts",
+    "build": "cd frontend && vite build",
+    "preview": "vite preview --config frontend/vite.config.ts"
+  },
+  "dependencies": {
+    "@house/store": "*",
+    "@house/ui": "*",
+    "framer-motion": "^12.26.2",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwind-merge": "^2.6.1"
+  },
+  "devDependencies": {
+    "vite": "^8.0.12"
+  }
+}

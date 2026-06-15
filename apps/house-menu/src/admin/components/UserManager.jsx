@@ -1,16 +1,41 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Pencil, Trash2, X, Check, AlertCircle, Users, Mail, Key, Shield, Loader2 } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, X, Check, AlertCircle, Users, Mail, Key, Shield, Loader2, Store } from 'lucide-react';
 import { subscribeUsers, createUser, updateUser, deleteUser, subscribeRoles } from '../../lib/authService';
 import { PERMISSIONS } from '../../lib/permissions';
 import { useAuth } from '../../context/AuthContext';
+import { ref, onValue } from 'firebase/database';
+import { realtimeDB as db } from '@house/db';
+import { branchesConfigPath } from '../../lib/paths';
 
 function UserFormModal({ user, roles, onSave, onClose }) {
   const [email, setEmail] = useState(user?.email || '');
   const [name, setName] = useState(user?.name || '');
   const [role, setRole] = useState(user?.role || 'kitchen');
   const [pin, setPin] = useState('');
+  const [branchIds, setBranchIds] = useState(user?.branchIds || { hq: true });
+  const [branches, setBranches] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Fetch available branches
+  useEffect(() => {
+    const unsub = onValue(ref(db, branchesConfigPath()), (snap) => {
+      const data = snap.val();
+      if (data) {
+        setBranches(Object.entries(data).map(([id, b]) => ({ id, name: b.name || id })));
+      }
+    });
+    return unsub;
+  }, []);
+
+  const toggleBranch = (branchId) => {
+    setBranchIds(prev => {
+      const next = { ...prev };
+      if (next[branchId]) delete next[branchId];
+      else next[branchId] = true;
+      return Object.keys(next).length === 0 ? { [branchId]: true } : next; // keep at least one
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,8 +46,8 @@ function UserFormModal({ user, roles, onSave, onClose }) {
     setSaving(true);
     setError(null);
     const data = user
-      ? { email, name, role, ...(pin ? { pin } : {}) }
-      : { email, name, role, pin };
+      ? { email, name, role, branchIds, ...(pin ? { pin } : {}) }
+      : { email, name, role, pin, branchIds };
     const result = user
       ? await updateUser(user.id, data)
       : await createUser(data);
@@ -82,6 +107,34 @@ function UserFormModal({ user, roles, onSave, onClose }) {
                   <option key={key} value={key}>{r.name}</option>
                 ))}
               </select>
+            )}
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-cm-text-secondary uppercase tracking-wider block mb-2">Acceso a Sucursales</label>
+            {branches.length === 0 ? (
+              <div className="flex items-center gap-2 bg-cm-bg-alt border border-cm-border rounded-lg px-3 py-2.5 text-sm text-cm-text-tertiary">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Cargando sucursales...
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {branches.map(b => {
+                  const selected = !!branchIds[b.id];
+                  return (
+                    <button key={b.id} type="button" onClick={() => toggleBranch(b.id)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                        selected
+                          ? 'bg-cm-accent/10 border-cm-accent text-cm-accent'
+                          : 'bg-cm-bg-alt border-cm-border text-cm-text-secondary hover:border-cm-accent/50'
+                      }`}>
+                      <Store className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{b.name}</span>
+                      {selected && <Check className="w-3.5 h-3.5 ml-auto shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 

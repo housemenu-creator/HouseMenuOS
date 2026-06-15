@@ -1,8 +1,9 @@
 import React, { memo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useBranch } from '../context/BranchContext';
+import BranchSwitcher from './BranchSwitcher';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo.jpg';
 import {
   UtensilsCrossed,
   ChefHat,
@@ -16,12 +17,15 @@ import {
   ClipboardList,
   LogOut,
   User,
+  Bike,
+  LayoutDashboard,
+  Monitor,
 } from 'lucide-react';
 
 const SECTIONS = [
   {
     id: 'customer',
-    path: '/',
+    path: '/carta',
     label: 'Carta & Pedidos',
     sublabel: 'Menú Digital',
     icon: UtensilsCrossed,
@@ -32,7 +36,7 @@ const SECTIONS = [
   },
   {
     id: 'cocina',
-    path: '/cocina',
+    path: '/staff/cocina',
     label: 'Cocina KDS',
     sublabel: 'Módulo de Cocina',
     icon: ChefHat,
@@ -43,7 +47,7 @@ const SECTIONS = [
   },
   {
     id: 'despacho',
-    path: '/despacho',
+    path: '/staff/despacho',
     label: 'Despacho',
     sublabel: 'Panel de Reparto',
     icon: Truck,
@@ -65,7 +69,7 @@ const SECTIONS = [
   },
   {
     id: 'mozo',
-    path: '/mozo',
+    path: '/staff/mozo',
     label: 'Mozo',
     sublabel: 'Toma de Pedidos',
     icon: ClipboardList,
@@ -73,6 +77,28 @@ const SECTIONS = [
     bg: 'bg-teal-500/10',
     activeBg: 'bg-teal-500',
     hint: 'PIN: 0000',
+  },
+  {
+    id: 'delivery',
+    path: '/staff/delivery',
+    label: 'Delivery',
+    sublabel: 'Portal de Reparto',
+    icon: Bike,
+    color: 'text-cyan-500',
+    bg: 'bg-cyan-500/10',
+    activeBg: 'bg-cyan-500',
+    hint: 'PIN: 1111',
+  },
+  {
+    id: 'staff',
+    path: '/staff',
+    label: 'Staff Hub',
+    sublabel: 'Dashboard General',
+    icon: LayoutDashboard,
+    color: 'text-amber-500',
+    bg: 'bg-amber-500/10',
+    activeBg: 'bg-amber-500',
+    hint: null,
   },
   {
     id: 'admin',
@@ -85,24 +111,38 @@ const SECTIONS = [
     activeBg: 'bg-purple-600',
     hint: 'PIN: admin',
   },
+  {
+    id: 'monitor',
+    path: null,
+    url: '/empleados',
+    label: 'Monitor',
+    sublabel: 'Dashboard Técnico',
+    icon: Monitor,
+    color: 'text-sky-600',
+    bg: 'bg-sky-500/10',
+    activeBg: 'bg-sky-600',
+    hint: null,
+  },
 ];
 
 function HouseMenuNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { branches, activeBranchId, setActiveBranchId } = useBranch();
-
   const { user, logout } = useAuth();
 
-  const currentSection = SECTIONS.find(s =>
-    s.path === '/'
-      ? location.pathname === '/'
-      : location.pathname.startsWith(s.path)
-  ) || SECTIONS[0];
+  const currentSection = SECTIONS.find(s => {
+    if (!s.path) return false;
+    if (s.path === '/') return location.pathname === '/';
+    return location.pathname === s.path || location.pathname.startsWith(s.path + '/');
+  }) || SECTIONS[0];
 
-  const handleNav = (path) => {
-    navigate(path);
+  const handleNav = (section) => {
+    if (section.url) {
+      window.open(section.url, '_blank', 'noopener,noreferrer');
+    } else if (section.path) {
+      navigate(section.path);
+    }
     setMobileOpen(false);
   };
 
@@ -113,28 +153,14 @@ function HouseMenuNav() {
         {/* Brand */}
         <div className="p-6 border-b border-cm-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-cm-accent flex items-center justify-center font-black text-white text-lg rounded-none border border-cm-border shadow-cm-md">
-              H
-            </div>
+            <img src={logo} alt="House Logo" className="w-10 h-10 rounded-xl object-cover border border-cm-border shadow-cm-md" />
             <div>
               <p className="font-black text-cm-text text-base leading-tight">HOUSE</p>
               <p className="text-[0.6rem] font-bold text-cm-muted tracking-widest uppercase">Menu System</p>
             </div>
           </div>
           
-          {/* Branch Selector */}
-          <div className="mt-4">
-            <label className="text-[0.6rem] font-bold text-cm-muted uppercase tracking-widest mb-1 block">Sucursal Activa</label>
-            <select 
-              value={activeBranchId}
-              onChange={(e) => setActiveBranchId(e.target.value)}
-              className="w-full bg-cm-bg border-2 border-cm-border rounded-lg p-2 text-sm font-bold text-cm-text focus:outline-none focus:border-cm-accent transition-colors cursor-pointer"
-            >
-              {branches.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
+          <BranchSwitcher variant="select" showLabel className="mt-4" />
         </div>
 
         {/* Nav label */}
@@ -153,7 +179,7 @@ function HouseMenuNav() {
             return (
               <button
                 key={section.id}
-                onClick={() => handleNav(section.path)}
+                onClick={() => handleNav(section)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all group border-2 ${
                   isActive
                     ? `${section.activeBg} text-white border-cm-border shadow-cm-md`
@@ -218,9 +244,7 @@ function HouseMenuNav() {
       {/* ── Mobile Hamburger ────────────────────────────── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-cm-border flex items-center justify-between px-4 py-3 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-cm-accent flex items-center justify-center font-black text-white border border-cm-border shadow-cm-md">
-            H
-          </div>
+          <img src={logo} alt="House Logo" className="w-8 h-8 rounded-lg object-cover border border-cm-border shadow-cm-md" />
           <span className="font-black text-cm-text text-sm">{currentSection.label}</span>
         </div>
         <button
@@ -247,7 +271,7 @@ function HouseMenuNav() {
             >
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-cm-accent flex items-center justify-center font-black text-white border-2 border-cm-border">H</div>
+                  <img src={logo} alt="House Logo" className="w-8 h-8 rounded-lg object-cover border border-cm-border shadow-cm-md" />
                   <span className="font-black text-cm-text">House Menu</span>
                 </div>
                 <button onClick={() => setMobileOpen(false)} className="p-1.5 border-2 border-cm-border rounded-lg text-cm-muted">
@@ -255,19 +279,7 @@ function HouseMenuNav() {
                 </button>
               </div>
 
-              {/* Mobile Branch Selector */}
-              <div className="mb-6 px-1">
-                <label className="text-[0.6rem] font-bold text-cm-muted uppercase tracking-widest mb-1 block">Sucursal Activa</label>
-                <select 
-                  value={activeBranchId}
-                  onChange={(e) => setActiveBranchId(e.target.value)}
-                  className="w-full bg-cm-bg border-2 border-cm-border rounded-lg p-2 text-sm font-bold text-cm-text focus:outline-none focus:border-cm-accent transition-colors cursor-pointer"
-                >
-                  {branches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
+              <BranchSwitcher variant="select" showLabel className="mb-6 px-1" />
 
               <nav className="space-y-2">
                 {SECTIONS.map((section) => {
@@ -276,7 +288,7 @@ function HouseMenuNav() {
                   return (
                     <button
                       key={section.id}
-                      onClick={() => handleNav(section.path)}
+                      onClick={() => handleNav(section)}
                       className={`w-full flex items-center gap-3 p-3 rounded-xl text-left border-2 transition-all ${
                         isActive
                           ? `${section.activeBg} text-white border-cm-border shadow-cm-md`

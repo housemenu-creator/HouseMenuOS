@@ -40,7 +40,8 @@ export function useVoiceCommands(onCommand) {
       }
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      console.warn('[VoiceCommands] Error:', event.error, event.message);
       setIsListening(false);
     };
 

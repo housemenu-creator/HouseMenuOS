@@ -1,40 +1,59 @@
 import React from 'react';
 
 export default function ProductSkeleton() {
-  const skeletonItems = Array.from({ length: 3 });
+  const skeletonItems = Array.from({ length: 4 });
 
   return (
-    <div className="space-y-4 animate-pulse">
-      {skeletonItems.map((_, index) => (
-        <div 
-          key={index}
-          className="bg-cm-surface rounded-xl border border-cm-border p-6 flex justify-between items-center border-l-4 border-cm-border relative select-none"
-        >
-          {/* Left Info Area */}
-          <div className="flex-1 flex gap-4 items-center min-w-0 pr-4">
-            {/* Image Placeholder */}
-            <div className="w-20 h-20 bg-cm-muted/10 rounded-xl shrink-0" />
-            
-            {/* Text details */}
-            <div className="flex-1 min-w-0 space-y-2">
-              {/* Category tag skeleton */}
-              <div className="h-3 bg-cm-muted/10 w-24 rounded-full" />
-              {/* Title skeleton */}
-              <div className="h-5 bg-cm-muted/20 w-3/4 rounded-full" />
-              {/* Description skeleton */}
-              <div className="h-3 bg-cm-muted/10 w-5/6 rounded-full" />
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Simulate category header skeleton */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="h-px flex-1 bg-gradient-to-r from-cm-border to-transparent" />
+        <div className="h-6 bg-cm-accent/10 w-28 rounded-full animate-pulse" />
+        <div className="h-px flex-1 bg-gradient-to-l from-cm-border to-transparent" />
+      </div>
 
-          {/* Right Price/Action Area */}
-          <div className="flex flex-col items-end gap-2 shrink-0 space-y-2">
-            {/* Price badge skeleton */}
-            <div className="h-5 bg-cm-muted/20 w-16 rounded-full" />
-            {/* Action button skeleton */}
-            <div className="w-8 h-8 bg-cm-muted/10 rounded-full mt-2" />
-          </div>
-        </div>
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {skeletonItems.map((_, index) => {
+          const isFeatured = index === 0;
+          return (
+            <div
+              key={index}
+              className={`bg-cm-surface/65 backdrop-blur-md rounded-2xl border border-cm-border/75 p-5 animate-pulse select-none border-l-4 border-l-cm-accent/20 ${
+                isFeatured
+                  ? 'sm:col-span-2 flex flex-col sm:flex-row gap-5 items-start sm:items-center'
+                  : 'flex justify-between items-center gap-4'
+              }`}
+            >
+              {/* Left: Image + Text */}
+              <div className={`flex gap-4 min-w-0 ${isFeatured ? 'w-full flex-col sm:flex-row' : 'flex-1 items-center pr-2'}`}>
+                {/* Image Placeholder */}
+                <div className={`bg-cm-border/20 rounded-xl shrink-0 ${isFeatured ? 'w-full sm:w-36 h-48 sm:h-32' : 'w-20 h-20'}`} />
+
+                {/* Text details */}
+                <div className="flex-1 min-w-0 space-y-2.5">
+                  {/* Category tag */}
+                  <div className="h-3 bg-cm-border/15 w-24 rounded-full" />
+                  {/* Title */}
+                  <div className={`bg-cm-border/25 rounded-full ${isFeatured ? 'h-6 w-3/4' : 'h-5 w-3/4'}`} />
+                  {/* Description */}
+                  <div className="h-3 bg-cm-border/15 w-5/6 rounded-full" />
+                  {/* Badges row */}
+                  <div className="flex gap-1.5 pt-1">
+                    <div className="h-4 bg-cm-border/10 w-14 rounded-full" />
+                    <div className="h-4 bg-cm-border/10 w-16 rounded-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Price + CTA */}
+              <div className={`flex items-end gap-3 shrink-0 ${isFeatured ? 'flex-row sm:flex-col w-full sm:w-auto justify-between sm:justify-end mt-3 sm:mt-0 border-t sm:border-t-0 border-cm-border/30 pt-3 sm:pt-0' : 'flex-col justify-between h-full py-1'}`}>
+                <div className="h-5 bg-cm-border/25 w-16 rounded-full" />
+                <div className="h-7 bg-cm-accent/10 w-16 rounded-full mt-1" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
