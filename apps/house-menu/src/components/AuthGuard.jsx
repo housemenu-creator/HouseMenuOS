@@ -1,4 +1,4 @@
-import { ROLE_REGISTRY } from '../lib/roleRegistry';
+import { ROLE_REGISTRY, getDefaultUsers } from '../lib/roleRegistry';
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from './LoginScreen';
 
@@ -29,6 +29,7 @@ export default function AuthGuard({ children, allowedRoles, roleConfig }) {
           error={error}
           onClearError={clearError}
           firebaseReady={firebaseReady}
+          devUsers={getDefaultUsers()}
         />
       </div>
     );
