@@ -17,7 +17,7 @@ export default function CajaTab({ cashSessions, allOrders, activeBranchId, user 
   const sessionOrders = useMemo(() => {
     if (!activeSession) return [];
     return allOrders.filter(o => {
-      const createdAt = new Date(o.createdAt).getTime();
+      const createdAt = o.createdAt ? new Date(o.createdAt).getTime() : 0;
       return createdAt >= activeSession.openedAt;
     });
   }, [allOrders, activeSession]);

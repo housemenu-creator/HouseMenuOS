@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useBranch } from '../context/BranchContext';
 import { ordersService } from '../lib/ordersService';
 import { cashService } from '../lib/cashService';
+import { useFCM } from '../hooks/useFCM';
+import NotificationBell from '../components/NotificationBell';
 import CajaTab from '../admin/tabs/CajaTab';
 import { Loader2, DollarSign } from 'lucide-react';
 
@@ -12,6 +14,9 @@ export default function CajeroView() {
   const [allOrders, setAllOrders] = useState([]);
   const [cashSessions, setCashSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // FCM + notificaciones en tiempo real
+  useFCM({ branchId: activeBranchId, userId: user?.email });
 
   useEffect(() => {
     if (!activeBranchId) return;
@@ -42,10 +47,13 @@ export default function CajeroView() {
             </h1>
             <p className="text-xs text-cm-muted font-semibold mt-0.5">{user?.name || 'Cajero'}</p>
           </div>
-          <button onClick={logout}
-            className="px-3 py-1.5 text-xs font-bold text-cm-error border border-cm-error/30 rounded-lg hover:bg-cm-error/10 transition-colors">
-            Cerrar sesión
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationBell branchId={activeBranchId} userId={user?.email} />
+            <button onClick={logout}
+              className="px-3 py-1.5 text-xs font-bold text-cm-error border border-cm-error/30 rounded-lg hover:bg-cm-error/10 transition-colors">
+              Cerrar sesión
+            </button>
+          </div>
         </div>
 
         <CajaTab
