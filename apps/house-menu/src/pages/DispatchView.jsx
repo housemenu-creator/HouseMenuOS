@@ -44,6 +44,7 @@ export default function DispatchView() {
   const isLoadingSessions = !user;
   const [showLocalOrders, setShowLocalOrders] = useState(true);
   const [showMap, setShowMap] = useState(true);
+  const [focusedDriverId, setFocusedDriverId] = useState(null);
 
   // Sound notification when new orders arrive
   const prevListosCount = useRef(0);
@@ -114,7 +115,8 @@ export default function DispatchView() {
     }
   };
 
-  const currentOrders = activeTab === 'listos' ? filteredListos : filteredEnCamino;
+  const currentOrders = (activeTab === 'listos' ? filteredListos : filteredEnCamino)
+    .filter((o) => !focusedDriverId || o.driverId === focusedDriverId);
   const availableDrivers = drivers.filter((d) => d.available !== false).length;
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   useEffect(() => {
@@ -194,6 +196,22 @@ export default function DispatchView() {
         </div>
       </header>
 
+      {/* ── Driver focus indicator ── */}
+      {focusedDriverId && (
+        <div className="shrink-0 bg-cm-info/10 border-b border-cm-info/20 px-4 py-2 flex items-center justify-between">
+          <p className="text-xs font-bold text-cm-info flex items-center gap-1.5">
+            <Map className="w-3.5 h-3.5" />
+            Mostrando pedidos de: {drivers.find((d) => d.id === focusedDriverId)?.name || focusedDriverId}
+          </p>
+          <button
+            onClick={() => setFocusedDriverId(null)}
+            className="text-[10px] font-black text-cm-info/60 hover:text-cm-info uppercase tracking-wider"
+          >
+            Limpiar filtro
+          </button>
+        </div>
+      )}
+
       {/* ── Live Map toggle ── */}
       <div className="shrink-0 bg-cm-surface border-b border-cm-border">
         <button
@@ -220,7 +238,7 @@ export default function DispatchView() {
               transition={{ duration: 0.25 }}
               className="overflow-hidden"
             >
-              <LiveDriverMap drivers={drivers} enCaminoOrders={enCamino} className="w-full h-[280px] rounded-none border-0 border-t border-cm-border" />
+              <LiveDriverMap drivers={drivers} enCaminoOrders={enCamino} focusedDriverId={focusedDriverId} onFocusDriver={setFocusedDriverId} className="w-full h-[280px] rounded-none border-0 border-t border-cm-border" />
             </motion.div>
           )}
         </AnimatePresence>

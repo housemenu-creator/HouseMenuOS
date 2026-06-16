@@ -68,7 +68,7 @@ function useDriverOrders(activeDrivers, enCaminoOrders) {
 }
 
 /* ── Map Panel ──────────────────────────────────────────────── */
-export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], className = '' }) {
+export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], focusedDriverId = null, onFocusDriver = () => {}, className = '' }) {
   const activeDrivers = useMemo(
     () => drivers.filter((d) => d.active !== false && d.lastPosition?.lat && d.lastPosition?.lng),
     [drivers],
@@ -96,7 +96,8 @@ export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], class
             <Marker
               key={driver.id}
               position={[driver.lastPosition.lat, driver.lastPosition.lng]}
-              icon={driverIcon(driver.available !== false, false)}
+              icon={driverIcon(driver.available !== false, driver.id === focusedDriverId)}
+              eventHandlers={{ click: () => onFocusDriver(driver.id === focusedDriverId ? null : driver.id) }}
             >
               <Popup>
                 <div className="text-sm space-y-1.5 min-w-[160px]">
