@@ -318,6 +318,9 @@ describe('cashService', () => {
 describe('notificationService', () => {
   const B = 'branch-a';
   const UID = 'user@test.com';
+  // notificationService encodea userId para Firebase RTDB (reemplaza . por ,)
+  const enc = (s) => s.replace(/\./g, ',').replace(/#/g, '_').replace(/[$\[\]]/g, '_');
+  const KEY = enc(UID);
 
   it('creates a notification', async () => {
     const ns = await import('../../lib/notificationService.js');
@@ -326,7 +329,7 @@ describe('notificationService', () => {
       title: 'Nuevo pedido', body: 'Pedido #123', orderId: 'o1', url: '/staff/cocina',
     });
     expect(notifId).toBeDefined();
-    const saved = store.get(`branches/${B}/notifications/${UID}/${notifId}`);
+    const saved = store.get(`branches/${B}/notifications/${KEY}/${notifId}`);
     expect(saved.type).toBe('order_new');
     expect(saved.title).toBe('Nuevo pedido');
     expect(saved.body).toBe('Pedido #123');
@@ -349,15 +352,15 @@ describe('notificationService', () => {
       branchId: B, userIds: [UID, 'user2@t.com'], type: 'order_delivered',
       title: 'Entregado', body: 'Pedido listo',
     });
-    const u1 = store.get(`branches/${B}/notifications/${UID}`);
-    const u2 = store.get(`branches/${B}/notifications/user2@t.com`);
+    const u1 = store.get(`branches/${B}/notifications/${KEY}`);
+    const u2 = store.get(`branches/${B}/notifications/${enc('user2@t.com')}`);
     expect(Object.keys(u1 || {})).toHaveLength(1);
     expect(Object.keys(u2 || {})).toHaveLength(1);
   });
 
   it('subscribes to notifications and returns latest', async () => {
-    store.set(`branches/${B}/notifications/${UID}/n1`, { type: 'system', title: 'A', read: false, _createdAt_client: 1000 });
-    store.set(`branches/${B}/notifications/${UID}/n2`, { type: 'system', title: 'B', read: false, _createdAt_client: 2000 });
+    store.set(`branches/${B}/notifications/${KEY}/n1`, { type: 'system', title: 'A', read: false, _createdAt_client: 1000 });
+    store.set(`branches/${B}/notifications/${KEY}/n2`, { type: 'system', title: 'B', read: false, _createdAt_client: 2000 });
     const ns = await import('../../lib/notificationService.js');
     const list = await new Promise((resolve) => {
       ns.subscribeToNotifications(B, UID, (data) => resolve(data));
@@ -376,20 +379,20 @@ describe('notificationService', () => {
   });
 
   it('marks a notification as read', async () => {
-    store.set(`branches/${B}/notifications/${UID}/n1`, { type: 'system', title: 'A', read: false });
+    store.set(`branches/${B}/notifications/${KEY}/n1`, { type: 'system', title: 'A', read: false });
     const ns = await import('../../lib/notificationService.js');
     await ns.markAsRead(B, UID, 'n1');
-    const saved = store.get(`branches/${B}/notifications/${UID}/n1`);
+    const saved = store.get(`branches/${B}/notifications/${KEY}/n1`);
     expect(saved.read).toBe(true);
   });
 
   it('marks all notifications as read', async () => {
-    store.set(`branches/${B}/notifications/${UID}/n1`, { type: 'system', title: 'A', read: false });
-    store.set(`branches/${B}/notifications/${UID}/n2`, { type: 'system', title: 'B', read: false });
+    store.set(`branches/${B}/notifications/${KEY}/n1`, { type: 'system', title: 'A', read: false });
+    store.set(`branches/${B}/notifications/${KEY}/n2`, { type: 'system', title: 'B', read: false });
     const ns = await import('../../lib/notificationService.js');
     await ns.markAllAsRead(B, UID, ['n1', 'n2']);
-    const s1 = store.get(`branches/${B}/notifications/${UID}/n1`);
-    const s2 = store.get(`branches/${B}/notifications/${UID}/n2`);
+    const s1 = store.get(`branches/${B}/notifications/${KEY}/n1`);
+    const s2 = store.get(`branches/${B}/notifications/${KEY}/n2`);
     expect(s1.read).toBe(true);
     expect(s2.read).toBe(true);
   });

@@ -3,6 +3,14 @@ import { ref, set, onDisconnect } from 'firebase/database';
 import { app } from '@house/db';
 import { realtimeDB as db } from '@house/db';
 
+/**
+ * Firebase RTDB no permite ".", "#", "$", "[", "]" en keys de paths.
+ * Los emails contienen "." — los encodeamos a "," que sí es válido.
+ */
+function safePathKey(str) {
+  return str.replace(/\./g, ',').replace(/#/g, '_').replace(/[$\[\]]/g, '_');
+}
+
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
 
 let messaging = null;
@@ -30,7 +38,8 @@ export async function requestNotificationPermission() {
 
 export async function registerFCMToken(branchId, userId, token) {
   if (!branchId || !userId || !token) return;
-  const tokenRef = ref(db, `branches/${branchId}/fcm_tokens/${userId}`);
+  const key = safePathKey(userId);
+  const tokenRef = ref(db, `branches/${branchId}/fcm_tokens/${key}`);
   await set(tokenRef, {
     token,
     platform: 'web',
@@ -41,7 +50,8 @@ export async function registerFCMToken(branchId, userId, token) {
 
 export async function unregisterFCMToken(branchId, userId) {
   if (!branchId || !userId) return;
-  const tokenRef = ref(db, `branches/${branchId}/fcm_tokens/${userId}`);
+  const key = safePathKey(userId);
+  const tokenRef = ref(db, `branches/${branchId}/fcm_tokens/${key}`);
   await set(tokenRef, null);
 }
 

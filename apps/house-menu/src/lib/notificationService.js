@@ -9,6 +9,14 @@
 import { ref, push, set, update, query, limitToLast, onValue, serverTimestamp, orderByChild } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 
+/**
+ * Firebase RTDB no permite ".", "#", "$", "[", "]" en keys de paths.
+ * Los emails contienen "." — los encodeamos a "," que sí es válido.
+ */
+function safePathKey(str) {
+  return str.replace(/\./g, ',').replace(/#/g, '_').replace(/[$\[\]]/g, '_');
+}
+
 let notifCounter = 0;
 
 /**
@@ -18,7 +26,8 @@ let notifCounter = 0;
 export async function createNotification({ branchId, userId, type, title, body, orderId = null, url = null }) {
   if (!branchId || !userId) return null;
 
-  const notifRef = ref(db, `branches/${branchId}/notifications/${userId}`);
+  const key = safePathKey(userId);
+  const notifRef = ref(db, `branches/${branchId}/notifications/${key}`);
   const newRef = push(notifRef);
   const notifId = newRef.key;
 
@@ -56,8 +65,9 @@ export async function createNotificationForUsers({ branchId, userIds, type, titl
 export function subscribeToNotifications(branchId, userId, onData) {
   if (!branchId || !userId) return () => {};
 
+  const key = safePathKey(userId);
   const notifRef = query(
-    ref(db, `branches/${branchId}/notifications/${userId}`),
+    ref(db, `branches/${branchId}/notifications/${key}`),
     orderByChild('createdAt'),
     limitToLast(50)
   );
@@ -82,7 +92,8 @@ export function subscribeToNotifications(branchId, userId, onData) {
  */
 export async function markAsRead(branchId, userId, notifId) {
   if (!branchId || !userId || !notifId) return;
-  await update(ref(db, `branches/${branchId}/notifications/${userId}/${notifId}`), {
+  const key = safePathKey(userId);
+  await update(ref(db, `branches/${branchId}/notifications/${key}/${notifId}`), {
     read: true,
   });
 }
@@ -92,9 +103,10 @@ export async function markAsRead(branchId, userId, notifId) {
  */
 export async function markAllAsRead(branchId, userId, notifIds) {
   if (!branchId || !userId || !notifIds?.length) return;
+  const key = safePathKey(userId);
   const updates = {};
   for (const id of notifIds) {
-    updates[`branches/${branchId}/notifications/${userId}/${id}/read`] = true;
+    updates[`branches/${branchId}/notifications/${key}/${id}/read`] = true;
   }
   await update(ref(db), updates);
 }

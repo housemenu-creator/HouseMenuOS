@@ -32,6 +32,8 @@
     },
     "branches": {
       "$branchId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
         ".indexOn": ["status", "createdAt", "deliveryDate"],
         "_health": {
           ".write": "auth != null"
