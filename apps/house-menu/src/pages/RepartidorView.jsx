@@ -12,6 +12,7 @@ import DeliveryCard from '../delivery/components/DeliveryCard';
 import { playBeep } from '../lib/notificationSound';
 import { useDriverGeolocation } from '../delivery/hooks/useDriverGeolocation';
 import NotificationBell from '../components/NotificationBell';
+import { useFCM } from '../hooks/useFCM';
 
 export default function RepartidorView() {
   const { user, logout } = useAuth();
@@ -19,6 +20,7 @@ export default function RepartidorView() {
   const [filter, setFilter] = useState('activas');
 
   useOrderSync({ branchId: activeBranchId });
+  useFCM({ branchId: activeBranchId, userId: user?.email });
 
   const { driverId, driverName, loading: identityLoading } = useDriverIdentity(activeBranchId, user?.id || '');
   useDriverGeolocation(activeBranchId, driverId);

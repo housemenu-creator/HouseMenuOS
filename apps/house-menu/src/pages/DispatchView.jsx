@@ -24,6 +24,7 @@ import DispatchOrderCard from '../dispatch/components/DispatchOrderCard';
 import LiveDriverMap from '../dispatch/components/LiveDriverMap';
 import NotificationBell from '../components/NotificationBell';
 import { createNotification } from '../lib/notificationService';
+import { useFCM } from '../hooks/useFCM';
 
 export default function DispatchView() {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ export default function DispatchView() {
 
   useOrderSync({ branchId: activeBranchId });
   useDrivers(activeBranchId);
+  useFCM({ branchId: activeBranchId, userId: user?.email });
 
   const accessibleBranches = useAccessibleBranches();
   const drivers = useDeliveryStore((s) => s.drivers);

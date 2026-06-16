@@ -24,6 +24,7 @@ import { useAccessibleBranches } from '../hooks/useAccessibleBranches';
 import { playChime } from '../lib/notificationSound';
 import NotificationBell from '../components/NotificationBell';
 import { createNotification } from '../lib/notificationService';
+import { useFCM } from '../hooks/useFCM';
 const DashboardTab = lazy(() => import('../admin/tabs/DashboardTab'));
 const OrdersTab = lazy(() => import('../admin/tabs/OrdersTab'));
 const MenuTab = lazy(() => import('../admin/tabs/MenuTab'));
@@ -135,6 +136,7 @@ export default function AdminView() {
 
   const accessibleBranches = useAccessibleBranches();
   const branchAccessDenied = accessibleBranches.length > 0 && !accessibleBranches.some(b => b.id === activeBranchId);
+  useFCM({ branchId: activeBranchId, userId: user?.email });
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);

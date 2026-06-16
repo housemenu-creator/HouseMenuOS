@@ -34,24 +34,28 @@ messaging.onBackgroundMessage((payload) => {
     requireInteraction: true,
     data: { url: data.url || '/staff/cocina' },
     actions: [
-      { action: 'view',    title: 'ðŸ‘€ Ver KDS' },
-      { action: 'dismiss', title: 'Ignorar'    },
+      { action: 'view',    title: 'ðŸ‘€ Ver' },
+      { action: 'dismiss', title: 'Ignorar'  },
     ],
   });
 });
 
-// Click en la notificaciÃ³n â†’ abrir/enfocar KDS
+// Click en la notificaciÃ³n â†’ abrir/enfocar la URL correspondiente
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   if (event.action === 'dismiss') return;
 
-  const url = event.notification.data?.url || '/staff/cocina';
+  const url = event.notification.data?.url || '/menu-app/staff/despacho';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes('/staff/cocina') && 'focus' in client) {
-          return client.focus();
+      // Try to find an existing window with the app path
+      const appClient = clientList.find((c) => c.url.includes('/menu-app/'));
+      if (appClient && 'focus' in appClient) {
+        // Store the target URL for the app to navigate to
+        if ('navigate' in appClient) {
+          appClient.navigate(url);
         }
+        return appClient.focus();
       }
       return clients.openWindow(url);
     })
