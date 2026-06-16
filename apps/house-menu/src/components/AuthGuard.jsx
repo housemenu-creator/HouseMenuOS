@@ -35,7 +35,7 @@ export default function AuthGuard({ children, allowedRoles, roleConfig }) {
     );
   }
 
-  if (allowedRoles && user.role !== 'admin' && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && user.role !== 'admin' && user.role !== 'superadmin' && !allowedRoles.includes(user.role)) {
     return (
       <div className="fixed inset-0 z-50 cm-bg flex items-center justify-center p-4">
         <div className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border p-8 max-w-sm w-full text-center bg-white">

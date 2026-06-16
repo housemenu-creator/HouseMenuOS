@@ -267,7 +267,7 @@ export default function AdminView() {
     const content = (() => {
       switch (activeTab) {
         case 'dashboard':
-          return <DashboardTab kpiData={kpiData} funnelData={funnelData} kioskEnabled={kioskEnabled} toggleKiosk={toggleKiosk} allOrders={allOrders} now={now} activeBranchName={activeBranchName} />;
+          return <DashboardTab kpiData={kpiData} funnelData={funnelData} kioskEnabled={kioskEnabled} toggleKiosk={toggleKiosk} allOrders={allOrders} now={now} activeBranchName={activeBranchName} userRole={user?.role} cashSessions={cashSessions} activeBranchId={activeBranchId} user={user} />;
         case 'orders':
           return <OrdersTab allOrders={allOrders} searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} paymentFilter={paymentFilter} onPaymentFilterChange={setPaymentFilter} filteredOrders={filteredOrders} onCancelOrder={cancelOrder} exportToCSV={exportToCSV} activeBranchId={activeBranchId} activeBranchName={activeBranchName} />;
         case 'menu':

@@ -1,11 +1,30 @@
 import { useMemo } from 'react';
-import { Clock, DollarSign, TrendingUp, TrendingDown, Package, Store, Award, Sparkles, Activity, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Clock, DollarSign, TrendingUp, TrendingDown, Package, Store, Award, Sparkles, Activity, CheckCircle2, ChevronRight, AlertTriangle } from 'lucide-react';
 import KpiCard from '../components/KpiCard';
 import FunnelRow from '../components/FunnelRow';
 import StatusBadge from '../components/StatusBadge';
+import CajaTab from './CajaTab';
 
-export default function DashboardTab({ kpiData, funnelData, kioskEnabled, toggleKiosk, allOrders, now, activeBranchName }) {
+export default function DashboardTab({ kpiData, funnelData, kioskEnabled, toggleKiosk, allOrders, now, activeBranchName, userRole, cashSessions, activeBranchId, user }) {
   
+  // ── Role-specific dashboard ──────────────────────────────────
+  if (userRole === 'cajero') {
+    return (
+      <div className="space-y-4">
+        <div className="bg-cm-surface border border-cm-border rounded-2xl p-5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cm-accent/10 flex items-center justify-center text-cm-accent">
+            <DollarSign className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-black text-cm-text">Panel de Caja</h2>
+            <p className="text-xs text-cm-muted font-medium">{activeBranchName}</p>
+          </div>
+        </div>
+        <CajaTab cashSessions={cashSessions} allOrders={allOrders} activeBranchId={activeBranchId} user={user} />
+      </div>
+    );
+  }
+
   // ── 1. Agrupar Ventas por Hora (de hoy) ───────────────────────────────────────
   const hourlySales = useMemo(() => {
     const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 a 22:00

@@ -8,13 +8,15 @@ import {
 import { deliveryService } from '../../lib/deliveryService';
 import { createUser } from '../../lib/authService';
 import { useBranch } from '../../context/BranchContext';
+import { useToast } from '../../components/ToastContext';
 
 const VEHICLE_ICONS = { Moto: Bike, Auto: Car, Bicicleta: Bike, 'A Pie': Footprints };
 
 export default function DeliveryManager({ branchId }) {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('drivers');
   const [loading, setLoading] = useState({ drivers: true, zones: true, logs: true, tariff: true });
-  const [error, setError] = useState(null);
+  const [subscriptionError, setSubscriptionError] = useState(null);
   const [drivers, setDrivers] = useState([]);
   const [zones, setZones] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -23,29 +25,29 @@ export default function DeliveryManager({ branchId }) {
   const [showZoneModal, setShowZoneModal] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
   const [editingZone, setEditingZone] = useState(null);
-  const [driverForm, setDriverForm] = useState({ name: '', phone: '', vehicle: 'Moto', email: '', pin: '', createUser: false });
+  const [driverForm, setDriverForm] = useState({ name: '', phone: '', vehicle: 'Moto', email: '', pin: '', createUser: false, userId: '' });
   const [zoneForm, setZoneForm] = useState({ name: '', fee: '0', freeThreshold: '', estimatedMinutes: '15', priority: '0' });
 
   useEffect(() => {
     if (!branchId) return;
-    setError(null);
-    setLoading({ drivers: true, zones: true, logs: true });
+    setSubscriptionError(null);
+    setLoading({ drivers: true, zones: true, logs: true, tariff: true });
     const unsub1 = deliveryService.subscribeToDrivers(branchId, (data) => {
       setDrivers(data);
       setLoading(prev => ({ ...prev, drivers: false }));
-    }, (err) => { setError(err.message); setLoading(prev => ({ ...prev, drivers: false })); });
+    }, (err) => { setSubscriptionError(err.message); setLoading(prev => ({ ...prev, drivers: false, zones: false, logs: false, tariff: false })); });
     const unsub2 = deliveryService.subscribeToZones(branchId, (data) => {
       setZones(data);
       setLoading(prev => ({ ...prev, zones: false }));
-    }, (err) => { setError(err.message); setLoading(prev => ({ ...prev, zones: false })); });
+    }, (err) => { setSubscriptionError(err.message); setLoading(prev => ({ ...prev, drivers: false, zones: false, logs: false, tariff: false })); });
     const unsub3 = deliveryService.subscribeToDeliveryLogs(branchId, (data) => {
       setLogs(data);
       setLoading(prev => ({ ...prev, logs: false }));
-    }, (err) => { setError(err.message); setLoading(prev => ({ ...prev, logs: false })); });
+    }, (err) => { setSubscriptionError(err.message); setLoading(prev => ({ ...prev, drivers: false, zones: false, logs: false, tariff: false })); });
     const unsub4 = deliveryService.subscribeToTariffConfig(branchId, (data) => {
       setTariffConfig(data);
       setLoading(prev => ({ ...prev, tariff: false }));
-    });
+    }, (err) => { setSubscriptionError(err.message); setLoading(prev => ({ ...prev, drivers: false, zones: false, logs: false, tariff: false })); });
     return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
   }, [branchId]);
 
@@ -57,7 +59,7 @@ export default function DeliveryManager({ branchId }) {
   const openDriverForm = (driver = null) => {
     if (driver) {
       setEditingDriver(driver);
-      setDriverForm({ name: driver.name, phone: driver.phone, vehicle: driver.vehicle, email: driver.email || '', pin: '', createUser: false });
+      setDriverForm({ name: driver.name, phone: driver.phone, vehicle: driver.vehicle, email: driver.email || '', pin: '', createUser: false, userId: driver.userId || '' });
     } else {
       setEditingDriver(null);
       setDriverForm({ name: '', phone: '', vehicle: 'Moto', email: '', pin: '', createUser: false });
@@ -71,7 +73,9 @@ export default function DeliveryManager({ branchId }) {
     if (driverForm.email.trim()) data.email = driverForm.email.trim();
     try {
       if (editingDriver) {
-        await deliveryService.updateDriver(branchId, editingDriver.id, data);
+        const r = await deliveryService.updateDriver(branchId, editingDriver.id, data);
+        if (!r.success) { showToast('Error al actualizar repartidor', 'error'); return; }
+        showToast('Repartidor actualizado correctamente');
       } else {
         let userId = null;
         if (driverForm.createUser && driverForm.email.trim() && driverForm.pin) {
@@ -80,11 +84,12 @@ export default function DeliveryManager({ branchId }) {
         }
         data.userId = userId;
         const result = await deliveryService.createDriver(branchId, data);
-        if (!result.success) { setError('Error al crear repartidor'); return; }
+        if (!result.success) { showToast('Error al crear repartidor', 'error'); return; }
+        showToast('Repartidor creado correctamente');
       }
       setShowDriverModal(false);
     } catch (err) {
-      setError(err.message || 'Error al guardar repartidor');
+      showToast(err.message || 'Error al guardar repartidor', 'error');
     }
   };
 
@@ -120,10 +125,14 @@ export default function DeliveryManager({ branchId }) {
       const result = editingZone
         ? await deliveryService.updateZone(branchId, editingZone.id, data)
         : await deliveryService.createZone(branchId, data);
-      if (result.success) setShowZoneModal(false);
-      else setError('Error al guardar zona');
+      if (result.success) {
+        setShowZoneModal(false);
+        showToast(editingZone ? 'Zona actualizada correctamente' : 'Zona creada correctamente');
+      } else {
+        showToast('Error al guardar zona', 'error');
+      }
     } catch (err) {
-      setError(err.message || 'Error al guardar zona');
+      showToast(err.message || 'Error al guardar zona', 'error');
     }
   };
 
@@ -158,36 +167,29 @@ export default function DeliveryManager({ branchId }) {
     { key: 'metrics', label: 'Métricas', icon: TrendingUp },
   ];
 
-  if (!isReady && !error) {
-    return (
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-cm-text">Gestión de Delivery</h2>
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-cm-text">Gestión de Delivery</h2>
-        <div className="flex flex-col items-center justify-center py-16 text-cm-error">
-          <AlertTriangle className="w-12 h-12 mb-3" />
-          <p className="font-semibold">Error al cargar datos</p>
-          <p className="text-sm mt-1">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-cm-text">Gestión de Delivery</h2>
       </div>
 
+      {subscriptionError && (
+        <div className="flex items-start gap-3 bg-cm-error/5 border border-cm-error/20 rounded-xl px-4 py-3">
+          <AlertTriangle className="w-5 h-5 text-cm-error shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-cm-error">Error de conexión</p>
+            <p className="text-xs text-cm-text-secondary mt-0.5">{subscriptionError}</p>
+          </div>
+        </div>
+      )}
+
+      {!isReady && !subscriptionError && (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
+        </div>
+      )}
+
+      {(isReady || subscriptionError) && (<>
       {/* Tabs */}
       <nav className="segmented">
         {TABS.map(tab => {
@@ -246,7 +248,10 @@ export default function DeliveryManager({ branchId }) {
                           const hasActive = logs.some(l => l.driverId === d.id && l.status === 'en_camino');
                           if (hasActive && !window.confirm(`"${d.name}" tiene entregas activas. ¿Marcar disponible de todas formas?`)) return;
                         }
-                        try { await deliveryService.updateDriver(branchId, d.id, { available: !d.available }); } catch (err) { setError(err.message); }
+                        try {
+                          await deliveryService.updateDriver(branchId, d.id, { available: !d.available });
+                          showToast(`"${d.name}" marcado como ${!d.available ? 'disponible' : 'ocupado'}`);
+                        } catch { showToast('Error al cambiar estado', 'error'); }
                       }}
                         className="p-2 text-cm-text-tertiary hover:text-cm-info hover:bg-cm-info/10 rounded-lg transition-colors" title={d.available ? 'Marcar ocupado' : 'Marcar disponible'}>
                         {d.available ? <CheckCircle2 className="w-4 h-4 text-cm-success" /> : <Clock className="w-4 h-4" />}
@@ -254,7 +259,14 @@ export default function DeliveryManager({ branchId }) {
                       <button onClick={() => openDriverForm(d)} className="p-2 text-cm-text-tertiary hover:text-cm-accent hover:bg-cm-accent/10 rounded-lg transition-colors">
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      <button onClick={async () => { if (!window.confirm(`¿Eliminar repartidor "${d.name}"?`)) return; try { await deliveryService.deleteDriver(branchId, d.id); } catch (err) { setError(err.message); } }}
+                      <button onClick={async () => {
+                        if (!window.confirm(`¿Eliminar repartidor "${d.name}"?`)) return;
+                        try {
+                          const r = await deliveryService.deleteDriver(branchId, d.id);
+                          if (r.success) showToast(`"${d.name}" eliminado`);
+                          else showToast('Error al eliminar repartidor', 'error');
+                        } catch { showToast('Error al eliminar repartidor', 'error'); }
+                      }}
                         className="p-2 text-cm-text-tertiary hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -312,7 +324,14 @@ export default function DeliveryManager({ branchId }) {
                     <button onClick={() => openZoneForm(z)} className="p-2 text-cm-text-tertiary hover:text-cm-accent hover:bg-cm-accent/10 rounded-lg transition-colors">
                       <Edit3 className="w-4 h-4" />
                     </button>
-                    <button onClick={async () => { if (!window.confirm(`¿Eliminar zona "${z.name}"?`)) return; try { await deliveryService.deleteZone(branchId, z.id); } catch (err) { setError(err.message); } }}
+                    <button onClick={async () => {
+                      if (!window.confirm(`¿Eliminar zona "${z.name}"?`)) return;
+                      try {
+                        const r = await deliveryService.deleteZone(branchId, z.id);
+                        if (r.success) showToast(`Zona "${z.name}" eliminada`);
+                        else showToast('Error al eliminar zona', 'error');
+                      } catch { showToast('Error al eliminar zona', 'error'); }
+                    }}
                       className="p-2 text-cm-text-tertiary hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -488,12 +507,14 @@ export default function DeliveryManager({ branchId }) {
 
           <button onClick={async () => {
             const r = await deliveryService.updateTariffConfig(branchId, tariffConfig);
-            if (!r.success) alert('Error al guardar');
+            if (r.success) showToast('Tarifas guardadas');
+            else showToast('Error al guardar tarifas', 'error');
           }} className="px-6 py-2.5 bg-cm-accent text-white text-sm font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors">
             Guardar configuración
           </button>
         </div>
       )}
+      </>)}
 
       {/* ─── DRIVER MODAL ─────────────────────────── */}
       {showDriverModal && (

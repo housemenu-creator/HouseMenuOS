@@ -18,6 +18,7 @@ const DispatchView = lazy(() => import('./pages/DispatchView'));
 const MozoView = lazy(() => import('./pages/MozoView'));
 const RepartidorView = lazy(() => import('./pages/RepartidorView'));
 const VendedorView = lazy(() => import('./pages/VendedorView'));
+const CajeroView = lazy(() => import('./pages/CajeroView'));
 const WorkerDashboard = lazy(() => import('./worker/components/WorkerDashboard'));
 
 function SuspenseBoundary({ children, message }) {
@@ -39,7 +40,7 @@ function SuspenseBoundary({ children, message }) {
 
 function StaffGuard({ children }) {
   return (
-    <AuthGuard allowedRoles={['admin', 'kitchen', 'mozo', 'dispatch', 'delivery', 'vendedor', 'cajero']}>
+    <AuthGuard allowedRoles={['admin', 'superadmin', 'kitchen', 'mozo', 'dispatch', 'delivery', 'vendedor', 'cajero']}>
       {children}
     </AuthGuard>
   );
@@ -59,7 +60,7 @@ export default function App() {
                   <Route path="/" element={<SuspenseBoundary message="Error en la landing"><LandingView /></SuspenseBoundary>} />
                   <Route path="/carta" element={<SuspenseBoundary message="Error en la vista de cliente"><CustomerView /></SuspenseBoundary>} />
                   <Route path="/rastreo" element={<SuspenseBoundary message="Error en el rastreador de pedidos"><OrderTracker /></SuspenseBoundary>} />
-                  <Route path="/admin" element={<AuthGuard allowedRoles={['admin', 'cajero']}><SuspenseBoundary message="Error en el panel de administración"><AdminView /></SuspenseBoundary></AuthGuard>} />
+                  <Route path="/admin" element={<AuthGuard allowedRoles={['admin', 'superadmin', 'cajero']}><SuspenseBoundary message="Error en el panel de administración"><AdminView /></SuspenseBoundary></AuthGuard>} />
                 </Route>
 
                 {/* ── Zona Staff (sin sidebar, con WorkerShell) ── */}
@@ -70,6 +71,7 @@ export default function App() {
                   <Route path="despacho" element={<SuspenseBoundary message="Error en el despacho"><DispatchView /></SuspenseBoundary>} />
                   <Route path="delivery" element={<SuspenseBoundary message="Error en el portal de reparto"><RepartidorView /></SuspenseBoundary>} />
                   <Route path="vendedor" element={<SuspenseBoundary message="Error en el módulo de ventas"><VendedorView /></SuspenseBoundary>} />
+                  <Route path="caja" element={<SuspenseBoundary message="Error en el módulo de caja"><CajeroView /></SuspenseBoundary>} />
                 </Route>
 
                 {/* ── Redirects viejas → nuevas ──────── */}
@@ -78,6 +80,7 @@ export default function App() {
                 <Route path="/mozo" element={<Navigate to="/staff/mozo" replace />} />
                 <Route path="/delivery" element={<Navigate to="/staff/delivery" replace />} />
                 <Route path="/vendedor" element={<Navigate to="/staff/vendedor" replace />} />
+                <Route path="/caja" element={<Navigate to="/staff/caja" replace />} />
                 <Route path="/trabajador" element={<Navigate to="/staff" replace />} />
               </Routes>
               </MarketingProvider>

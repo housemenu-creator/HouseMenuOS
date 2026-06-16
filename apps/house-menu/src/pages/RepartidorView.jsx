@@ -34,6 +34,17 @@ export default function RepartidorView() {
     [filteredDeliveries]
   );
 
+  // ─── Auto-availability: set available on mount ──────────
+  const autoSetRef = useRef(false);
+  useEffect(() => {
+    if (driverId && !identityLoading && !autoSetRef.current) {
+      autoSetRef.current = true;
+      setAvailability(true);
+      deliveryService.updateDriver(activeBranchId, driverId, { available: true });
+      console.log(`🚴 ${driverName || driverId} marcado disponible automáticamente`);
+    }
+  }, [driverId, identityLoading, activeBranchId, driverName]);
+
   // Sound notification when a new delivery is assigned
   const prevActiveCount = useRef(0);
   useEffect(() => {

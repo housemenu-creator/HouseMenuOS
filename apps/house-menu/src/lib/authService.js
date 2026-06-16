@@ -246,13 +246,17 @@ export async function createSession(user) {
     membershipId: user.membershipId,
     branchIds: user.branchIds,
     createdAt: nowISO(),
+    token,
   };
-  try {
-    await set(ref(db, tenantPath(`sessions/${token}`)), sessionData);
-  } catch (err) {
-    console.warn('authService.createSession error:', err);
+  // Only persist to RTDB if Firebase Auth is available (avoids PERMISSION_DENIED in dev)
+  if (auth?.currentUser) {
+    try {
+      await set(ref(db, tenantPath(`sessions/${token}`)), sessionData);
+    } catch (err) {
+      console.warn('authService.createSession error:', err);
+    }
   }
-  return { token, ...sessionData };
+  return sessionData;
 }
 
 export async function getSession(token) {
@@ -266,6 +270,7 @@ export async function getSession(token) {
 }
 
 export async function deleteSession(token) {
+  if (!auth?.currentUser) return;
   try {
     await remove(ref(db, tenantPath(`sessions/${token}`)));
   } catch (err) {

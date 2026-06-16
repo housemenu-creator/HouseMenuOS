@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ordersService } from '../lib/ordersService';
 import { deliveryService } from '../lib/deliveryService';
-import { Truck, Package, Star, AlertTriangle, CheckCircle2, Loader2, UtensilsCrossed } from 'lucide-react';
+import { Truck, Package, Star, UtensilsCrossed, Loader2 } from 'lucide-react';
 import { playBeep } from '../lib/notificationSound';
 import EmptyState from '../components/EmptyState';
+import { useToast } from '../components/ToastContext';
 import { useBranch } from '../context/BranchContext';
 import { useAuth } from '../context/AuthContext';
 import { useAccessibleBranches } from '../hooks/useAccessibleBranches';
@@ -23,12 +24,11 @@ import DispatchOrderCard from '../dispatch/components/DispatchOrderCard';
 export default function DispatchView() {
   const { activeBranchId, setActiveBranchId } = useBranch();
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('listos');
   const [showDriverAssign, setShowDriverAssign] = useState(null);
   const [confirmingOrder, setConfirmingOrder] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
-  const [toast, setToast] = useState(null);
-  const toastRef = useRef(null);
 
   useOrderSync({ branchId: activeBranchId });
   useDrivers(activeBranchId);
@@ -56,12 +56,6 @@ export default function DispatchView() {
   const isDeliveryOrder = (o) => (o.type || o.order_type || '').toLowerCase().includes('delivery');
   const filteredListos = showLocalOrders ? listos : listos.filter(isDeliveryOrder);
   const filteredEnCamino = showLocalOrders ? enCamino : enCamino.filter(isDeliveryOrder);
-
-  const showToast = (message, type = 'success') => {
-    if (toastRef.current) clearTimeout(toastRef.current);
-    setToast({ message, type });
-    toastRef.current = setTimeout(() => setToast(null), 3000);
-  };
 
   const handleTake = async (order) => {
     const available = drivers.filter((d) => d.available !== false);
@@ -129,18 +123,25 @@ export default function DispatchView() {
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
       <header className="bg-cm-surface border-b border-cm-border p-4 shrink-0 z-10 shadow-cm-sm">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
             <h1 className="text-sm font-black tracking-widest text-cm-text flex items-center gap-2 uppercase">
               <Truck className="text-cm-info w-4 h-4" /> Despacho
             </h1>
+            <BranchSwitcher
+              branches={accessibleBranches}
+              activeBranchId={activeBranchId}
+              onSwitch={setActiveBranchId}
+            />
           </div>
-          {sessionDeliveries > 0 && (
-            <div className="flex items-center gap-1.5 bg-cm-success/10 border border-cm-success/20 px-2.5 py-1 rounded-full">
-              <Star className="w-3.5 h-3.5 text-cm-success" />
-              <span className="text-xs font-black text-cm-success">{sessionDeliveries} {sessionDeliveries === 1 ? 'entrega' : 'entregas'}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {sessionDeliveries > 0 && (
+              <div className="flex items-center gap-1.5 bg-cm-success/10 border border-cm-success/20 px-2.5 py-1 rounded-full">
+                <Star className="w-3.5 h-3.5 text-cm-success" />
+                <span className="text-xs font-black text-cm-success">{sessionDeliveries} {sessionDeliveries === 1 ? 'entrega' : 'entregas'}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -192,14 +193,18 @@ export default function DispatchView() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 space-y-4 bg-cm-bg">
-        {currentOrders.length > 0 && (
-          <DriverStatusBoard
-            drivers={drivers}
-            driverFilter={driverFilter}
-            loading={false}
-            onFilterChange={setDriverFilter}
-          />
-        )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
+          </div>
+        ) : (
+          <>
+        <DriverStatusBoard
+          drivers={drivers}
+          driverFilter={driverFilter}
+          loading={false}
+          onFilterChange={setDriverFilter}
+        />
 
         <AnimatePresence mode="popLayout">
           {currentOrders.length === 0 ? (
@@ -220,6 +225,8 @@ export default function DispatchView() {
             ))
           )}
         </AnimatePresence>
+        </>
+        )}
       </div>
 
       <DriverAssignModal
@@ -235,18 +242,6 @@ export default function DispatchView() {
         onConfirm={handleDeliverConfirm}
         onClose={() => setConfirmingOrder(null)}
       />
-
-      <AnimatePresence>
-        {toast && (
-          <motion.div key="toast" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
-            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl font-bold text-sm shadow-xl border-2 flex items-center gap-2 max-w-sm text-center ${
-              toast.type === 'error' ? 'bg-cm-error text-white border-cm-error/80' : 'bg-cm-success text-white border-cm-success/80'
-            }`}>
-            {toast.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
-            {toast.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

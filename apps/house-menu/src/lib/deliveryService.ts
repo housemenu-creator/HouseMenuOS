@@ -46,7 +46,7 @@ export const deliveryService = {
 
   // ─── TARIFF CONFIG ──────────────────────────────────
 
-  subscribeToTariffConfig(branchId: string, callback: (config: Record<string, any>) => void) {
+  subscribeToTariffConfig(branchId: string, callback: (config: Record<string, any>) => void, onError?: (err: Error) => void) {
     const refPath = ref(db, deliveryTariffPath(branchId));
     return onValue(refPath, (snap) => {
       const data = snap.val();
@@ -55,7 +55,7 @@ export const deliveryService = {
         return;
       }
       callback(data);
-    });
+    }, onError);
   },
 
   async updateTariffConfig(branchId: string, data: Record<string, any>) {
@@ -70,13 +70,13 @@ export const deliveryService = {
 
   // ─── DRIVERS ────────────────────────────────────────
 
-  subscribeToDrivers(branchId: string, callback: (drivers: DeliveryDriver[]) => void) {
+  subscribeToDrivers(branchId: string, callback: (drivers: DeliveryDriver[]) => void, onError?: (err: Error) => void) {
     const driversRef = ref(db, deliveryDriversPath(branchId));
     return onValue(driversRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) { callback([]); return; }
       callback(Object.keys(data).map(key => ({ id: key, ...data[key] } as DeliveryDriver)));
-    });
+    }, onError);
   },
 
   async createDriver(branchId: string, driverData: Partial<DeliveryDriver> & { userId?: string; email?: string }) {
@@ -125,13 +125,13 @@ export const deliveryService = {
 
   // ─── DELIVERY ZONES ─────────────────────────────────
 
-  subscribeToZones(branchId: string, callback: (zones: any[]) => void) {
+  subscribeToZones(branchId: string, callback: (zones: any[]) => void, onError?: (err: Error) => void) {
     const zonesRef = ref(db, deliveryZonesPath(branchId));
     return onValue(zonesRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) { callback([]); return; }
       callback(Object.keys(data).map(key => ({ id: key, ...data[key] })));
-    });
+    }, onError);
   },
 
   async createZone(branchId: string, zoneData: Record<string, any>) {
@@ -290,13 +290,13 @@ export const deliveryService = {
 
   // ─── DELIVERY METRICS ────────────────────────────────
 
-  subscribeToDeliveryLogs(branchId: string, callback: (logs: DeliveryLog[]) => void) {
+  subscribeToDeliveryLogs(branchId: string, callback: (logs: DeliveryLog[]) => void, onError?: (err: Error) => void) {
     const logsRef = ref(db, deliveryLogsPath(branchId));
     return onValue(logsRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) { callback([]); return; }
       callback(Object.keys(data).map(key => ({ id: key, ...data[key] } as DeliveryLog)));
-    });
+    }, onError);
   },
 
   async getDriverStats(branchId: string, driverId: string): Promise<DriverStats> {
