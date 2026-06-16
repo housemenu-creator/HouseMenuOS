@@ -55,15 +55,28 @@ function MapBounds({ drivers }) {
   return null;
 }
 
+/* ── Build lookup: driverId → assigned order ────────────────── */
+function useDriverOrders(activeDrivers, enCaminoOrders) {
+  return useMemo(() => {
+    const map = {};
+    for (const d of activeDrivers) {
+      const order = enCaminoOrders.find((o) => o.driverId === d.id);
+      if (order) map[d.id] = order;
+    }
+    return map;
+  }, [activeDrivers, enCaminoOrders]);
+}
+
 /* ── Map Panel ──────────────────────────────────────────────── */
-export default function LiveDriverMap({ drivers = [], className = '' }) {
+export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], className = '' }) {
   const activeDrivers = useMemo(
     () => drivers.filter((d) => d.active !== false && d.lastPosition?.lat && d.lastPosition?.lng),
     [drivers],
   );
+  const driverOrders = useDriverOrders(activeDrivers, enCaminoOrders);
 
   return (
-    <div className={`rounded-xl overflow-hidden border border-cm-border shadow-cm-sm ${className}`}>
+    <div className={`relative rounded-xl overflow-hidden border border-cm-border shadow-cm-sm ${className}`}>
       <MapContainer
         center={[DEFAULT_CENTER.lat, DEFAULT_CENTER.lng]}
         zoom={DEFAULT_ZOOM}
@@ -77,44 +90,68 @@ export default function LiveDriverMap({ drivers = [], className = '' }) {
 
         <MapBounds drivers={activeDrivers} />
 
-        {activeDrivers.map((driver) => (
-          <Marker
-            key={driver.id}
-            position={[driver.lastPosition.lat, driver.lastPosition.lng]}
-            icon={driverIcon(driver.available !== false, false)}
-          >
-            <Popup>
-              <div className="text-sm space-y-1 min-w-[140px]">
-                <p className="font-black text-gray-900">{driver.name}</p>
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Navigation className="w-3 h-3" />
-                  {driver.available !== false ? 'Disponible' : 'En ruta'}
-                </div>
-                {driver.phone && (
-                  <p className="text-xs text-gray-400">{driver.phone}</p>
-                )}
-                {driver.totalDeliveries > 0 && (
-                  <p className="text-xs text-gray-400">
-                    {driver.totalDeliveries} {driver.totalDeliveries === 1 ? 'entrega' : 'entregas'}
+        {activeDrivers.map((driver) => {
+          const assigned = driverOrders[driver.id];
+          return (
+            <Marker
+              key={driver.id}
+              position={[driver.lastPosition.lat, driver.lastPosition.lng]}
+              icon={driverIcon(driver.available !== false, false)}
+            >
+              <Popup>
+                <div className="text-sm space-y-1.5 min-w-[160px]">
+                  <p className="font-black text-gray-900">{driver.name}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <Navigation className="w-3 h-3" />
+                    {driver.available !== false ? 'Disponible' : 'En ruta'}
+                  </div>
+                  {driver.phone && (
+                    <p className="text-xs text-gray-400">{driver.phone}</p>
+                  )}
+                  {driver.totalDeliveries > 0 && (
+                    <p className="text-xs text-gray-400">
+                      {driver.totalDeliveries} {driver.totalDeliveries === 1 ? 'entrega' : 'entregas'}
+                    </p>
+                  )}
+
+                  {assigned && (
+                    <div className="mt-2 pt-2 border-t border-gray-200 space-y-1">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase">Pedido actual</p>
+                      <p className="text-xs font-bold text-gray-800">
+                        {assigned.customerName || 'Cliente'}
+                      </p>
+                      {assigned.location && (
+                        <p className="text-[11px] text-gray-500 flex items-start gap-1">
+                          <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>{assigned.location}</span>
+                        </p>
+                      )}
+                      <p className="text-[10px] text-gray-400 font-mono">
+                        #{assigned.id?.slice(-4).toUpperCase()}
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-gray-300 pt-1">
+                    {new Date(driver.lastPosition.updatedAt).toLocaleTimeString('es-PE', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </p>
-                )}
-                <p className="text-[10px] text-gray-300 pt-1">
-                  {new Date(driver.lastPosition.updatedAt).toLocaleTimeString('es-PE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
 
-      {/* Header overlay */}
       <div className="absolute top-2 left-2 z-[1000] bg-cm-surface/90 backdrop-blur-sm rounded-lg px-2.5 py-1.5 border border-cm-border shadow-cm-sm flex items-center gap-2">
         <MapPin className="w-3.5 h-3.5 text-cm-accent" />
         <span className="text-xs font-bold text-cm-text">
           {activeDrivers.length} repartidor{activeDrivers.length !== 1 ? 'es' : ''} activo{activeDrivers.length !== 1 ? 's' : ''}
+          {Object.keys(driverOrders).length > 0 && (
+            <> &middot; {Object.keys(driverOrders).length} en ruta</>
+          )}
         </span>
       </div>
     </div>
