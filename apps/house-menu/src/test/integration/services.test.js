@@ -63,6 +63,13 @@ vi.mock('firebase/database', () => {
     }),
     set: vi.fn(async (ref, val) => { store.set(ref.path, val); }),
     update: vi.fn(async (ref, data) => {
+      // update(ref(db), { 'path/to/key': val }) — multi-path
+      if (!ref.path) {
+        for (const [path, val] of Object.entries(data)) {
+          store.set(path, val);
+        }
+        return;
+      }
       const existing = store.get(ref.path) || {};
       store.set(ref.path, { ...existing, ...data });
     }),
@@ -78,6 +85,7 @@ vi.mock('firebase/database', () => {
     off: vi.fn(() => {}),
     remove: vi.fn(async (ref) => store.del(ref.path)),
     query: vi.fn((ref) => ref),
+    orderByChild: vi.fn(() => ({})),
     limitToLast: vi.fn(() => ({})),
     serverTimestamp: vi.fn(() => new Date().toISOString()),
     runTransaction: vi.fn(async (ref, updateFn) => {
@@ -301,6 +309,163 @@ describe('cashService', () => {
       cs.subscribeToSessions(B, (s) => resolve(s));
     });
     expect(sessions).toHaveLength(2);
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+//  notificationService
+// ─────────────────────────────────────────────────────────
+describe('notificationService', () => {
+  const B = 'branch-a';
+  const UID = 'user@test.com';
+
+  it('creates a notification', async () => {
+    const ns = await import('../../lib/notificationService.js');
+    const notifId = await ns.createNotification({
+      branchId: B, userId: UID, type: 'order_new',
+      title: 'Nuevo pedido', body: 'Pedido #123', orderId: 'o1', url: '/staff/cocina',
+    });
+    expect(notifId).toBeDefined();
+    const saved = store.get(`branches/${B}/notifications/${UID}/${notifId}`);
+    expect(saved.type).toBe('order_new');
+    expect(saved.title).toBe('Nuevo pedido');
+    expect(saved.body).toBe('Pedido #123');
+    expect(saved.orderId).toBe('o1');
+    expect(saved.url).toBe('/staff/cocina');
+    expect(saved.read).toBe(false);
+  });
+
+  it('returns null when branchId or userId missing', async () => {
+    const ns = await import('../../lib/notificationService.js');
+    const r1 = await ns.createNotification({ branchId: '', userId: UID, type: 'system', title: 'T' });
+    expect(r1).toBeNull();
+    const r2 = await ns.createNotification({ branchId: B, userId: '', type: 'system', title: 'T' });
+    expect(r2).toBeNull();
+  });
+
+  it('creates notification for multiple users', async () => {
+    const ns = await import('../../lib/notificationService.js');
+    await ns.createNotificationForUsers({
+      branchId: B, userIds: [UID, 'user2@t.com'], type: 'order_delivered',
+      title: 'Entregado', body: 'Pedido listo',
+    });
+    const u1 = store.get(`branches/${B}/notifications/${UID}`);
+    const u2 = store.get(`branches/${B}/notifications/user2@t.com`);
+    expect(Object.keys(u1 || {})).toHaveLength(1);
+    expect(Object.keys(u2 || {})).toHaveLength(1);
+  });
+
+  it('subscribes to notifications and returns latest', async () => {
+    store.set(`branches/${B}/notifications/${UID}/n1`, { type: 'system', title: 'A', read: false, _createdAt_client: 1000 });
+    store.set(`branches/${B}/notifications/${UID}/n2`, { type: 'system', title: 'B', read: false, _createdAt_client: 2000 });
+    const ns = await import('../../lib/notificationService.js');
+    const list = await new Promise((resolve) => {
+      ns.subscribeToNotifications(B, UID, (data) => resolve(data));
+    });
+    expect(list).toHaveLength(2);
+    // newest first
+    expect(list[0].title).toBe('B');
+  });
+
+  it('returns empty array when no notifications', async () => {
+    const ns = await import('../../lib/notificationService.js');
+    const list = await new Promise((resolve) => {
+      ns.subscribeToNotifications(B, 'unknown@u.com', (data) => resolve(data));
+    });
+    expect(list).toEqual([]);
+  });
+
+  it('marks a notification as read', async () => {
+    store.set(`branches/${B}/notifications/${UID}/n1`, { type: 'system', title: 'A', read: false });
+    const ns = await import('../../lib/notificationService.js');
+    await ns.markAsRead(B, UID, 'n1');
+    const saved = store.get(`branches/${B}/notifications/${UID}/n1`);
+    expect(saved.read).toBe(true);
+  });
+
+  it('marks all notifications as read', async () => {
+    store.set(`branches/${B}/notifications/${UID}/n1`, { type: 'system', title: 'A', read: false });
+    store.set(`branches/${B}/notifications/${UID}/n2`, { type: 'system', title: 'B', read: false });
+    const ns = await import('../../lib/notificationService.js');
+    await ns.markAllAsRead(B, UID, ['n1', 'n2']);
+    const s1 = store.get(`branches/${B}/notifications/${UID}/n1`);
+    const s2 = store.get(`branches/${B}/notifications/${UID}/n2`);
+    expect(s1.read).toBe(true);
+    expect(s2.read).toBe(true);
+  });
+
+  it('getUnreadCount returns correct count', async () => {
+    const ns = await import('../../lib/notificationService.js');
+    const list = [
+      { id: 'n1', read: false },
+      { id: 'n2', read: true },
+      { id: 'n3', read: false },
+    ];
+    expect(ns.getUnreadCount(list)).toBe(2);
+    expect(ns.getUnreadCount([])).toBe(0);
+    expect(ns.getUnreadCount(null)).toBe(0);
+  });
+
+  it('NOTIF_ICONS has entries for each type', async () => {
+    const ns = await import('../../lib/notificationService.js');
+    for (const t of ns.NOTIF_TYPES) {
+      expect(ns.NOTIF_ICONS[t]).toBeDefined();
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+//  deliveryService helpers
+// ─────────────────────────────────────────────────────────
+describe('deliveryService helpers', () => {
+  const B = 'branch-a';
+
+  it('calculateWaitingTime returns correct ms', async () => {
+    const { calculateWaitingTime } = await import('../../lib/deliveryService.js');
+    const past = new Date(Date.now() - 60000).toISOString();
+    const ms = calculateWaitingTime(past);
+    expect(ms).toBeGreaterThan(50000);
+    expect(ms).toBeLessThan(70000);
+    expect(calculateWaitingTime(undefined)).toBe(0);
+  });
+
+  it('formatWaitingTime formats correctly', async () => {
+    const { formatWaitingTime } = await import('../../lib/deliveryService.js');
+    expect(formatWaitingTime(30000)).toBe('< 1 min');
+    expect(formatWaitingTime(60000)).toBe('1 min');
+    expect(formatWaitingTime(3600000)).toBe('1h 0m');
+    expect(formatWaitingTime(7500000)).toBe('2h 5m');
+  });
+
+  it('getWaitingUrgency returns correct level', async () => {
+    const { getWaitingUrgency } = await import('../../lib/deliveryService.js');
+    expect(getWaitingUrgency(60000)).toBe('low');
+    expect(getWaitingUrgency(60000 * 16)).toBe('medium');
+    expect(getWaitingUrgency(60000 * 31)).toBe('high');
+  });
+
+  it('getDriverStats returns correct stats from logs', async () => {
+    store.set(`branches/${B}/delivery/logs/l1`, { driverId: 'd1', status: 'delivered' });
+    store.set(`branches/${B}/delivery/logs/l2`, { driverId: 'd1', status: 'delivered' });
+    store.set(`branches/${B}/delivery/logs/l3`, { driverId: 'd1', status: 'en_camino' });
+    store.set(`branches/${B}/delivery/logs/l4`, { driverId: 'd2', status: 'delivered' });
+    const { deliveryService: ds } = await import('../../lib/deliveryService.js');
+    const stats = await ds.getDriverStats(B, 'd1');
+    expect(stats.total).toBe(3);
+    expect(stats.delivered).toBe(2);
+    expect(stats.pending).toBe(1);
+  });
+
+  it('subscribeToDeliveryLogs returns logs sorted by assignedAt', async () => {
+    store.set(`branches/${B}/delivery/logs/l1`, { orderId: 'o1', driverId: 'd1', assignedAt: '2026-01-01T10:00:00Z', status: 'delivered' });
+    store.set(`branches/${B}/delivery/logs/l2`, { orderId: 'o2', driverId: 'd2', assignedAt: '2026-01-01T11:00:00Z', status: 'en_camino' });
+    const { deliveryService: ds } = await import('../../lib/deliveryService.js');
+    const logs = await new Promise((resolve) => {
+      ds.subscribeToDeliveryLogs(B, (data) => resolve(data));
+    });
+    expect(logs).toHaveLength(2);
+    expect(logs.map(l => l.orderId)).toContain('o1');
+    expect(logs.map(l => l.orderId)).toContain('o2');
   });
 });
 
