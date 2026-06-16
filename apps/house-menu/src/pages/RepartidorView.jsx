@@ -11,6 +11,7 @@ import { useDriverDelivery, useDriverStats } from '../delivery/hooks/useDriverDe
 import DeliveryCard from '../delivery/components/DeliveryCard';
 import { playBeep } from '../lib/notificationSound';
 import { useDriverGeolocation } from '../delivery/hooks/useDriverGeolocation';
+import NotificationBell from '../components/NotificationBell';
 
 export default function RepartidorView() {
   const { user, logout } = useAuth();
@@ -93,18 +94,25 @@ export default function RepartidorView() {
             <p className="text-xs text-cm-muted font-semibold mt-0.5">{driverName || 'Cargando...'}</p>
           </div>
           
-          <button
-            onClick={handleToggleAvailability}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black shadow-cm-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${
-              isAvailable
-                ? 'bg-cm-success/10 border border-cm-success/20 text-cm-success'
-                : 'bg-cm-error/10 border border-cm-error/20 text-cm-error'
-            }`}
-            title={isAvailable ? 'Haga clic para ponerse Ocupado' : 'Haga clic para ponerse Disponible'}
-          >
-            <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-cm-success animate-pulse' : 'bg-cm-error'}`} />
-            {isAvailable ? 'DISPONIBLE' : 'OCUPADO'}
-          </button>
+          <div className="flex items-center gap-1">
+            <NotificationBell
+              branchId={activeBranchId}
+              userId={user?.email}
+              onNavigate={() => {}}
+            />
+            <button
+              onClick={handleToggleAvailability}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black shadow-cm-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${
+                isAvailable
+                  ? 'bg-cm-success/10 border border-cm-success/20 text-cm-success'
+                  : 'bg-cm-error/10 border border-cm-error/20 text-cm-error'
+              }`}
+              title={isAvailable ? 'Haga clic para ponerse Ocupado' : 'Haga clic para ponerse Disponible'}
+            >
+              <span className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-cm-success animate-pulse' : 'bg-cm-error'}`} />
+              {isAvailable ? 'DISPONIBLE' : 'OCUPADO'}
+            </button>
+          </div>
         </div>
         {!isAvailable && driverId && (
           <div className="bg-cm-warning/10 border border-cm-warning/20 rounded-xl p-4 text-center">

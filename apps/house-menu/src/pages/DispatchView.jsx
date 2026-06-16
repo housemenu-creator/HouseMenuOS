@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { ordersService } from '../lib/ordersService';
 import { deliveryService } from '../lib/deliveryService';
 import { Truck, Package, Star, UtensilsCrossed, Loader2, Map, ChevronDown, ChevronUp } from 'lucide-react';
@@ -21,8 +22,11 @@ import DispatchStats from '../dispatch/components/DispatchStats';
 import DriverStatusBoard from '../dispatch/components/DriverStatusBoard';
 import DispatchOrderCard from '../dispatch/components/DispatchOrderCard';
 import LiveDriverMap from '../dispatch/components/LiveDriverMap';
+import NotificationBell from '../components/NotificationBell';
+import { createNotification } from '../lib/notificationService';
 
 export default function DispatchView() {
+  const navigate = useNavigate();
   const { activeBranchId, setActiveBranchId } = useBranch();
   const { user, logout } = useAuth();
   const { showToast } = useToast();
@@ -77,6 +81,24 @@ export default function DispatchView() {
     if (result.success) {
       setActiveTab('en_camino');
       showToast(`#${(order.id || '').slice(-4).toUpperCase()} → ${driver.name}`);
+      // Notify driver
+      await createNotification({
+        branchId: activeBranchId,
+        userId: driver.email || `${driver.id}@driver`,
+        type: 'order_assigned',
+        title: 'Nuevo pedido asignado',
+        body: `Pedido de ${order.customerName || 'cliente'} — ${order.location || ''}`,
+        orderId: order.id,
+      });
+      // Notify dispatcher
+      await createNotification({
+        branchId: activeBranchId,
+        userId: user?.email,
+        type: 'order_assigned',
+        title: `#${(order.id || '').slice(-4).toUpperCase()} asignado`,
+        body: `${driver.name} recogió pedido de ${order.customerName || 'cliente'}`,
+        orderId: order.id,
+      });
     } else {
       showToast('Error al asignar repartidor.', 'error');
     }
@@ -109,6 +131,15 @@ export default function DispatchView() {
       addDelivery();
       const freshDriver = drivers.find((d) => d.id === freshOrder?.driverId);
       showToast(`✓ ${freshDriver?.name || freshOrder?.driverName || 'Repartidor'} entregó a ${freshOrder?.customerName}`);
+      // Notify dispatcher
+      await createNotification({
+        branchId: activeBranchId,
+        userId: user?.email,
+        type: 'delivery_confirmed',
+        title: 'Entrega confirmada',
+        body: `${freshDriver?.name || 'Repartidor'} entregó a ${freshOrder?.customerName || 'cliente'}`,
+        orderId: orderId,
+      });
       setActiveTab('listos');
     } else {
       showToast('Error al registrar entrega.', 'error');
@@ -138,7 +169,12 @@ export default function DispatchView() {
               onSwitch={setActiveBranchId}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <NotificationBell
+              branchId={activeBranchId}
+              userId={user?.email}
+              onNavigate={(url) => navigate(url)}
+            />
             {sessionDeliveries > 0 && (
               <div className="flex items-center gap-1.5 bg-cm-success/10 border border-cm-success/20 px-2.5 py-1 rounded-full">
                 <Star className="w-3.5 h-3.5 text-cm-success" />
