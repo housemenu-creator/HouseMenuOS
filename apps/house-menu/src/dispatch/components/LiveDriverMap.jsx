@@ -68,17 +68,22 @@ function useDriverOrders(activeDrivers, enCaminoOrders) {
 }
 
 /* ── Map Panel ──────────────────────────────────────────────── */
-export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], focusedDriverId = null, onFocusDriver = () => {}, className = '' }) {
+export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], focusedDriverId = null, onFocusDriver = () => {}, branchCenter = null, className = '' }) {
   const activeDrivers = useMemo(
     () => drivers.filter((d) => d.active !== false && d.lastPosition?.lat && d.lastPosition?.lng),
     [drivers],
   );
   const driverOrders = useDriverOrders(activeDrivers, enCaminoOrders);
 
+  const mapCenter = useMemo(() => {
+    if (branchCenter?.lat && branchCenter?.lng) return [branchCenter.lat, branchCenter.lng];
+    return [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng];
+  }, [branchCenter]);
+
   return (
     <div className={`relative rounded-xl overflow-hidden border border-cm-border shadow-cm-sm ${className}`}>
       <MapContainer
-        center={[DEFAULT_CENTER.lat, DEFAULT_CENTER.lng]}
+        center={mapCenter}
         zoom={DEFAULT_ZOOM}
         className="w-full h-full"
         zoomControl={false}
@@ -146,14 +151,16 @@ export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], focus
         })}
       </MapContainer>
 
-      <div className="absolute top-2 left-2 z-[1000] bg-cm-surface/90 backdrop-blur-sm rounded-lg px-2.5 py-1.5 border border-cm-border shadow-cm-sm flex items-center gap-2">
-        <MapPin className="w-3.5 h-3.5 text-cm-accent" />
-        <span className="text-xs font-bold text-cm-text">
-          {activeDrivers.length} repartidor{activeDrivers.length !== 1 ? 'es' : ''} activo{activeDrivers.length !== 1 ? 's' : ''}
-          {Object.keys(driverOrders).length > 0 && (
-            <> &middot; {Object.keys(driverOrders).length} en ruta</>
-          )}
-        </span>
+      <div className="absolute top-2 left-2 z-[1000] flex items-start gap-1.5 max-w-[70%]">
+        <div className="bg-cm-surface/90 backdrop-blur-sm rounded-lg px-2.5 py-1.5 border border-cm-border shadow-cm-sm flex items-center gap-2">
+          <MapPin className="w-3.5 h-3.5 text-cm-accent" />
+          <span className="text-xs font-bold text-cm-text">
+            {activeDrivers.length} rep{activeDrivers.length !== 1 ? 's' : ''} activo{activeDrivers.length !== 1 ? 's' : ''}
+            {Object.keys(driverOrders).length > 0 && (
+              <> · {Object.keys(driverOrders).length} ruta</>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );

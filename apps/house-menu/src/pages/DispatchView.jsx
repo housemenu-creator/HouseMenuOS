@@ -238,7 +238,7 @@ export default function DispatchView() {
               transition={{ duration: 0.25 }}
               className="overflow-hidden"
             >
-              <LiveDriverMap drivers={drivers} enCaminoOrders={enCamino} focusedDriverId={focusedDriverId} onFocusDriver={setFocusedDriverId} className="w-full h-[280px] rounded-none border-0 border-t border-cm-border" />
+              <LiveDriverMap drivers={drivers} enCaminoOrders={enCamino} focusedDriverId={focusedDriverId} onFocusDriver={setFocusedDriverId} branchCenter={activeBranch?.coordinates} className="w-full h-[280px] rounded-none border-0 border-t border-cm-border" />
             </motion.div>
           )}
         </AnimatePresence>
