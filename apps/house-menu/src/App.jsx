@@ -20,6 +20,8 @@ const RepartidorView = lazy(() => import('./pages/RepartidorView'));
 const VendedorView = lazy(() => import('./pages/VendedorView'));
 const CajeroView = lazy(() => import('./pages/CajeroView'));
 const WorkerDashboard = lazy(() => import('./worker/components/WorkerDashboard'));
+const KioskMode = lazy(() => import('./kds/components/KioskMode'));
+const MonitorView = lazy(() => import('./pages/MonitorView'));
 
 function SuspenseBoundary({ children, message }) {
   return (
@@ -73,6 +75,10 @@ export default function App() {
                   <Route path="vendedor" element={<SuspenseBoundary message="Error en el módulo de ventas"><VendedorView /></SuspenseBoundary>} />
                   <Route path="caja" element={<SuspenseBoundary message="Error en el módulo de caja"><CajeroView /></SuspenseBoundary>} />
                 </Route>
+
+                {/* ── Zona Pública sin layout ── */}
+                  <Route path="/kiosko" element={<SuspenseBoundary message="Error en el kiosko"><KioskMode /></SuspenseBoundary>} />
+                  <Route path="/monitor" element={<SuspenseBoundary message="Error en el monitor"><MonitorView /></SuspenseBoundary>} />
 
                 {/* ── Redirects viejas → nuevas ──────── */}
                 <Route path="/cocina" element={<Navigate to="/staff/cocina" replace />} />

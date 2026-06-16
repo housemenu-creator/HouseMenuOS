@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ref, onValue, set } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { ShoppingCart, Minus, Plus, X, Check, Send, Smartphone } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, X, Check, Send, Smartphone, Lock, Loader2 } from 'lucide-react';
 import { useBranch } from '../../context/BranchContext';
 import { ordersService } from '../../lib/ordersService';
 
@@ -14,6 +14,15 @@ export default function KioskMode() {
   const [showCart, setShowCart] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [done, setDone] = useState(false);
+  const [kioskEnabled, setKioskEnabled] = useState(null); // null = loading
+
+  // Check if kiosk is enabled
+  useEffect(() => {
+    if (!activeBranchId) return;
+    const enabledRef = ref(db, `branches/${activeBranchId}/config/kioskEnabled`);
+    const unsub = onValue(enabledRef, (snap) => setKioskEnabled(!!snap.val()));
+    return unsub;
+  }, [activeBranchId]);
 
   // Subscribe to catalog
   useEffect(() => {
@@ -25,6 +34,32 @@ export default function KioskMode() {
     });
     return unsub;
   }, [activeBranchId]);
+
+  // Kiosk disabled / loading state
+  if (kioskEnabled === null) {
+    return (
+      <div className="min-h-screen bg-cm-bg flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!kioskEnabled) {
+    return (
+      <div className="min-h-screen bg-cm-bg flex items-center justify-center p-4">
+        <div className="text-center max-w-sm space-y-4">
+          <div className="w-16 h-16 bg-cm-muted/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-cm-muted/20">
+            <Lock className="w-8 h-8 text-cm-muted" />
+          </div>
+          <h1 className="text-2xl font-black text-cm-text">Auto-pedido desactivado</h1>
+          <p className="text-sm text-cm-muted font-medium">
+            El kiosko de auto-pedido no está habilitado para esta sucursal.
+            Consultá con el encargado para activarlo.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Group by category
   const categories = useMemo(() => {
