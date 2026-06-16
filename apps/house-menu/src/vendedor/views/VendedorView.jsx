@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ref, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { menuService } from '../../lib/menuService';
@@ -27,7 +27,11 @@ export default function VendedorView() {
 
   const vendedorEmail = user?.email || '';
 
-  const cuentas = useVendedorStore((s) => s.getFilteredCuentas(vendedorEmail));
+  // ── Zustand selectors: SOLO primitivas o referencias estables ──
+  // NO usar getFilteredCuentas/getSelectedCuenta como selectors porque
+  // retornan nuevas referencias en cada llamada → bucle infinito con
+  // useSyncExternalStore de React 18. (Mismo bug que WorkerDashboard.tsx:137-139)
+  const rawCuentas = useVendedorStore((s) => s.cuentas);
   const selectedCuentaId = useVendedorStore((s) => s.selectedCuentaId);
   const searchQuery = useVendedorStore((s) => s.searchQuery);
   const filter = useVendedorStore((s) => s.filter);
@@ -38,7 +42,35 @@ export default function VendedorView() {
   const setFilter = useVendedorStore((s) => s.setFilter);
   const setShowNewOrder = useVendedorStore((s) => s.setShowNewOrder);
 
-  const selectedCuenta = useVendedorStore((s) => s.getSelectedCuenta());
+  // ── Derivados estables con useMemo ──
+  const cuentas = useMemo(() => {
+    let result = rawCuentas.filter((c) => c.assignedVendedor === vendedorEmail);
+    if (filter === 'activas') {
+      result = result.filter((c) => c.status === 'activa' && c.isActive !== false);
+    } else if (filter === 'pendientes') {
+      result = result.filter(
+        (c) => c.status === 'activa' && c.creditUsed != null && c.creditLimit != null && c.creditUsed >= c.creditLimit * 0.8
+      );
+    }
+    const q = searchQuery.toLowerCase().trim();
+    if (q) {
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.legalName || '').toLowerCase().includes(q) ||
+          (c.taxId || '').toLowerCase().includes(q) ||
+          (c.phone || '').toLowerCase().includes(q) ||
+          (c.email || '').toLowerCase().includes(q)
+      );
+    }
+    return result.sort((a, b) => (b.lastOrderAt || b.createdAt) - (a.lastOrderAt || a.createdAt));
+  }, [rawCuentas, vendedorEmail, filter, searchQuery]);
+
+  const selectedCuenta = useMemo(
+    () => rawCuentas.find((c) => c.id === selectedCuentaId) || null,
+    [rawCuentas, selectedCuentaId]
+  );
+
   const ordersForCuenta = useOrdersByCuentaId(selectedCuentaId);
   const stats = useCuentaStats(vendedorEmail);
 

@@ -78,7 +78,7 @@ const ROLE_CONFIG = {
   cajero: {
     title: 'Cajero',
     description: 'Cobrar pedidos y gestionar caja',
-    route: '/staff/vendedor',
+    route: '/staff/caja',
     icon: <Coins className="w-5 h-5" />,
     gradient: 'from-lime-500 to-green-600',
     accent: 'text-lime-400',
