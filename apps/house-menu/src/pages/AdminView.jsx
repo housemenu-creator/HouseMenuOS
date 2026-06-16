@@ -22,6 +22,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAccessibleBranches } from '../hooks/useAccessibleBranches';
 import { playChime } from '../lib/notificationSound';
+import NotificationBell from '../components/NotificationBell';
+import { createNotification } from '../lib/notificationService';
 const DashboardTab = lazy(() => import('../admin/tabs/DashboardTab'));
 const OrdersTab = lazy(() => import('../admin/tabs/OrdersTab'));
 const MenuTab = lazy(() => import('../admin/tabs/MenuTab'));
@@ -150,11 +152,30 @@ export default function AdminView() {
     return unsub;
   }, [activeBranchId]);
 
+  const prevOrderIdsRef = useRef(new Set());
   useEffect(() => {
     if (!activeBranchId) return;
     const unsub = ordersService.subscribeToOrders(activeBranchId, (data) => {
       setAllOrders(data);
       setLoading(false);
+      // Notify on new delivery orders
+      const prevIds = prevOrderIdsRef.current;
+      for (const order of data) {
+        if (!order.id || prevIds.has(order.id)) continue;
+        const isDelivery = (order.type || order.order_type || '').toLowerCase().includes('delivery');
+        if (isDelivery && order.status === 'pendiente' || order.status === 'listo') {
+          createNotification({
+            branchId: activeBranchId,
+            userId: user?.email,
+            type: 'order_new',
+            title: '¡Nuevo pedido delivery!',
+            body: `${order.customerName || 'Cliente'} — ${order.location || 'sin dirección'} — S/ ${(order.financials?.total ?? order.total ?? 0).toFixed(2)}`,
+            orderId: order.id,
+            url: '/admin?tab=orders',
+          });
+        }
+      }
+      prevOrderIdsRef.current = new Set(data.map((o) => o.id));
     });
     return unsub;
   }, [activeBranchId]);
@@ -381,6 +402,13 @@ export default function AdminView() {
               {now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
             <div className="w-[1px] h-4 bg-cm-border hidden md:block" />
+
+            {/* Notifications */}
+            <NotificationBell
+              branchId={activeBranchId}
+              userId={user?.email}
+              onNavigate={(url) => {}}
+            />
             
             {/* User display */}
             <span className="text-xs text-cm-muted font-medium hidden sm:inline">
