@@ -19,6 +19,7 @@ const MozoView = lazy(() => import('./pages/MozoView'));
 const RepartidorView = lazy(() => import('./pages/RepartidorView'));
 const VendedorView = lazy(() => import('./pages/VendedorView'));
 const CajeroView = lazy(() => import('./pages/CajeroView'));
+const NotificacionesView = lazy(() => import('./pages/NotificacionesView'));
 const WorkerDashboard = lazy(() => import('./worker/components/WorkerDashboard'));
 const KioskMode = lazy(() => import('./kds/components/KioskMode'));
 const MonitorView = lazy(() => import('./pages/MonitorView'));
@@ -74,6 +75,7 @@ export default function App() {
                   <Route path="delivery" element={<SuspenseBoundary message="Error en el portal de reparto"><RepartidorView /></SuspenseBoundary>} />
                   <Route path="vendedor" element={<SuspenseBoundary message="Error en el módulo de ventas"><VendedorView /></SuspenseBoundary>} />
                   <Route path="caja" element={<SuspenseBoundary message="Error en el módulo de caja"><CajeroView /></SuspenseBoundary>} />
+                  <Route path="notificaciones" element={<SuspenseBoundary message="Error en notificaciones"><NotificacionesView /></SuspenseBoundary>} />
                 </Route>
 
                 {/* ── Zona Pública sin layout ── */}
