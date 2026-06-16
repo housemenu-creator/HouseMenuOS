@@ -31,6 +31,7 @@ export function useDrivers(branchId: string) {
         active: val.active !== false,
         available: val.available !== false,
         totalDeliveries: val.totalDeliveries || 0,
+        lastPosition: val.lastPosition || undefined,
       }));
       setDrivers(drivers);
     });

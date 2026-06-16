@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ordersService } from '../lib/ordersService';
 import { deliveryService } from '../lib/deliveryService';
-import { Truck, Package, Star, UtensilsCrossed, Loader2 } from 'lucide-react';
+import { Truck, Package, Star, UtensilsCrossed, Loader2, Map, ChevronDown, ChevronUp } from 'lucide-react';
 import { playBeep } from '../lib/notificationSound';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/ToastContext';
@@ -20,6 +20,7 @@ import ConfirmDeliveryModal from '../dispatch/components/ConfirmDeliveryModal';
 import DispatchStats from '../dispatch/components/DispatchStats';
 import DriverStatusBoard from '../dispatch/components/DriverStatusBoard';
 import DispatchOrderCard from '../dispatch/components/DispatchOrderCard';
+import LiveDriverMap from '../dispatch/components/LiveDriverMap';
 
 export default function DispatchView() {
   const { activeBranchId, setActiveBranchId } = useBranch();
@@ -42,6 +43,7 @@ export default function DispatchView() {
   const { listos, enCamino } = useDispatchOrders();
   const isLoadingSessions = !user;
   const [showLocalOrders, setShowLocalOrders] = useState(true);
+  const [showMap, setShowMap] = useState(true);
 
   // Sound notification when new orders arrive
   const prevListosCount = useRef(0);
@@ -191,6 +193,38 @@ export default function DispatchView() {
           </button>
         </div>
       </header>
+
+      {/* ── Live Map toggle ── */}
+      <div className="shrink-0 bg-cm-surface border-b border-cm-border">
+        <button
+          onClick={() => setShowMap(!showMap)}
+          className="w-full flex items-center justify-between px-4 py-2 text-xs font-bold text-cm-muted hover:text-cm-text transition-colors"
+        >
+          <div className="flex items-center gap-1.5">
+            <Map className="w-3.5 h-3.5 text-cm-info" />
+            Mapa de repartidores
+            <span className="px-1.5 py-0.5 rounded-full bg-cm-info/10 text-cm-info text-[10px] font-black">
+              {drivers.filter((d) => d.lastPosition?.lat).length}
+            </span>
+          </div>
+          {showMap ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
+
+        <AnimatePresence>
+          {showMap && (
+            <motion.div
+              key="map"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 280, opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <LiveDriverMap drivers={drivers} className="w-full h-[280px] rounded-none border-0 border-t border-cm-border" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <div className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 space-y-4 bg-cm-bg">
         {isLoading ? (
