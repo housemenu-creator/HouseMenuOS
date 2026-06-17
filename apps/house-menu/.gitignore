@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Generated at build time by scripts/inject-sw-config.mjs
+public/_firebaseConfig.js
+
+# Environment (copy of .env.example)
+.env
+.env.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
