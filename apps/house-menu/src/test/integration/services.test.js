@@ -70,6 +70,14 @@ vi.mock('firebase/database', () => {
         }
         return;
       }
+      // Check if any keys contain '/' (multi-path update)
+      const hasMultiPath = Object.keys(data).some(k => k.includes('/'));
+      if (hasMultiPath) {
+        for (const [key, val] of Object.entries(data)) {
+          store.set(`${ref.path}/${key}`, val);
+        }
+        return;
+      }
       const existing = store.get(ref.path) || {};
       store.set(ref.path, { ...existing, ...data });
     }),
@@ -500,9 +508,12 @@ describe('authService', () => {
     expect(r.error).toBe('Credenciales incorrectas');
   });
 
-  it('verifies a Firebase-stored user with PIN', async () => {
-    store.set('tenants/default/users/u1', { email: 'chef@rest.com', name: 'Chef', pin: '4321', active: true });
-    store.set('tenants/default/memberships/m1', { userId: 'u1', roleId: 'kitchen', branchIds: { hq: true }, active: true });
+  it('verifies a Firebase-stored user with PIN (employee path)', async () => {
+    store.set('tenants/default/employees/u1', {
+      profile: { email: 'chef@rest.com', name: 'Chef', pin: '4321', active: true },
+      role: 'kitchen',
+      branches: { hq: true },
+    });
     store.set('tenants/default/roles', {
       admin: { name: 'Admin', permissions: { 'orders:read': true, 'users:manage': true } },
       kitchen: { name: 'Cocina', permissions: { 'orders:read': true, 'orders:create': true } },
@@ -515,12 +526,23 @@ describe('authService', () => {
     expect(r.user.permissions['orders:read']).toBe(true);
   });
 
-  it('rejects user without membership', async () => {
-    store.set('tenants/default/users/u2', { email: 'nobody@rest.com', name: 'Nobody', pin: '0000', active: true });
+  it('returns user data from flat employee record directly (no membership needed)', async () => {
+    store.set('tenants/default/employees/u2', {
+      profile: { email: 'nobody@rest.com', name: 'Nobody', pin: '0000', active: true },
+      role: 'mozo',
+      branches: { hq: true },
+    });
+    store.set('tenants/default/roles', {
+      admin: { name: 'Admin', permissions: { 'orders:read': true } },
+      kitchen: { name: 'Cocina', permissions: { 'orders:read': true } },
+      mozo: { name: 'Mozo', permissions: { 'orders:read': true, 'orders:create': true } },
+    });
     const { verifyPin } = await import('../../lib/authService.js');
     const r = await verifyPin('nobody@rest.com', '0000');
-    expect(r.success).toBe(false);
-    expect(r.error).toBe('Usuario sin asignación a una sucursal');
+    expect(r.success).toBe(true);
+    expect(r.user.role).toBe('mozo');
+    expect(r.user.name).toBe('Nobody');
+    expect(r.user.branchIds).toEqual({ hq: true });
   });
 
   it('findUserByFirebaseUid returns null for unknown uid', async () => {
@@ -529,18 +551,17 @@ describe('authService', () => {
     expect(r).toBeNull();
   });
 
-  it('ensureFirebaseUser creates user if not found', async () => {
+  it('ensureFirebaseUser creates user if not found (employee path)', async () => {
     const { ensureFirebaseUser } = await import('../../lib/authService.js');
     const r = await ensureFirebaseUser({ uid: 'new-uid-123', email: 'new@rest.com', displayName: 'New Chef' });
     expect(r.success).toBe(true);
     expect(r.user.role).toBe('kitchen');
     expect(r.user.email).toBe('new@rest.com');
-    const user = store.get('tenants/default/users');
-    const userEntry = Object.values(user).find(u => u.firebaseUid === 'new-uid-123');
-    expect(userEntry).toBeDefined();
-    expect(userEntry.name).toBe('New Chef');
-    const memberships = store.get('tenants/default/memberships');
-    expect(Object.values(memberships).some(m => m.userId === r.user.id)).toBe(true);
+    const employee = store.get('tenants/default/employees/new-uid-123');
+    expect(employee).toBeDefined();
+    expect(employee.profile.name).toBe('New Chef');
+    expect(employee.firebaseUid).toBe('new-uid-123');
+    // No membership indirection — role and branches are directly on the employee
   });
 
   it('hasPermission checks correctly', async () => {
@@ -561,8 +582,11 @@ describe('authService', () => {
     });
 
     it('migrates plaintext PIN to hash on successful login', async () => {
-      store.set('tenants/default/users/u1', { email: 'chef@rest.com', name: 'Chef', pin: '4321', active: true });
-      store.set('tenants/default/memberships/m1', { userId: 'u1', roleId: 'kitchen', branchIds: { hq: true }, active: true });
+      store.set('tenants/default/employees/u1', {
+        profile: { email: 'chef@rest.com', name: 'Chef', pin: '4321', active: true },
+        role: 'kitchen',
+        branches: { hq: true },
+      });
       store.set('tenants/default/roles', {
         admin: { name: 'Admin', permissions: { 'orders:read': true } },
         kitchen: { name: 'Cocina', permissions: { 'orders:read': true } },
@@ -570,15 +594,20 @@ describe('authService', () => {
       const { verifyPin } = await import('../../lib/authService.js');
       const r = await verifyPin('chef@rest.com', '4321');
       expect(r.success).toBe(true);
-      const user = store.get('tenants/default/users/u1');
-      expect(user.pinHash).toBeDefined();
-      expect(user.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
-      expect(user.pin).toBeNull();
+      const employee = store.get('tenants/default/employees/u1');
+      // After migration, pinHash is written both on root and profile/pinHash (multi-path update)
+      expect(employee.pinHash || employee.profile?.pinHash).toBeDefined();
+      const hash = employee.pinHash || employee.profile?.pinHash;
+      expect(hash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
+      expect(employee.pin).toBeNull();
     });
 
     it('verifies hashed PIN correctly', async () => {
-      store.set('tenants/default/users/u2', { email: 'cook@rest.com', name: 'Cook', pinHash: testPinHash, active: true });
-      store.set('tenants/default/memberships/m2', { userId: 'u2', roleId: 'kitchen', branchIds: { hq: true }, active: true });
+      store.set('tenants/default/employees/u2', {
+        profile: { email: 'cook@rest.com', name: 'Cook', pinHash: testPinHash, active: true },
+        role: 'kitchen',
+        branches: { hq: true },
+      });
       store.set('tenants/default/roles', {
         kitchen: { name: 'Cocina', permissions: { 'orders:read': true } },
       });
@@ -593,20 +622,22 @@ describe('authService', () => {
       const { createUser } = await import('../../lib/authService.js');
       const r = await createUser({ email: 'new@rest.com', name: 'New', role: 'kitchen', pin: '1234' });
       expect(r.success).toBe(true);
-      const user = store.get(`tenants/default/users/${r.userId}`);
-      expect(user.pinHash).toBeDefined();
-      expect(user.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
-      expect(user.pin).toBeUndefined();
+      const employeeData = store.get(`tenants/default/employees/${r.userId}`);
+      expect(employeeData.profile.pinHash).toBeDefined();
+      expect(employeeData.profile.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
+      expect(employeeData.profile.pin).toBeUndefined();
     });
 
     it('updateUser hashes pin when provided', async () => {
-      store.set('tenants/default/users/u3', { email: 'update@rest.com', name: 'Update', pinHash: testPinHash, active: true });
+      store.set('tenants/default/employees/u3', {
+        profile: { email: 'update@rest.com', name: 'Update', pinHash: testPinHash, active: true },
+      });
       const { updateUser } = await import('../../lib/authService.js');
       await updateUser('u3', { pin: 'newpin' });
-      const user = store.get('tenants/default/users/u3');
-      expect(user.pinHash).toBeDefined();
-      expect(user.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
-      expect(user.pin).toBeUndefined();
+      const employee = store.get('tenants/default/employees/u3');
+      expect(employee.profile.pinHash).toBeDefined();
+      expect(employee.profile.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
+      expect(employee.profile.pin).toBeNull();
     });
   });
 });

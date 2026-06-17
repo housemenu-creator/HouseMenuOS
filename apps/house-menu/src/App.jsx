@@ -69,13 +69,41 @@ export default function App() {
                 {/* ── Zona Staff (sin sidebar, con WorkerShell) ── */}
                 <Route path="/staff" element={<StaffGuard><WorkerShell /></StaffGuard>}>
                   <Route index element={<SuspenseBoundary message="Error en el dashboard"><WorkerDashboard /></SuspenseBoundary>} />
-                  <Route path="mozo" element={<SuspenseBoundary message="Error en el módulo mozo"><MozoView /></SuspenseBoundary>} />
-                  <Route path="cocina" element={<SuspenseBoundary message="Error en el KDS"><KitchenView /></SuspenseBoundary>} />
-                  <Route path="despacho" element={<SuspenseBoundary message="Error en el despacho"><DispatchView /></SuspenseBoundary>} />
-                  <Route path="delivery" element={<SuspenseBoundary message="Error en el portal de reparto"><RepartidorView /></SuspenseBoundary>} />
-                  <Route path="vendedor" element={<SuspenseBoundary message="Error en el módulo de ventas"><VendedorView /></SuspenseBoundary>} />
-                  <Route path="caja" element={<SuspenseBoundary message="Error en el módulo de caja"><CajeroView /></SuspenseBoundary>} />
-                  <Route path="notificaciones" element={<SuspenseBoundary message="Error en notificaciones"><NotificacionesView /></SuspenseBoundary>} />
+                  <Route path="mozo" element={
+                    <AuthGuard requirePermission="orders:create">
+                      <SuspenseBoundary message="Error en el módulo mozo"><MozoView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="cocina" element={
+                    <AuthGuard requirePermission="orders:read">
+                      <SuspenseBoundary message="Error en el KDS"><KitchenView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="despacho" element={
+                    <AuthGuard requirePermission="orders:update_status">
+                      <SuspenseBoundary message="Error en el despacho"><DispatchView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="delivery" element={
+                    <AuthGuard requirePermission="orders:read">
+                      <SuspenseBoundary message="Error en el portal de reparto"><RepartidorView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="vendedor" element={
+                    <AuthGuard requirePermission="cuentas:read">
+                      <SuspenseBoundary message="Error en el módulo de ventas"><VendedorView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="caja" element={
+                    <AuthGuard requirePermission="orders:mark_paid">
+                      <SuspenseBoundary message="Error en el módulo de caja"><CajeroView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="notificaciones" element={
+                    <AuthGuard requirePermission="chat:read">
+                      <SuspenseBoundary message="Error en notificaciones"><NotificacionesView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
                 </Route>
 
                 {/* ── Zona Pública sin layout ── */}

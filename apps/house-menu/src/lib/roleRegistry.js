@@ -153,6 +153,7 @@ export function getAdminTabs(userRole) {
 }
 
 export function getDefaultUsers() {
+  if (import.meta.env.PROD) return [];
   return Object.values(ROLE_REGISTRY)
     .filter(r => r.defaultUser)
     .map(r => ({ id: `default-${r.key}`, role: r.key, ...r.defaultUser }));

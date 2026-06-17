@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { verifyPin, createSession, deleteSession, ensureFirebaseUser } from '../lib/authService';
 import { signInWithGoogle, signOut as fbSignOut, onAuthChange } from '../lib/firebaseAuth';
 import { hasPermission as checkPermission } from '../lib/permissions';
+import { getSessionId } from '@house/db';
 
 /** @typedef {{ id: string; email: string; name: string; role: string }} SessionUser */
 /** @typedef {{ user: SessionUser | null; session: Record<string, unknown> | null; isAuthenticated: boolean; isLoading: boolean; firebaseReady: boolean; error: unknown; login: (email: string, pin: string) => Promise<{success: boolean; error?: string}>; loginWithGoogle: () => Promise<{success: boolean; error?: string}>; logout: () => Promise<void>; can: (perm: string) => boolean; hasBranchAccess: (branchId: string) => boolean; clearError: () => void }} AuthContextValue */
@@ -46,6 +47,10 @@ export function AuthProvider({ children }) {
   const isAuthenticated = !!session;
 
   useEffect(() => {
+    // Ensure a stable session ID exists for customer carts/orders
+    // that survive staff login/logout in the same browser
+    getSessionId();
+
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       setFirebaseReady(true);
       if (firebaseUser) {
