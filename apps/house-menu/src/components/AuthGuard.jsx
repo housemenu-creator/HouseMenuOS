@@ -1,9 +1,26 @@
+import { ShieldX } from 'lucide-react';
 import { ROLE_REGISTRY, getDefaultUsers } from '../lib/roleRegistry';
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from './LoginScreen';
 
-export default function AuthGuard({ children, allowedRoles, roleConfig }) {
-  const { isAuthenticated, isLoading, error, login, loginWithGoogle, clearError, user, firebaseReady } = useAuth();
+function AccessDenied({ message }) {
+  return (
+    <div className="fixed inset-0 z-50 cm-bg flex items-center justify-center p-4">
+      <div className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border p-8 max-w-sm w-full text-center">
+        <div className="w-16 h-16 bg-cm-error/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-cm-error/30">
+          <ShieldX className="w-8 h-8 text-cm-error" />
+        </div>
+        <h1 className="text-2xl font-bold text-cm-accent mb-2">Acceso denegado</h1>
+        <p className="text-sm text-cm-muted">
+          {message || 'No tienes permiso para acceder a esta sección.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function AuthGuard({ children, allowedRoles, roleConfig, requirePermission }) {
+  const { isAuthenticated, isLoading, error, login, loginWithGoogle, clearError, user, firebaseReady, can } = useAuth();
 
   if (isLoading && !isAuthenticated) {
     return (
@@ -35,16 +52,14 @@ export default function AuthGuard({ children, allowedRoles, roleConfig }) {
     );
   }
 
+  // Permission guard — checks against user permissions (not role)
+  if (requirePermission && !can(requirePermission)) {
+    return <AccessDenied message="No tienes el permiso necesario para acceder a esta sección." />;
+  }
+
   if (allowedRoles && user.role !== 'admin' && user.role !== 'superadmin' && !allowedRoles.includes(user.role)) {
     return (
-      <div className="fixed inset-0 z-50 cm-bg flex items-center justify-center p-4">
-        <div className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border p-8 max-w-sm w-full text-center bg-white">
-          <h1 className="text-2xl text-cm-accent">Acceso denegado</h1>
-          <p className="text-sm text-cm-muted mt-2">
-            Tu rol actual ({user.role}) no tiene permiso para esta sección.
-          </p>
-        </div>
-      </div>
+      <AccessDenied message={`Tu rol actual (${user.role}) no tiene permiso para esta sección.`} />
     );
   }
 

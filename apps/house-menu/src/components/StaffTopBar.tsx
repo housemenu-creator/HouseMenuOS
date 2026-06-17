@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BranchSwitcher from './BranchSwitcher';
 import { useAuth } from '../context/AuthContext';
-import { ChefHat, ClipboardList, Truck, Bike, TrendingUp, LogOut, LayoutDashboard } from 'lucide-react';
+import { ChefHat, ClipboardList, Truck, Bike, TrendingUp, LogOut, LayoutDashboard, Users } from 'lucide-react';
 import logo from '../assets/logo.jpg';
 
 interface RoleLink {
@@ -19,6 +19,7 @@ const ROLE_LINKS: RoleLink[] = [
   { path: '/staff/despacho', label: 'Despacho', icon: <Truck className="w-3.5 h-3.5" />, roles: ['dispatch'] },
   { path: '/staff/delivery', label: 'Delivery', icon: <Bike className="w-3.5 h-3.5" />, roles: ['delivery'] },
   { path: '/staff/vendedor', label: 'Ventas', icon: <TrendingUp className="w-3.5 h-3.5" />, roles: ['vendedor', 'cajero'] },
+  { path: '/staff/empleados', label: 'Empleados', icon: <Users className="w-3.5 h-3.5" />, roles: ['admin', 'superadmin'] },
 ];
 
 export default function StaffTopBar() {
