@@ -73,6 +73,21 @@
     "jd-judge-a": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/jd-judge-a.md}" },
     "jd-judge-b": { "hidden": true, "mode": "subagent", "prompt": "{file:C:/Users/archiphone/.config/opencode/prompts/sdd/jd-judge-b.md}" }
   },
+  "provider": {
+    "nvidia-build": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "NVIDIA Build",
+      "options": {
+        "baseURL": "https://integrate.api.nvidia.com/v1"
+      },
+      "models": {
+        "moonshotai/kimi-k2.6": {
+          "name": "Kimi K2.6 (Moonshot)",
+          "limit": { "context": 16384, "output": 16384 }
+        }
+      }
+    }
+  },
   "instructions": [
     "C:/Users/archiphone/.config/opencode/skills/agentic-framework/SKILL.md",
     "C:/Users/archiphone/.config/opencode/agents/project-orchestrator.md",

@@ -123,13 +123,13 @@ export const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg:
 };
 
 export const ORDER_STATUSES = [
-  { value: 'recibido', label: 'Recibido', color: 'bg-yellow-400' },
-  { value: 'preparando', label: 'Preparando', color: 'bg-blue-400' },
-  { value: 'listo', label: 'Listo', color: 'bg-green-400' },
-  { value: 'en_camino', label: 'En Camino', color: 'bg-purple-400' },
-  { value: 'entregado', label: 'Entregado', color: 'bg-gray-400' },
-  { value: 'cancelado', label: 'Cancelado', color: 'bg-red-400' },
-  { value: 'programado', label: 'Programado', color: 'bg-indigo-400' },
+  { value: 'recibido', label: 'Recibido', color: 'bg-cm-warning' },
+  { value: 'preparando', label: 'Preparando', color: 'bg-cm-info' },
+  { value: 'listo', label: 'Listo', color: 'bg-cm-success' },
+  { value: 'en_camino', label: 'En Camino', color: 'bg-cm-accent' },
+  { value: 'entregado', label: 'Entregado', color: 'bg-cm-border' },
+  { value: 'cancelado', label: 'Cancelado', color: 'bg-cm-error' },
+  { value: 'programado', label: 'Programado', color: 'bg-cm-accent' },
 ] as const;
 
 export const STATUS_WORKFLOW = ['recibido', 'preparando', 'listo', 'en_camino', 'entregado'];

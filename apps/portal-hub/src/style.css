@@ -69,3 +69,83 @@ body,
   background: var(--cm-accent-light);
   color: var(--cm-text);
 }
+
+/* ── Button System (cm-btn) ───────────────────────────── */
+.cm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--cm-font);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: var(--cm-radius-md);
+  cursor: pointer;
+  transition: all var(--cm-transition-fast);
+  text-decoration: none;
+  line-height: 1.2;
+  padding: 0.65rem 1.25rem;
+  font-size: var(--cm-font-size-sm);
+}
+.cm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.cm-btn--primary {
+  background: var(--cm-primary);
+  color: #fff;
+}
+.cm-btn--primary:hover:not(:disabled) {
+  background: var(--cm-primary-hover);
+}
+.cm-btn--success {
+  background: var(--cm-success);
+  color: #fff;
+}
+.cm-btn--success:hover:not(:disabled) {
+  background: #047857;
+}
+.cm-btn--error {
+  background: var(--cm-error);
+  color: #fff;
+}
+.cm-btn--error:hover:not(:disabled) {
+  background: #b91c1c;
+}
+.cm-btn--lg {
+  padding: 0.85rem 1.75rem;
+  font-size: var(--cm-font-size-base);
+  border-radius: var(--cm-radius-lg);
+}
+
+/* ── Badge System (cm-badge) ──────────────────────────── */
+.cm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--cm-radius-full);
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.cm-badge--success {
+  background: var(--cm-success-soft);
+  color: var(--cm-success);
+  border-color: rgba(5, 150, 105, 0.2);
+}
+.cm-badge--warning {
+  background: var(--cm-warning-soft);
+  color: var(--cm-warning);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+.cm-badge--info {
+  background: var(--cm-info-soft);
+  color: var(--cm-info);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+.cm-badge--neutral {
+  background: var(--cm-bg-alt);
+  color: var(--cm-text-secondary);
+  border-color: var(--cm-border);
+}

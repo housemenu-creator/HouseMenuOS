@@ -3,7 +3,7 @@ import type { KitchenStation } from './stations';
 import type { Priority } from './priorities';
 import { getPrepTime } from './stations';
 import { calcDueTime } from './timing';
-import { getPriority, sortByPriority } from './priorities';
+import { getPriority } from './priorities';
 
 export interface EnrichedOrder extends Order {
   station: KitchenStation;
@@ -15,10 +15,10 @@ export interface EnrichedOrder extends Order {
 
 export function enrichOrders(orders: Order[]): EnrichedOrder[] {
   return orders.map((order) => {
-    const station = order.station || inferOrderStation(order);
+    const station: KitchenStation = (order.station as KitchenStation) || inferOrderStation(order);
     const prepTime = getPrepTime(station);
     const dueTime = calcDueTime({ ...order, station }, prepTime * 60 * 1000);
-    const priority = getPriority(order);
+    const priority = getPriority(order as { rush?: boolean; priority?: Priority });
     const elapsed = Date.now() - (order.statusTimestamps?.[order.status || ''] || order.createdAt ? new Date(order.statusTimestamps?.[order.status || ''] || order.createdAt).getTime() : Date.now());
     const urgency = elapsed >= 12 * 60 * 1000 ? 'critical' : elapsed >= 8 * 60 * 1000 ? 'warning' : 'safe';
     return { ...order, station, dueTime, prepTime, priority, urgency };

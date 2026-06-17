@@ -65,8 +65,9 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
               key={option.id}
               layout
               variants={{
-                idle: { scale: 1, opacity: 1, y: 0 },
-                selected: { scale: 1.03, opacity: 1 },
+                idle: { scale: 1, opacity: 1 },
+                selected: { scale: 1.03, opacity: 1, y: -2 },
+                sibling: { scale: 0.96, opacity: 0.45 },
               }}
               animate={
                 isOut
@@ -77,11 +78,6 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
                   ? 'sibling'
                   : 'idle'
               }
-              variants={{
-                idle: { scale: 1, opacity: 1 },
-                selected: { scale: 1.03, opacity: 1, y: -2 },
-                sibling: { scale: 0.96, opacity: 0.45 },
-              }}
               transition={{ type: 'spring', stiffness: 400, damping: 25, mass: 0.8 }}
               whileHover={isOut ? {} : { scale: isSelected ? 1.04 : 1.02, y: -4 }}
               whileTap={isOut ? {} : { scale: 0.97 }}
@@ -155,21 +151,21 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
                   <motion.span
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-[9px] font-black uppercase text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse"
+                    className="text-[9px] font-black uppercase text-cm-warning bg-cm-warning/10 border border-cm-warning/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse"
                   >
                     <AlertTriangle className="w-3 h-3" /> Solo {option.stock}
                   </motion.span>
                 )}
 
                 {isOut ? (
-                  <span className="text-[9px] font-black text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="text-[9px] font-black text-cm-error bg-cm-error/10 border border-cm-error/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                     Agotado
                   </span>
                 ) : option.price ? (
                   <motion.span
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                    className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-cm-success/10 text-cm-success border border-cm-success/20"
                   >
                     +S/ {option.price.toFixed(2)}
                   </motion.span>

@@ -39,16 +39,6 @@ export const PACKAGING_OPTIONS = [
   { id: 'liter', name: '1 Litro', icon: '📦', price: 1.00 },
 ];
 
-export const ORDER_STATUSES = [
-  { value: 'recibido', label: 'Recibido', color: 'bg-yellow-400' },
-  { value: 'preparando', label: 'Preparando', color: 'bg-blue-400' },
-  { value: 'listo', label: 'Listo', color: 'bg-green-400' },
-  { value: 'en_camino', label: 'En Camino', color: 'bg-purple-400' },
-  { value: 'entregado', label: 'Entregado', color: 'bg-gray-400' },
-  { value: 'cancelado', label: 'Cancelado', color: 'bg-red-400' },
-  { value: 'programado', label: 'Programado', color: 'bg-indigo-400' },
-];
-
 export const PAYMENT_METHODS = [
   'Yape/Plin',
   'Efectivo',

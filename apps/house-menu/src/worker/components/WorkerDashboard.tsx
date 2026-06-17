@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, ChefHat, Truck, Bike, Clock, Activity,
   Calendar, Award, Megaphone, CheckCircle,
   AlertCircle, Coins, Play, Square, ArrowRight,
-  TrendingUp, CircleDollarSign, Users, Package,
+  TrendingUp, CircleDollarSign,
   Zap, Timer, ShoppingBag, BarChart3, Flame,
   MapPin, Coffee
 } from 'lucide-react';
@@ -88,12 +88,12 @@ const ROLE_CONFIG = {
 } as const;
 
 const STATUS_DISPLAY: Record<string, { label: string; dot: string; badge: string }> = {
-  recibido:   { label: 'Recibido',   dot: 'bg-yellow-400',  badge: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20' },
-  preparando: { label: 'Preparando', dot: 'bg-blue-400',    badge: 'bg-blue-400/10 text-blue-400 border-blue-400/20' },
-  listo:      { label: 'Listo',      dot: 'bg-emerald-400', badge: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' },
-  en_camino:  { label: 'En camino',  dot: 'bg-purple-400',  badge: 'bg-purple-400/10 text-purple-400 border-purple-400/20' },
-  entregado:  { label: 'Entregado',  dot: 'bg-gray-400',    badge: 'bg-gray-400/10 text-gray-400 border-gray-400/20' },
-  cancelado:  { label: 'Cancelado',  dot: 'bg-red-400',     badge: 'bg-red-400/10 text-red-400 border-red-400/20' },
+  recibido:   { label: 'Recibido',   dot: 'bg-cm-warning',  badge: 'bg-cm-warning/10 text-cm-warning border-cm-warning/20' },
+  preparando: { label: 'Preparando', dot: 'bg-cm-info',     badge: 'bg-cm-info/10 text-cm-info border-cm-info/20' },
+  listo:      { label: 'Listo',      dot: 'bg-cm-success',  badge: 'bg-cm-success/10 text-cm-success border-cm-success/20' },
+  en_camino:  { label: 'En camino',  dot: 'bg-cm-accent',   badge: 'bg-cm-accent/10 text-cm-accent border-cm-accent/20' },
+  entregado:  { label: 'Entregado',  dot: 'bg-cm-border',   badge: 'bg-cm-border text-cm-muted border-cm-border' },
+  cancelado:  { label: 'Cancelado',  dot: 'bg-cm-error',    badge: 'bg-cm-error/10 text-cm-error border-cm-error/20' },
 };
 
 const MOTIVATIONAL: Record<string, string> = {
@@ -239,7 +239,7 @@ export default function WorkerDashboard() {
   }, [ordersMap, user?.id, user?.name]);
 
   const activeBranchName = useMemo(
-    () => branches.find((b) => b.id === activeBranchId)?.name || 'Principal',
+    () => branches.find((b: any) => b.id === activeBranchId)?.name || 'Principal',
     [branches, activeBranchId]
   );
 
@@ -254,10 +254,10 @@ export default function WorkerDashboard() {
 
   // ── Pedidos por estado (métricas rápidas) ──
   const orderMetrics = [
-    { label: 'Recibidos',   count: statusCounts['recibido'] || 0,   dot: 'bg-yellow-400',  key: 'recibido' },
-    { label: 'En cocina',   count: statusCounts['preparando'] || 0, dot: 'bg-blue-400',    key: 'preparando' },
-    { label: 'Listos',      count: statusCounts['listo'] || 0,       dot: 'bg-emerald-400', key: 'listo' },
-    { label: 'En camino',   count: statusCounts['en_camino'] || 0,   dot: 'bg-purple-400',  key: 'en_camino' },
+    { label: 'Recibidos',   count: statusCounts['recibido'] || 0,   dot: 'bg-cm-warning', key: 'recibido' },
+    { label: 'En cocina',   count: statusCounts['preparando'] || 0, dot: 'bg-cm-info',    key: 'preparando' },
+    { label: 'Listos',      count: statusCounts['listo'] || 0,       dot: 'bg-cm-success', key: 'listo' },
+    { label: 'En camino',   count: statusCounts['en_camino'] || 0,   dot: 'bg-cm-accent',  key: 'en_camino' },
   ];
 
   return (

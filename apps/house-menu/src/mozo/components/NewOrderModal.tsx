@@ -74,7 +74,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
   const handleSubmit = async () => {
     // Validate
     const nameCheck = isRequired(customerName, 'El nombre del cliente');
-    setNameError(nameCheck.valid ? '' : nameCheck.error);
+    setNameError(nameCheck.valid ? '' : (nameCheck.error ?? ''));
     setCreateError(null);
     if (!nameCheck.valid) return;
     if (cart.length === 0) return;
@@ -137,8 +137,8 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
               <label className="text-xs font-semibold text-cm-text-secondary uppercase tracking-wider block mb-1">Cliente</label>
               <input type="text" value={customerName}
                 onChange={(e) => { setCustomerName(e.target.value); if (nameError) setNameError(''); }}
-                onBlur={() => { const c = isRequired(customerName, 'El nombre del cliente'); setNameError(c.valid ? '' : c.error); }}
-                className={`w-full bg-cm-bg-alt border rounded-lg px-3 py-2.5 text-sm text-cm-text focus:outline-none ${nameError ? 'border-cm-error' : 'border-cm-border focus:border-teal-500'}`}
+                onBlur={() => { const c = isRequired(customerName, 'El nombre del cliente'); setNameError(c.valid ? '' : (c.error ?? '')); }}
+                className={`w-full bg-cm-bg-alt border rounded-lg px-3 py-2.5 text-sm text-cm-text focus:outline-none ${nameError ? 'border-cm-error' : 'border-cm-border focus:border-cm-accent'}`}
                 placeholder="Nombre del cliente" />
               {nameError && <p className="text-[0.6rem] font-bold text-cm-error mt-1">{nameError}</p>}
             </div>
@@ -162,7 +162,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
           <div>
             <label className="text-xs font-semibold text-cm-text-secondary uppercase tracking-wider block mb-1">Observaciones</label>
             <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)}
-              className="w-full bg-cm-bg-alt border border-cm-border rounded-lg px-3 py-2 text-sm text-cm-text focus:outline-none focus:border-teal-500 resize-none"
+              className="w-full bg-cm-bg-alt border border-cm-border rounded-lg px-3 py-2 text-sm text-cm-text focus:outline-none focus:border-cm-accent resize-none"
               rows={2} placeholder="Notas para la cocina..." />
           </div>
 
@@ -175,7 +175,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-text-tertiary" />
                   <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-cm-bg-alt border border-cm-border rounded-lg text-sm text-cm-text focus:outline-none focus:border-teal-500"
+                    className="w-full pl-9 pr-4 py-2 bg-cm-bg-alt border border-cm-border rounded-lg text-sm text-cm-text focus:outline-none focus:border-cm-accent"
                     placeholder="Buscar..." />
                 </div>
               </div>
@@ -183,12 +183,12 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
               {categories.length > 0 && (
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   <button onClick={() => setCategory('')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${!category ? 'bg-teal-500 text-white' : 'bg-cm-bg-alt border border-cm-border text-cm-text-secondary'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${!category ? 'bg-cm-accent text-white' : 'bg-cm-bg-alt border border-cm-border text-cm-text-secondary'}`}>
                     Todos
                   </button>
                   {categories.map((c) => (
                     <button key={c} onClick={() => setCategory(c)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${category === c ? 'bg-teal-500 text-white' : 'bg-cm-bg-alt border border-cm-border text-cm-text-secondary'}`}>
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${category === c ? 'bg-cm-accent text-white' : 'bg-cm-bg-alt border border-cm-border text-cm-text-secondary'}`}>
                       {c}
                     </button>
                   ))}
@@ -198,7 +198,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {products.map((p: any) => (
                   <button key={p.id} onClick={() => handleProductClick(p)}
-                    className="bg-cm-bg-alt border border-cm-border rounded-lg p-3 text-left hover:border-teal-500 transition-colors text-xs">
+                    className="bg-cm-bg-alt border border-cm-border rounded-lg p-3 text-left hover:border-cm-accent transition-colors text-xs">
                     <p className="font-bold text-cm-text truncate">{p.name}</p>
                     <p className="text-cm-text-secondary mt-0.5">S/ {((p.base_price ?? p.price ?? 0)).toFixed(2)}</p>
                     {hasProductOptions(p) && <p className="text-[0.55rem] text-cm-accent font-semibold mt-1">✦ Personalizar</p>}
@@ -220,7 +220,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
                     <p className="flex-1 text-sm font-semibold text-cm-text truncate">{item.name}</p>
                     {item.details?.length > 0 && (
                       <div className="text-[0.5rem] text-cm-text-tertiary ml-1 space-y-0.5">
-                        {item.details.map((d, dIdx) => <p key={dIdx} className="border-l-2 border-cm-border pl-1.5">{d}</p>)}
+                        {item.details.map((d: string, dIdx: number) => <p key={dIdx} className="border-l-2 border-cm-border pl-1.5">{d}</p>)}
                       </div>
                     )}
                     <div className="flex items-center gap-1.5">
@@ -249,7 +249,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
         <div className="p-5 border-t border-cm-border flex gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 border border-cm-border rounded-lg text-sm font-semibold text-cm-text-secondary hover:bg-cm-surface-hover transition-colors">Cancelar</button>
           <button onClick={handleSubmit} disabled={!customerName.trim() || cart.length === 0 || saving}
-            className="flex-1 py-2.5 bg-teal-500 text-white rounded-lg text-sm font-bold hover:bg-teal-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors">
+            className="flex-1 py-2.5 bg-cm-accent text-white rounded-lg text-sm font-bold hover:bg-cm-accent-hover disabled:opacity-50 flex items-center justify-center gap-2 transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Creando...' : `Crear Pedido — S/ ${total.toFixed(2)}`}
           </button>

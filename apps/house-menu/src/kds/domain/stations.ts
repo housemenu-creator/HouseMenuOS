@@ -19,6 +19,7 @@ export const STATION_KEYWORDS = {
 } as const;
 
 export const STATION_PREP_TIMES = {
+  all: 0,
   grill: 10,
   fryer: 8,
   cold: 4,

@@ -19,7 +19,6 @@ export default function MozoOrderList({ orders, onUpdateStatus, onCobrar }: Mozo
     <div className="space-y-3">
       {orders.map((order) => {
         const isPaid = order.payment_status === 'pagado';
-        const isActive = order.status !== 'entregado' && order.status !== 'cancelado';
 
         return (
           <div key={order.id} className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm p-4">

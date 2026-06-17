@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { TriangleAlert, Bell, Clock } from 'lucide-react';
 import { PRIORITY, PRIORITY_CONFIG } from '../kdsTypes';
 
@@ -8,7 +8,7 @@ const iconMap = {
   [PRIORITY.LOW]: TriangleAlert,
 };
 
-export default function PriorityBadge({ priority = PRIORITY.NORMAL, className = '' }) {
+function PriorityBadge({ priority = PRIORITY.NORMAL, className = '' }) {
   const config = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG[PRIORITY.NORMAL];
   const Icon = iconMap[priority] || Clock;
 
@@ -21,3 +21,5 @@ export default function PriorityBadge({ priority = PRIORITY.NORMAL, className = 
     </span>
   );
 }
+
+export default memo(PriorityBadge);

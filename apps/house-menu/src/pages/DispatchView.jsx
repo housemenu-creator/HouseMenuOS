@@ -28,7 +28,7 @@ import { useFCM } from '../hooks/useFCM';
 
 export default function DispatchView() {
   const navigate = useNavigate();
-  const { activeBranchId, setActiveBranchId } = useBranch();
+  const { activeBranchId, activeBranch, setActiveBranchId } = useBranch();
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('listos');

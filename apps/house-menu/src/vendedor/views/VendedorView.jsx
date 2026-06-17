@@ -14,11 +14,15 @@ import useVendedorStore from '../store/vendedorStore';
 import VendedorDashboard from '../components/VendedorDashboard';
 import CuentaDetail from '../components/CuentaDetail';
 import NewOrderModal from '../components/NewOrderModal';
+import CuentaFormModal from '../components/CuentaFormModal';
 
 export default function VendedorView() {
   const { activeBranchId, setActiveBranchId } = useBranch();
   const { user, logout } = useAuth();
   const [catalog, setCatalog] = useState({ products: {} });
+  const [showCuentaForm, setShowCuentaForm] = useState(false);
+  const [editingCuenta, setEditingCuenta] = useState(null);
+  const [cuentaRefreshKey, setCuentaRefreshKey] = useState(0);
 
   useOrderSync({ branchId: activeBranchId });
   useVendedorSync({ branchId: activeBranchId });
@@ -107,6 +111,10 @@ export default function VendedorView() {
               </h1>
               <p className="text-xs text-cm-muted font-semibold mt-0.5">{stats.activeCuentas} cuentas activas</p>
             </div>
+            <button onClick={() => { setEditingCuenta(null); setShowCuentaForm(true); }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-cm-accent text-white rounded-lg text-xs font-bold hover:bg-cm-accent-hover transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
+            </button>
           </div>
         )}
         {selectedCuenta && selectedCuentaId ? (
@@ -115,6 +123,7 @@ export default function VendedorView() {
             orders={ordersForCuenta}
             onBack={() => setSelectedCuentaId(null)}
             onNewOrder={handleNewOrder}
+            onEditCuenta={() => { setEditingCuenta(selectedCuenta); setShowCuentaForm(true); }}
           />
         ) : (
           <VendedorDashboard
@@ -138,6 +147,14 @@ export default function VendedorView() {
           catalog={catalog}
           onClose={() => setShowNewOrder(false)}
           onCreated={() => setSelectedCuentaId(selectedCuenta.id)}
+        />
+      )}
+
+      {showCuentaForm && (
+        <CuentaFormModal
+          cuenta={editingCuenta}
+          onClose={() => { setShowCuentaForm(false); setEditingCuenta(null); }}
+          onSaved={() => setCuentaRefreshKey((k) => k + 1)}
         />
       )}
     </div>

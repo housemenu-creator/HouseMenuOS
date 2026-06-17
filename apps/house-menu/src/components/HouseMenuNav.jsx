@@ -20,9 +20,21 @@ import {
   Bike,
   LayoutDashboard,
   Monitor,
+  Home,
 } from 'lucide-react';
 
 const SECTIONS = [
+  {
+    id: 'inicio',
+    path: '/',
+    label: 'Inicio',
+    sublabel: 'Página Principal',
+    icon: Home,
+    color: 'text-cm-text',
+    bg: 'bg-cm-accent/10',
+    activeBg: 'bg-cm-accent',
+    hint: null,
+  },
   {
     id: 'customer',
     path: '/carta',
@@ -112,11 +124,11 @@ const SECTIONS = [
     hint: 'PIN: admin',
   },
   {
-    id: 'monitor',
+    id: 'empleados',
     path: null,
     url: '/empleados',
-    label: 'Monitor',
-    sublabel: 'Dashboard Técnico',
+    label: 'Portal Empleados',
+    sublabel: 'Fichado, Horarios, Tareas',
     icon: Monitor,
     color: 'text-sky-600',
     bg: 'bg-sky-500/10',
@@ -150,15 +162,18 @@ function HouseMenuNav() {
     <>
       {/* ── Desktop Sidebar ─────────────────────────────── */}
       <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-white border-r border-cm-border flex-col z-50 shadow-cm-md">
-        {/* Brand */}
+        {/* Brand — clickeable → Inicio */}
         <div className="p-6 border-b border-cm-border">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => { navigate('/'); setMobileOpen(false); }}
+            className="flex items-center gap-3 w-full text-left hover:opacity-80 transition-opacity"
+          >
             <img src={logo} alt="House Logo" className="w-10 h-10 rounded-xl object-cover border border-cm-border shadow-cm-md" />
             <div>
               <p className="font-black text-cm-text text-base leading-tight">HOUSE</p>
               <p className="text-[0.6rem] font-bold text-cm-muted tracking-widest uppercase">Menu System</p>
             </div>
-          </div>
+          </button>
           
           <BranchSwitcher variant="select" showLabel className="mt-4" />
         </div>
@@ -270,10 +285,13 @@ function HouseMenuNav() {
               className="md:hidden fixed left-0 top-0 h-full w-72 bg-white border-r border-cm-border z-50 flex flex-col p-5 justify-between"
             >
               <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { navigate('/'); setMobileOpen(false); }}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
                   <img src={logo} alt="House Logo" className="w-8 h-8 rounded-lg object-cover border border-cm-border shadow-cm-md" />
                   <span className="font-black text-cm-text">House Menu</span>
-                </div>
+                </button>
                 <button onClick={() => setMobileOpen(false)} className="p-1.5 border-2 border-cm-border rounded-lg text-cm-muted">
                   <X className="w-4 h-4" />
                 </button>

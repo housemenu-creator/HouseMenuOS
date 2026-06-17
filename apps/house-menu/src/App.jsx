@@ -53,7 +53,7 @@ export default function App() {
   return (
     <ErrorBoundary message="Error crítico en la aplicación">
       <BranchProvider>
-        <BrowserRouter basename="/menu-app">
+        <BrowserRouter basename="/">
           <AuthProvider>
             <UIProvider>
               <MarketingProvider>

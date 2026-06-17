@@ -106,39 +106,39 @@ export default function LiveDriverMap({ drivers = [], enCaminoOrders = [], focus
             >
               <Popup>
                 <div className="text-sm space-y-1.5 min-w-[160px]">
-                  <p className="font-black text-gray-900">{driver.name}</p>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <p className="font-black text-cm-text">{driver.name}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-cm-text-secondary">
                     <Navigation className="w-3 h-3" />
                     {driver.available !== false ? 'Disponible' : 'En ruta'}
                   </div>
                   {driver.phone && (
-                    <p className="text-xs text-gray-400">{driver.phone}</p>
+                    <p className="text-xs text-cm-text-tertiary">{driver.phone}</p>
                   )}
                   {driver.totalDeliveries > 0 && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-cm-text-tertiary">
                       {driver.totalDeliveries} {driver.totalDeliveries === 1 ? 'entrega' : 'entregas'}
                     </p>
                   )}
 
                   {assigned && (
-                    <div className="mt-2 pt-2 border-t border-gray-200 space-y-1">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase">Pedido actual</p>
-                      <p className="text-xs font-bold text-gray-800">
+                    <div className="mt-2 pt-2 border-t border-cm-border space-y-1">
+                      <p className="text-[10px] font-bold text-cm-text-tertiary uppercase">Pedido actual</p>
+                      <p className="text-xs font-bold text-cm-text">
                         {assigned.customerName || 'Cliente'}
                       </p>
                       {assigned.location && (
-                        <p className="text-[11px] text-gray-500 flex items-start gap-1">
+                        <p className="text-[11px] text-cm-text-secondary flex items-start gap-1">
                           <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
                           <span>{assigned.location}</span>
                         </p>
                       )}
-                      <p className="text-[10px] text-gray-400 font-mono">
+                      <p className="text-[10px] text-cm-text-tertiary font-mono">
                         #{assigned.id?.slice(-4).toUpperCase()}
                       </p>
                     </div>
                   )}
 
-                  <p className="text-[10px] text-gray-300 pt-1">
+                  <p className="text-[10px] text-cm-muted pt-1">
                     {new Date(driver.lastPosition.updatedAt).toLocaleTimeString('es-PE', {
                       hour: '2-digit',
                       minute: '2-digit',

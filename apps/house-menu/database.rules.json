@@ -59,7 +59,7 @@
         },
         "catalog": {
           ".read": true,
-          ".write": "auth != null",
+          ".write": "auth != null && (root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'vendedor')",
           "products": {
             "$productId": {
               ".validate": "newData.hasChildren(['name', 'base_price']) && newData.child('base_price').isNumber() && newData.child('base_price').val() >= 0"
@@ -68,15 +68,15 @@
         },
         "cash_sessions": {
           ".read": "auth != null",
-          ".write": "auth != null"
+          ".write": "auth != null && (root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'cajero')"
         },
         "flash_offers_active": {
           ".read": true,
           ".write": "auth != null && root.child('tenants').child(auth.uid).exists()"
         },
         "config": {
-          ".read": "auth != null",
-          ".write": "auth != null && root.child('tenants').child(auth.uid).exists()"
+          ".read": "auth != null && (root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin')",
+          ".write": "auth != null && (root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin')"
         },
         "orders": {
           ".read": "auth != null",
@@ -86,24 +86,12 @@
             "status": {
               ".validate": "newData.isString() && newData.val().matches(/^(programado|recibido|preparando|listo|en_camino|entregado|cancelado)$/)"
             },
-            "canceledBy": {
-              ".validate": "newData.isString()"
-            },
-            "paidBy": {
-              ".validate": "newData.isString()"
-            },
-            "createdBy": {
-              ".validate": "newData.isString()"
-            },
-            "updatedBy": {
-              ".validate": "newData.isString()"
-            },
-            "editedBy": {
-              ".validate": "newData.isString()"
-            },
-            "notedBy": {
-              ".validate": "newData.isString()"
-            }
+            "canceledBy": { ".validate": "newData.isString()" },
+            "paidBy": { ".validate": "newData.isString()" },
+            "createdBy": { ".validate": "newData.isString()" },
+            "updatedBy": { ".validate": "newData.isString()" },
+            "editedBy": { ".validate": "newData.isString()" },
+            "notedBy": { ".validate": "newData.isString()" }
           }
         },
         "chat": {
@@ -116,7 +104,7 @@
         "attendance": {
           ".read": "auth != null",
           "$employeeId": {
-            ".write": "auth != null",
+            ".write": "auth != null && $employeeId === auth.uid",
             "$date": {
               ".validate": "newData.hasChildren(['employeeId', 'date', 'clockIn'])"
             }
@@ -127,20 +115,26 @@
           ".write": "auth != null",
           "drivers": {
             "$driverId": {
-              ".write": "auth != null"
+              ".write": "auth != null && ($driverId === auth.uid || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'dispatch')"
             }
           }
         },
         "employees": {
-          ".read": "auth != null",
+          ".read": "auth != null && (root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin')",
           "$employeeId": {
-            ".write": "auth != null"
+            ".write": "auth != null && (root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin')"
           }
         },
         "fcm_tokens": {
           ".read": "auth != null",
           "$userId": {
-            ".write": "auth != null"
+            ".write": "auth != null && $userId === auth.uid"
+          }
+        },
+        "notifications": {
+          ".read": "auth != null",
+          "$userId": {
+            ".write": "auth != null && $userId === auth.uid"
           }
         }
       }
@@ -149,7 +143,7 @@
       ".read": "auth != null",
       "$branchId": {
         ".read": "auth != null",
-        ".write": "auth != null && root.child('tenants').child(auth.uid).exists()",
+        ".write": "auth != null && (root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('branches').child($branchId).child('employees').child(auth.uid).child('role').val() === 'superadmin')",
         "fiscal": {
           "$field": {
             ".read": "auth != null && root.child('tenants').child(auth.uid).exists()",
@@ -170,7 +164,6 @@
         ".write": "auth != null"
       }
     },
-
     "agent_tasks": {
       ".read": "auth != null",
       ".write": "auth != null",
@@ -178,7 +171,6 @@
         ".validate": "newData.hasChildren(['instruccion', 'activa'])"
       }
     },
-
     "agent_audit": {
       ".read": "auth != null",
       "$logId": {

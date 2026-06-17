@@ -57,11 +57,11 @@ export default function WizardEditorModal({ product, onClose, updateField }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border-4 border-cm-border animate-[fadeIn_0.2s_ease]">
+      <div className="bg-cm-surface rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border-4 border-cm-border animate-[fadeIn_0.2s_ease]">
 
         <div className="flex items-center justify-between p-6 border-b-2 border-cm-border bg-cm-bg">
           <div>
-            <div className="flex items-center gap-2 text-indigo-600 mb-1">
+            <div className="flex items-center gap-2 text-cm-accent mb-1">
               <Sparkles className="w-5 h-5" />
               <span className="font-bold text-xs tracking-widest uppercase">Constructor de Combos</span>
             </div>
@@ -69,13 +69,13 @@ export default function WizardEditorModal({ product, onClose, updateField }) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors text-cm-muted"
+            className="p-2 hover:bg-cm-error/10 hover:text-cm-error rounded-full transition-colors text-cm-muted"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-cm-bg">
           {steps.length === 0 ? (
             <div className="text-center py-12 text-cm-muted">
               <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -84,10 +84,10 @@ export default function WizardEditorModal({ product, onClose, updateField }) {
             </div>
           ) : (
             steps.map((step, sIdx) => (
-              <div key={step.id} className="bg-white rounded-xl border-2 border-cm-border shadow-sm p-5 relative group">
+              <div key={step.id} className="bg-cm-surface rounded-xl border-2 border-cm-border shadow-sm p-5 relative group">
                 <button
                   onClick={() => handleDeleteStep(sIdx)}
-                  className="absolute -top-3 -right-3 bg-red-100 text-red-600 p-1.5 rounded-full border border-red-200 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200"
+                  className="absolute -top-3 -right-3 bg-cm-error/10 text-cm-error p-1.5 rounded-full border border-cm-error/20 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-cm-error/20"
                   title="Eliminar Paso"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -102,7 +102,7 @@ export default function WizardEditorModal({ product, onClose, updateField }) {
                       className="text-lg font-black text-cm-text block w-full"
                     />
                   </div>
-                  <div className="shrink-0 flex items-center bg-gray-100 rounded-lg p-1">
+                  <div className="shrink-0 flex items-center bg-cm-bg-alt rounded-lg p-1">
                     <button
                       onClick={() => handleStepChange(sIdx, 'type', 'single')}
                       className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${step.type === 'single' ? 'bg-white shadow text-cm-accent' : 'text-cm-muted'}`}
@@ -120,7 +120,7 @@ export default function WizardEditorModal({ product, onClose, updateField }) {
 
                 <div className="space-y-2 mb-4">
                   {(step.options || []).map((opt, oIdx) => (
-                    <div key={opt.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg group/opt">
+                    <div key={opt.id} className="flex items-center gap-3 p-2 hover:bg-cm-bg-alt rounded-lg group/opt">
                       <div className="w-10 h-10 rounded-full bg-cm-border flex items-center justify-center shrink-0 border border-cm-border text-xl cursor-pointer hover:bg-cm-accent/10 transition-colors" title="Cambiar Icono (Emoji)">
                         <InlineEdit
                           value={opt.icon || '📍'}
@@ -156,7 +156,7 @@ export default function WizardEditorModal({ product, onClose, updateField }) {
 
                 <button
                   onClick={() => handleAddOption(sIdx)}
-                  className="w-full py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-dashed border-indigo-200"
+                  className="w-full py-2 text-xs font-bold text-cm-accent hover:bg-cm-accent/10 rounded-lg transition-colors border border-dashed border-cm-accent/30"
                 >
                   + Añadir Opción a este paso
                 </button>

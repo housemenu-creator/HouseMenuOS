@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Phone, Mail, MapPin, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Phone, Mail, MapPin, FileText, Pencil, XCircle, Loader2 } from 'lucide-react';
 import type { VendedorCuenta } from '../vendedorTypes';
 import { CUENTA_TYPE_LABELS, CUENTA_STATUS_COLORS } from '../vendedorTypes';
 import type { Order } from '../../worker/workerTypes';
+import { ordersService } from '../../lib/ordersService';
 
 interface CuentaDetailProps {
   cuenta: VendedorCuenta;
   orders: Order[];
   onBack: () => void;
   onNewOrder: () => void;
+  onEditCuenta: () => void;
 }
 
 function formatCurrency(amount: number): string {
@@ -30,8 +32,21 @@ const STATUS_ORDER_LABELS: Record<string, string> = {
   programado: 'Programado',
 };
 
-export default function CuentaDetail({ cuenta, orders, onBack, onNewOrder }: CuentaDetailProps) {
+export default function CuentaDetail({ cuenta, orders, onBack, onNewOrder, onEditCuenta }: CuentaDetailProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'pedidos'>('info');
+  const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm('¿Cancelar este pedido? Esta acción no se puede deshacer.')) return;
+    setCancellingOrder(orderId);
+    try {
+      await ordersService.updateOrderStatus('', orderId, 'cancelado', 'vendedor');
+    } catch (e) {
+      console.error('Error cancelando pedido:', e);
+    } finally {
+      setCancellingOrder(null);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -53,10 +68,16 @@ export default function CuentaDetail({ cuenta, orders, onBack, onNewOrder }: Cue
               {cuenta.taxId && ` · RUC ${cuenta.taxId}`}
             </p>
           </div>
-          <button onClick={onNewOrder}
-            className="flex items-center gap-1.5 px-4 py-2 bg-cm-accent text-white rounded-lg text-xs font-bold hover:bg-cm-accent/90 transition-colors">
-            <Plus className="w-3.5 h-3.5" /> Nuevo Pedido
-          </button>
+          <div className="flex gap-2">
+            <button onClick={onEditCuenta}
+              className="flex items-center gap-1.5 px-3 py-2 border border-cm-border text-cm-text-secondary rounded-lg text-xs font-bold hover:bg-cm-surface-hover transition-colors">
+              <Pencil className="w-3 h-3" /> Editar
+            </button>
+            <button onClick={onNewOrder}
+              className="flex items-center gap-1.5 px-4 py-2 bg-cm-accent text-white rounded-lg text-xs font-bold hover:bg-cm-accent/90 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Nuevo Pedido
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -180,33 +201,51 @@ export default function CuentaDetail({ cuenta, orders, onBack, onNewOrder }: Cue
               <p className="text-sm text-cm-text-tertiary">No hay pedidos para esta cuenta</p>
             </div>
           ) : (
-            orders.map((order) => (
-              <div key={order.id} className="bg-cm-surface border border-cm-border rounded-xl p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-cm-text-secondary">#{order.id.slice(-6).toUpperCase()}</span>
-                  <span className="text-xs text-cm-text-tertiary">
-                    {new Date(order.createdAt).toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </span>
+            orders.map((order) => {
+              const isFinal = order.status === 'entregado' || order.status === 'cancelado';
+              return (
+                <div key={order.id} className="bg-cm-surface border border-cm-border rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-cm-text-secondary">#{order.id.slice(-6).toUpperCase()}</span>
+                    <span className="text-xs text-cm-text-tertiary">
+                      {new Date(order.createdAt).toLocaleString('es-PE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                      order.status === 'entregado' ? 'text-cm-success bg-cm-success/10' :
+                      order.status === 'cancelado' ? 'text-cm-error bg-cm-error/10' :
+                      'text-cm-warning bg-cm-warning/10'
+                    }`}>
+                      {STATUS_ORDER_LABELS[order.status] || order.status}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {!isFinal && (
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={cancellingOrder === order.id}
+                          className="p-1.5 rounded-lg text-cm-error hover:bg-cm-error/10 transition-colors disabled:opacity-50"
+                          title="Cancelar pedido"
+                        >
+                          {cancellingOrder === order.id
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <XCircle className="w-3.5 h-3.5" />
+                          }
+                        </button>
+                      )}
+                      <span className="text-sm font-bold text-cm-text">
+                        {formatCurrency(order.financials?.total || 0)}
+                      </span>
+                    </div>
+                  </div>
+                  {order.items && order.items.length > 0 && (
+                    <p className="text-xs text-cm-text-tertiary mt-1 truncate">
+                      {order.items.map((i) => `${i.name} x${i.quantity}`).join(', ')}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                    order.status === 'entregado' ? 'text-cm-success bg-cm-success/10' :
-                    order.status === 'cancelado' ? 'text-cm-error bg-cm-error/10' :
-                    'text-cm-warning bg-cm-warning/10'
-                  }`}>
-                    {STATUS_ORDER_LABELS[order.status] || order.status}
-                  </span>
-                  <span className="text-sm font-bold text-cm-text">
-                    {formatCurrency(order.financials?.total || 0)}
-                  </span>
-                </div>
-                {order.items && order.items.length > 0 && (
-                  <p className="text-xs text-cm-text-tertiary mt-1 truncate">
-                    {order.items.map((i) => `${i.name} x${i.quantity}`).join(', ')}
-                  </p>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
