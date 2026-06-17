@@ -20,6 +20,7 @@ const RepartidorView = lazy(() => import('./pages/RepartidorView'));
 const VendedorView = lazy(() => import('./pages/VendedorView'));
 const CajeroView = lazy(() => import('./pages/CajeroView'));
 const NotificacionesView = lazy(() => import('./pages/NotificacionesView'));
+const EmpleadosView = lazy(() => import('./staff/empleados/EmpleadosView'));
 const WorkerDashboard = lazy(() => import('./worker/components/WorkerDashboard'));
 const KioskMode = lazy(() => import('./kds/components/KioskMode'));
 const MonitorView = lazy(() => import('./pages/MonitorView'));
@@ -102,6 +103,11 @@ export default function App() {
                   <Route path="notificaciones" element={
                     <AuthGuard requirePermission="chat:read">
                       <SuspenseBoundary message="Error en notificaciones"><NotificacionesView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="empleados" element={
+                    <AuthGuard requirePermission="users:read">
+                      <SuspenseBoundary message="Error en el portal de empleados"><EmpleadosView /></SuspenseBoundary>
                     </AuthGuard>
                   } />
                 </Route>
