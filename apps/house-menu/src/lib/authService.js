@@ -196,6 +196,17 @@ export async function ensureFirebaseUser(firebaseUser, defaultRole = 'kitchen', 
         'profile/name': existingByEmail.name || firebaseUser.displayName,
         name: existingByEmail.name || firebaseUser.displayName,
       });
+
+      // Migrate role cache from old key (push ID or pending key) to firebaseUid key
+      const cacheUpdates = {};
+      const empBranches = existingByEmail.branches || branchIds;
+      for (const branchId of Object.keys(empBranches)) {
+        // Remove old entry keyed by push ID
+        cacheUpdates[`branches/${branchId}/_role_cache/${empKey}`] = null;
+        // Write new entry keyed by Firebase UID
+        cacheUpdates[`branches/${branchId}/_role_cache/${firebaseUser.uid}`] = existingByEmail.role;
+      }
+      await update(ref(db), cacheUpdates);
     } catch (err) {
       console.warn('authService.ensureFirebaseUser: error al vincular firebaseUid:', err);
     }
@@ -232,6 +243,16 @@ export async function ensureFirebaseUser(firebaseUser, defaultRole = 'kitchen', 
   try {
     const employeePath = tenantPath(`employees/${firebaseUser.uid}`);
     await set(ref(db, employeePath), newEmployee);
+
+    // Sync role cache for all assigned branches
+    const cacheUpdates = {};
+    for (const branchId of Object.keys(branchIds)) {
+      cacheUpdates[`branches/${branchId}/_role_cache/${firebaseUser.uid}`] = defaultRole;
+    }
+    if (Object.keys(cacheUpdates).length > 0) {
+      await update(ref(db), cacheUpdates);
+    }
+
     return {
       success: true,
       user: {
@@ -330,6 +351,17 @@ export async function createUser({ email, name, role, pin, branchIds, actor }) {
       firebaseUid: null,
     };
     await set(newRef, employee);
+
+    // Sync role cache for all assigned branches
+    const targetBranches = branchIds || { hq: true };
+    const cacheUpdates = {};
+    for (const branchId of Object.keys(targetBranches)) {
+      cacheUpdates[`branches/${branchId}/_role_cache/${newRef.key}`] = role;
+    }
+    if (Object.keys(cacheUpdates).length > 0) {
+      await update(ref(db), cacheUpdates);
+    }
+
     auditLog('user.created', { userId: newRef.key, email, name, role, branchIds }, actor || 'system');
     return { success: true, userId: newRef.key };
   } catch (err) {
@@ -340,7 +372,15 @@ export async function createUser({ email, name, role, pin, branchIds, actor }) {
 
 export async function updateUser(userId, data, actor) {
   try {
-    // Use multi-path updates to avoid overwriting the entire profile object
+    // Read current employee to compute role cache diff
+    const currentSnap = await get(ref(db, tenantPath(`employees/${userId}`)));
+    const current = currentSnap.val();
+    const oldBranches = current?.branches || { hq: true };
+    const oldRole = current?.role || 'kitchen';
+    const newBranches = data.branchIds || oldBranches;
+    const newRole = data.role || oldRole;
+
+    // Build employee updates
     const updates = {};
     if (data.name !== undefined) updates['profile/name'] = data.name;
     if (data.email !== undefined) updates['profile/email'] = data.email;
@@ -355,6 +395,22 @@ export async function updateUser(userId, data, actor) {
     // Write changes directly to the employee record
     await update(ref(db, tenantPath(`employees/${userId}`)), updates);
 
+    // Sync role cache for affected branches
+    const cacheUpdates = {};
+    // Remove from branches no longer assigned
+    for (const branchId of Object.keys(oldBranches)) {
+      if (!newBranches[branchId]) {
+        cacheUpdates[`branches/${branchId}/_role_cache/${userId}`] = null; // delete
+      }
+    }
+    // Set/add to new branches (or update role on existing)
+    for (const branchId of Object.keys(newBranches)) {
+      cacheUpdates[`branches/${branchId}/_role_cache/${userId}`] = newRole;
+    }
+    if (Object.keys(cacheUpdates).length > 0) {
+      await update(ref(db), cacheUpdates);
+    }
+
     auditLog('user.updated', { userId, ...data }, actor || 'system');
     return { success: true };
   } catch (err) {
@@ -365,6 +421,20 @@ export async function updateUser(userId, data, actor) {
 
 export async function deleteUser(userId, actor) {
   try {
+    // Read employee to get assigned branches before deleting
+    const currentSnap = await get(ref(db, tenantPath(`employees/${userId}`)));
+    const current = currentSnap.val();
+    const branches = current?.branches || {};
+
+    // Remove role cache entries from all assigned branches
+    const cacheUpdates = {};
+    for (const branchId of Object.keys(branches)) {
+      cacheUpdates[`branches/${branchId}/_role_cache/${userId}`] = null; // delete
+    }
+    if (Object.keys(cacheUpdates).length > 0) {
+      await update(ref(db), cacheUpdates);
+    }
+
     await remove(ref(db, tenantPath(`employees/${userId}`)));
     auditLog('user.deleted', { userId }, actor || 'system');
     return { success: true };

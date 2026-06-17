@@ -12,10 +12,10 @@
   --cm-primary-surface: rgba(30, 43, 56, 0.06);
 
   /* Brand Accent — Warm energy (mustard gold) */
-  --cm-accent: #F2B71A;
-  --cm-accent-hover: #D9A417;
-  --cm-accent-light: rgba(242, 183, 26, 0.12);
-  --cm-accent-surface: rgba(242, 183, 26, 0.06);
+  --cm-accent: #8A5A00;
+  --cm-accent-hover: #6F4700;
+  --cm-accent-light: rgba(138, 90, 0, 0.12);
+  --cm-accent-surface: rgba(138, 90, 0, 0.06);
 
   /* Text */
   --cm-text: #1E2B38;

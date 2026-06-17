@@ -50,11 +50,13 @@ function StaffGuard({ children }) {
   );
 }
 
+const routerBasename = window.location.pathname.startsWith('/menu-app') ? '/menu-app' : '/';
+
 export default function App() {
   return (
     <ErrorBoundary message="Error crítico en la aplicación">
       <BranchProvider>
-        <BrowserRouter basename="/">
+        <BrowserRouter basename={routerBasename}>
           <AuthProvider>
             <UIProvider>
               <MarketingProvider>

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -27,7 +28,9 @@ export default {
         "cm-primary-hover": "var(--cm-primary-hover)",
         "cm-muted": "var(--cm-text-tertiary)",
         "cm-success-soft": "var(--cm-success-soft)",
+        "cm-warning-soft": "var(--cm-warning-soft)",
         "cm-error-soft": "var(--cm-error-soft)",
+        "cm-info-soft": "var(--cm-info-soft)",
 
       },
       fontFamily: {

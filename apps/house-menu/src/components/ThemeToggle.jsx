@@ -10,17 +10,13 @@ export default function ThemeToggle() {
   return (
     <motion.button
       onClick={toggleTheme}
-      className="fixed bottom-6 right-6 z-50 p-3 rounded-full backdrop-blur-xl border border-white/10 shadow-lg"
-      style={{
-        background: isDark
-          ? 'linear-gradient(135deg, #f59e0b, #f97316)'
-          : 'linear-gradient(135deg, #1e1b4b, #312e81)',
-      }}
+      className="fixed bottom-6 right-6 z-50 inline-flex h-12 w-12 items-center justify-center rounded-cm-full border border-cm-border bg-cm-surface text-cm-text shadow-cm-lg backdrop-blur-xl transition-colors hover:bg-cm-surface-hover focus:outline-none focus:ring-2 focus:ring-cm-accent/40"
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
     >
-      {isDark ? <Sun size={20} className="text-white" /> : <Moon size={20} className="text-white" />}
+      {isDark ? <Sun size={20} className="text-cm-warning" /> : <Moon size={20} className="text-cm-accent" />}
     </motion.button>
   );
 }

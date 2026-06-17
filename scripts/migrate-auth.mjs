@@ -189,6 +189,45 @@ async function migrateTenant(tenantId) {
     }
   }
 
+  // 6.5. Sync _role_cache entries for each employee and add _meta to branches
+  const metaWritten = new Set();
+  for (const [key, employee] of byEmail) {
+    const uid = employee.firebaseUid || `pending-${key}`;
+    const empBranches = employee.branches || { hq: true };
+
+    for (const branchId of Object.keys(empBranches)) {
+      const roleCachePath = `branches/${branchId}/_role_cache/${uid}`;
+      if (!DRY_RUN) {
+        try {
+          await write(roleCachePath, employee.role);
+          stats.migrated++;
+        } catch (err) {
+          console.error(`     ❌ Error writing ${roleCachePath}:`, err.message);
+          stats.errors++;
+        }
+      } else {
+        console.log(`     📄 Would write: ${roleCachePath} → ${employee.role}`);
+        stats.migrated++;
+      }
+
+      // Add _meta to each branch once
+      if (!metaWritten.has(branchId)) {
+        metaWritten.add(branchId);
+        const metaPath = `branches/${branchId}/_meta`;
+        if (!DRY_RUN) {
+          try {
+            await write(metaPath, { tenantId });
+          } catch (err) {
+            console.error(`     ❌ Error writing ${metaPath}:`, err.message);
+            stats.errors++;
+          }
+        } else {
+          console.log(`     📄 Would write: ${metaPath} → { tenantId: "${tenantId}" }`);
+        }
+      }
+    }
+  }
+
   // 7. Migrate attendance records per branch
   for (const [branchId, branch] of Object.entries(branchesData)) {
     if (!branch.attendance) continue;

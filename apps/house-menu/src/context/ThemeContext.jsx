@@ -14,6 +14,8 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.style.colorScheme = theme;
     try {
       localStorage.setItem('house_menu_theme', theme);
     } catch (e) {

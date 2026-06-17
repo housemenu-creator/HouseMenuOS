@@ -910,9 +910,17 @@ export function startHttpServer(port: number = 3000) {
         createdAt: timestamp,
         updatedAt: timestamp,
         source: orderData.source || "web",
+        sessionId: orderData.sessionId || '',
       };
 
-      await fb.set(newRef, order);
+      // Multi-path update: write the order + the orders_by_session index atomically
+      const updates = {
+        [`branches/${bid}/orders/${newRef.key}`]: order,
+      };
+      if (orderData.sessionId) {
+        updates[`branches/${bid}/orders_by_session/${orderData.sessionId}/${newRef.key}`] = true;
+      }
+      await fb.update(fb.ref(db), updates);
       console.log(`📦 Pedido #${newRef.key} — ${order.customerName} — S/ ${grandTotal.toFixed(2)}`);
       res.json({ success: true, orderId: newRef.key });
     } catch (e: any) {

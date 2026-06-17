@@ -13,6 +13,51 @@ body {
   transition: background var(--cm-transition-base), color var(--cm-transition-base);
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  color: var(--cm-text);
+  background-color: var(--cm-surface);
+  border-color: var(--cm-border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--cm-text-tertiary);
+  opacity: 1;
+}
+
+select option {
+  color: var(--cm-text);
+  background-color: var(--cm-surface);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--cm-text);
+  box-shadow: 0 0 0 1000px var(--cm-surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+::selection {
+  background: var(--cm-accent-light);
+  color: var(--cm-text);
+}
+
+* {
+  scrollbar-color: var(--cm-border-hover) var(--cm-bg-alt);
+}
+
 /* Clean Minimalist utility classes */
 .bdg {
   display: inline-flex;

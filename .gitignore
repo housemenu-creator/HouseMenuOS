@@ -65,4 +65,7 @@ storybook-static/
 # Speckit backup
 .spec-kit-backup/
 
+# Docker build artifacts (tracked in repo only until removed)
+docker/nginx-dist/
+
 
