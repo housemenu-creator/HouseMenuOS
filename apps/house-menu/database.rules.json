@@ -80,6 +80,12 @@
             "notedBy": { ".validate": "newData.isString()" }
           }
         },
+        "orders_by_session": {
+          "$sessionId": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          }
+        },
         "chat": {
           ".read": "auth != null",
           ".write": "auth != null",

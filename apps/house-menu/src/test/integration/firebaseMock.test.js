@@ -110,7 +110,13 @@ vi.mock('@house/db', () => {
   const app = {};
   app.options = { projectId: 'test', apiKey: 'test' };
   app.automaticDataCollectionEnabled = false;
-  return { realtimeDB: {}, app };
+  return {
+    realtimeDB: {},
+    app,
+    getSessionId: () => 'test-session-123',
+    setSessionId: vi.fn(),
+    clearSessionId: vi.fn(),
+  };
 });
 
 describe('ordersService', () => {

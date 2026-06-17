@@ -1,6 +1,6 @@
 import { ref, push, set, onValue, update, get, runTransaction } from 'firebase/database';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from '@house/db';
+import { app, getSessionId } from '@house/db';
 import { realtimeDB as db } from '@house/db';
 import { ordersPath, ordersStatusPath, ordersUpdatedAtPath, catalogProductsPath } from './paths';
 import { nowISO } from './format';
@@ -76,6 +76,7 @@ export const ordersService = {
         createdAt: timestamp,
         updatedAt: timestamp,
         ...(userEmail && { createdBy: userEmail }),
+        sessionId: getSessionId(),
       };
 
       await set(newOrderRef, order);
@@ -179,6 +180,7 @@ export const ordersService = {
         createdAt: timestamp,
         updatedAt: timestamp,
         ...(userEmail && { createdBy: userEmail }),
+        sessionId: getSessionId(),
       };
 
       await set(newOrderRef, order);

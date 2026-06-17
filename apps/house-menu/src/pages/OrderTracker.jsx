@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, ArrowLeft, MapPin, Clock, Receipt, User, Navigation,
-  MessageCircle, AlertTriangle
+  MessageCircle, AlertTriangle, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { ordersService } from '../lib/ordersService';
 import { ref, get } from 'firebase/database';
-import { realtimeDB as db } from '@house/db';
+import { realtimeDB as db, getSessionId } from '@house/db';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import HouseMenuNav from '../components/HouseMenuNav';
 import OrderTimeline, { STATUS_STEPS } from '../components/OrderTimeline';
@@ -45,6 +45,9 @@ export default function OrderTracker() {
   const [searched, setSearched] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [driverData, setDriverData] = useState(null);
+  const [sessionOrders, setSessionOrders] = useState([]);
+  const [sessionOrdersLoading, setSessionOrdersLoading] = useState(true);
+  const [sessionOrdersOpen, setSessionOrdersOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
 
   const unsubRef = useRef(null);
@@ -68,6 +71,43 @@ export default function OrderTracker() {
       } catch { /* fallback */ }
     };
     fetchBranch();
+  }, [urlBranch]);
+
+  // Fetch orders from this session (Mis pedidos)
+  useEffect(() => {
+    let cancelled = false;
+    const fetchSessionOrders = async () => {
+      try {
+        const sid = getSessionId();
+        if (!sid) { setSessionOrdersLoading(false); return; }
+        const idxRef = ref(db, `branches/${urlBranch}/orders_by_session/${sid}`);
+        const idxSnap = await get(idxRef);
+        if (!idxSnap.exists()) { setSessionOrdersLoading(false); return; }
+        const orderKeys = Object.keys(idxSnap.val());
+        const orders = await Promise.all(
+          orderKeys.map(async (key) => {
+            const orderRef = ref(db, `branches/${urlBranch}/orders/${key}`);
+            const snap = await get(orderRef);
+            return snap.exists() ? { id: key, ...snap.val() } : null;
+          })
+        );
+        if (!cancelled) {
+          const validOrders = orders.filter(Boolean).sort((a, b) => {
+            const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return tb - ta; // newest first
+          });
+          setSessionOrders(validOrders);
+          if (validOrders.length > 0) setSessionOrdersOpen(true);
+        }
+      } catch {
+        // silent
+      } finally {
+        if (!cancelled) setSessionOrdersLoading(false);
+      }
+    };
+    fetchSessionOrders();
+    return () => { cancelled = true; };
   }, [urlBranch]);
 
   // Fetch driver details when driverId changes
@@ -195,6 +235,60 @@ export default function OrderTracker() {
           >
             <ArrowLeft className="w-4 h-4" /> Volver al Menú
           </button>
+
+          {/* Mis pedidos — órdenes vinculadas a esta sesión */}
+          {!sessionOrdersLoading && sessionOrders.length > 0 && (
+            <div className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border overflow-hidden">
+              <button
+                onClick={() => setSessionOrdersOpen(!sessionOrdersOpen)}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-cm-accent/5 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-cm-accent" />
+                  <span className="font-black text-sm text-cm-text">Mis pedidos</span>
+                  <span className="text-[10px] font-bold text-cm-muted bg-cm-bg px-1.5 py-0.5 rounded-full">{sessionOrders.length}</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-cm-muted transition-transform ${sessionOrdersOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {sessionOrdersOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="border-t border-cm-border"
+                  >
+                    <div className="divide-y divide-cm-border">
+                      {sessionOrders.map((o) => (
+                        <button
+                          key={o.id}
+                          onClick={() => {
+                            const code = o.id.slice(-4).toUpperCase();
+                            navigate(`/rastreo?id=${code}&branch=${urlBranch}`, { replace: true });
+                            performSearch(code, o.id);
+                          }}
+                          className="w-full flex items-center justify-between p-3 hover:bg-cm-accent/5 transition-colors text-left"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-cm-text truncate">{o.customerName || 'Pedido'}</p>
+                            <p className="text-[10px] text-cm-muted font-bold">
+                              {o.createdAt ? timeAgo(o.createdAt) : ''} · S/ {(o.financials?.total ?? o.total ?? 0).toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-cm-accent">
+                              #{o.id.slice(-4).toUpperCase()}
+                            </span>
+                            <ChevronRight className="w-3 h-3 text-cm-muted" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Header */}
           <div className="text-center space-y-2">

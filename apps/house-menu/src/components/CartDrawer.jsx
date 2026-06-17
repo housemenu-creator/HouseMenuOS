@@ -17,6 +17,7 @@ import { findOrCreateCustomer, addCustomerPoints } from '../lib/customerService'
 import { getAnonymousToken } from '../lib/anonymousAuth';
 import { isEmail, isPhone, isTime, isRequired } from '@house/validation';
 import { marketingService } from '../lib/marketingService';
+import { getSessionId } from '@house/db';
 
 /* ───────── Subcomponentes ───────── */
 
@@ -617,6 +618,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
       payment_details: paymentMethod === 'yape_plin' ? { operation_number: operationNumber.trim(), wallet_type: selectedWallet, voucher_uploaded: !!voucherUploaded, voucher_url: voucherUrl || null } : null,
       order_type: OT_LABELS[orderType] || 'Mesa',
       type: OT_LABELS[orderType] || 'Mesa',
+      sessionId: getSessionId(),
     };
 
     let result;
