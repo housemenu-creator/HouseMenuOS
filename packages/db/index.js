@@ -33,3 +33,6 @@ export const db = firestore;
 
 // Storage
 export const storage = getStorage(app);
+
+// Session ID — persistent customer identifier (decoupled from auth.uid)
+export { getSessionId, setSessionId, clearSessionId } from './sessionId.js';
