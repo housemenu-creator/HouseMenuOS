@@ -33,7 +33,7 @@ export default function SidebarCart({ onCheckout }) {
                 )}
               </div>
               <span className="text-xs font-bold text-cm-accent">
-                S/ {((item.price || 0) * (item.quantity || 1)).toFixed(})}
+                S/ {((item.price || 0) * (item.quantity || 1)).toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center mt-2 pt-2 border-t border-cm-border/30">
