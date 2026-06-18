@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import MenuCard from '../../components/MenuCard';
+import ProductCard from '../../components/ProductCard';
 
 export default function ProductGrid({ products, onSelectProduct, onDirectAdd, searchQuery }) {
   if (products.length === 0) {
@@ -48,7 +48,7 @@ export default function ProductGrid({ products, onSelectProduct, onDirectAdd, se
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
-                <MenuCard
+                <ProductCard
                   productId={key}
                   product={prod}
                   onSelect={onSelectProduct}
