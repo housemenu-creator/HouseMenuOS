@@ -14,7 +14,8 @@ import { useNavigate } from 'react-router-dom';
 
 import MenuCard from '../components/MenuCard';
 import { useBranch } from '../context/BranchContext';
-import DateSelector from '../components/DateSelector';
+import CategorySidebar from '../customer/components/CategorySidebar';
+import SidebarCart from '../customer/components/SidebarCart';
 
 import SearchBar from '../customer/components/SearchBar';
 import CategoryRibbon from '../customer/components/CategoryRibbon';
@@ -81,6 +82,7 @@ export default function CustomerView() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [lastOrderItems, setLastOrderItems] = useState([]);
 
   const getLocalDateString = (date = new Date()) => {
     const year = date.getFullYear();
@@ -479,32 +481,72 @@ export default function CustomerView() {
         </button>
       </nav>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full px-6 pt-6 pb-24">
-        <motion.div key="menu" className="space-y-8">
-          {layoutConfig.cartaShowHero && (
-            <HeroBanner 
-              branchName={branches.find(b => b.id === activeBranchId)?.name}
+      {/* New 3-Column Layout */}
+      <div className="flex min-h-screen bg-cm-bg">
+        {/* Left Sidebar - Categories (Desktop) */}
+        <aside className="hidden lg:block w-64 sticky top-0 h-screen shrink-0 border-r border-cm-border/40 overflow-y-auto">
+          <div className="p-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-cm-accent mb-4">Categorías</h2>
+            <CategorySidebar 
+              categories={categoriesList} 
+              selected={activeCategory} 
+              onSelect={handleCategoryClick} 
             />
-          )}
-          <DateSelector selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-          {layoutConfig.cartaShowDailyMenu && (
-            <BentoDailyMenu 
-              menu={dailyMenus[selectedDate]} 
-              catalog={catalog} 
-              onSelectProduct={handleSelectProduct} 
-            />
-          )}
-          {layoutConfig.cartaShowFlashOffer && (
-            <FlashOffer />
-          )}
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} categoryImages={categoryImages} />
-          <ProductGrid products={filteredProducts} onSelectProduct={handleSelectProduct} searchQuery={searchQuery} />
-          {layoutConfig.cartaShowHighlights && (
-            <MarketingHighlights />
-          )}
-        </motion.div>
-      </main>
+          </div>
+        </aside>
+
+        {/* Main Content - Products */}
+        <main className="flex-1 min-w-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24">
+            <motion.div key="menu" className="space-y-8">
+              {layoutConfig.cartaShowHero && (
+                <HeroBanner 
+                  branchName={branches.find(b => b.id === activeBranchId)?.name}
+                />
+              )}
+              {layoutConfig.cartaShowDailyMenu && (
+                <BentoDailyMenu 
+                  menu={dailyMenus[selectedDate]} 
+                  catalog={catalog} 
+                  onSelectProduct={handleSelectProduct} 
+                />
+              )}
+              {layoutConfig.cartaShowFlashOffer && (
+                <FlashOffer />
+              )}
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} categoryImages={categoryImages} />
+              <ProductGrid products={filteredProducts} onSelectProduct={handleSelectProduct} onDirectAdd={(id, prod) => {
+                const newItem = {
+                  id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                  productId: id,
+                  name: prod.name,
+                  details: [],
+                  price: (prod.base_price ?? prod.price ?? 0),
+                  unitPrice: (prod.base_price ?? prod.price ?? 0),
+                  quantity: 1,
+                  packaging: 0,
+                  deliveryDate: selectedDate,
+                };
+                addStoreCart(newItem);
+              }} searchQuery={searchQuery} />
+              {layoutConfig.cartaShowHighlights && (
+                <MarketingHighlights />
+              )}
+            </motion.div>
+          </div>
+        </main>
+
+        {/* Right Sidebar - Cart (Desktop) */}
+        <aside className="hidden lg:block w-80 sticky top-0 h-screen shrink-0 border-l border-cm-border/40 bg-cm-surface/40 backdrop-blur-sm flex flex-col">
+          <div className="p-4 flex-1 flex flex-col min-h-0">
+            <h2 className="text-sm font-black uppercase tracking-widest text-cm-accent mb-4">Tu Pedido</h2>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <SidebarCart onCheckout={() => setIsCartOpen(true)} />
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <AnimatePresence>
         {view === 'wizard' && (
@@ -652,8 +694,9 @@ export default function CustomerView() {
           onClose={() => setIsCartOpen(false)}
           initialMesa={urlMesa}
           showMesa={false}
-          onOrderComplete={(id) => {
+          onOrderComplete={(id, cartSnapshot) => {
             setOrderId(id);
+            setLastOrderItems(cartSnapshot || []);
             setOrderComplete(true);
             setIsCartOpen(false);
           }}
@@ -664,8 +707,10 @@ export default function CustomerView() {
         <OrderConfirmation
           open={orderComplete}
           orderId={orderId}
-          cartItems={cart}
+          cartItems={lastOrderItems}
           branchId={activeBranchId}
+          branchName={branches.find(b => b.id === activeBranchId)?.name}
+          mesa={urlMesa}
           onTrackOrder={(id) => {
             setOrderComplete(false);
             setOrderId('');

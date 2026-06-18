@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import MenuCard from '../../components/MenuCard';
 
-export default function ProductGrid({ products, onSelectProduct, searchQuery }) {
+export default function ProductGrid({ products, onSelectProduct, onDirectAdd, searchQuery }) {
   if (products.length === 0) {
     return (
       <div className="text-center py-12 text-cm-muted bg-cm-bg/50 rounded-2xl border-2 border-dashed border-cm-border p-6">
@@ -40,27 +40,22 @@ export default function ProductGrid({ products, onSelectProduct, searchQuery }) 
           </div>
 
           {/* Products in this category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {grouped[cat].map(([key, prod], index) => {
-              // Create an asymmetrical feel: every 3rd item takes full width
-              const isFeatured = index % 3 === 0;
-              return (
-                <motion.div
-                  key={key}
-                  className={isFeatured ? 'sm:col-span-2' : 'sm:col-span-1'}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                >
-                  <MenuCard
-                    productId={key}
-                    product={prod}
-                    onSelect={onSelectProduct}
-                    featured={isFeatured}
-                  />
-                </motion.div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {grouped[cat].map(([key, prod], index) => (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+              >
+                <MenuCard
+                  productId={key}
+                  product={prod}
+                  onSelect={onSelectProduct}
+                  onDirectAdd={onDirectAdd}
+                />
+              </motion.div>
+            ))}
           </div>
         </div>
       ))}
