@@ -641,23 +641,23 @@ export default function CustomerView() {
         )}
       </AnimatePresence>
 
-      {/* Floating Cart FAB — visible only when cart has items and we're in landing view */}
-      <AnimatePresence>
-        {cart.length > 0 && view === 'landing' && (
-          <motion.button
-            key="cart-fab"
-            initial={{ y: 100, opacity: 0 }}
-            animate={
-              shouldAnimateCart 
-                ? { scale: [1, 1.08, 0.95, 1.02, 1], y: [0, -12, 2, -3, 0], opacity: 1 } 
-                : { scale: 1, y: 0, opacity: 1 }
-            }
-            exit={{ y: 100, opacity: 0 }}
-            transition={shouldAnimateCart ? { duration: 0.5 } : { type: 'spring', stiffness: 400, damping: 30 }}
-            onClick={() => setIsCartOpen(true)}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cm-accent to-amber-500 text-white rounded-2xl shadow-cm-lg hover:-translate-y-0.5 hover:shadow-cm-xl transition-all border border-white/10"
-            style={{ maxWidth: 'calc(100vw - 3rem)', minWidth: '260px' }}
-          >
+          {/* Floating Cart FAB — visible only on mobile when cart has items and we're in landing view */}
+          <AnimatePresence>
+            {cart.length > 0 && view === 'landing' && (
+              <motion.button
+                key="cart-fab"
+                initial={{ y: 100, opacity: 0 }}
+                animate={
+                  shouldAnimateCart 
+                    ? { scale: [1, 1.08, 0.95, 1.02, 1], y: [0, -12, 2, -3, 0], opacity: 1 } 
+                    : { scale: 1, y: 0, opacity: 1 }
+                }
+                exit={{ y: 100, opacity: 0 }}
+                transition={shouldAnimateCart ? { duration: 0.5 } : { type: 'spring', stiffness: 400, damping: 30 }}
+                onClick={() => setIsCartOpen(true)}
+                className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cm-accent to-amber-500 text-white rounded-2xl shadow-cm-lg hover:-translate-y-0.5 hover:shadow-cm-xl transition-all border border-white/10"
+                style={{ maxWidth: 'calc(100vw - 3rem)', minWidth: '260px' }}
+              >
             <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center font-black text-xs shrink-0 relative">
               <span className="absolute inset-0 rounded-full bg-white/20 animate-ping" />
               <span className="relative z-10">{cart.length}</span>
