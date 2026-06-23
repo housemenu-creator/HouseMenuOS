@@ -25,11 +25,23 @@ export async function createIngredient(branchId, data) {
 }
 
 export async function updateIngredient(branchId, ingredientId, data) {
-  await update(ref(db, `${LOG(branchId)}/ingredients/${ingredientId}`), { ...data, updatedAt: nowISO() });
+  const { id, createdAt, ...safe } = data;
+  await update(ref(db, `${LOG(branchId)}/ingredients/${ingredientId}`), { ...safe, updatedAt: nowISO() });
   return { success: true };
 }
 
 export async function deleteIngredient(branchId, ingredientId) {
+  // Check if ingredient is used in any recipe
+  const recipesSnap = await get(ref(db, `${LOG(branchId)}/recipes`));
+  const recipes = recipesSnap.val();
+  if (recipes) {
+    for (const [recipeId, recipe] of Object.entries(recipes)) {
+      const r = recipe;
+      if (r.ingredients && r.ingredients[ingredientId]) {
+        return { success: false, error: `No se puede eliminar: está en uso en la receta "${r.productName || recipeId}"` };
+      }
+    }
+  }
   await remove(ref(db, `${LOG(branchId)}/ingredients/${ingredientId}`));
   return { success: true };
 }
@@ -103,8 +115,9 @@ export async function updateRecipe(branchId, recipeId, data) {
     ingredients = newIngredients;
   }
 
+  const { id, createdAt, ...safeData } = data;
   const updates = {
-    ...data,
+    ...safeData,
     ingredients,
     costPerPortion: Object.values(ingredients).reduce((s, i) => s + (i.unitCost * i.quantity || 0), 0) / yieldVal,
     updatedAt: nowISO(),
@@ -191,7 +204,8 @@ export async function createSupplier(branchId, data) {
 }
 
 export async function updateSupplier(branchId, supplierId, data) {
-  await update(ref(db, `${LOG(branchId)}/suppliers/${supplierId}`), data);
+  const { id, createdAt, ...safe } = data;
+  await update(ref(db, `${LOG(branchId)}/suppliers/${supplierId}`), safe);
   return { success: true };
 }
 

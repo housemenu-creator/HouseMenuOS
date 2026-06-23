@@ -115,7 +115,30 @@ export const deliveryService = {
 
   async deleteDriver(branchId: string, driverId: string) {
     try {
-      await remove(ref(db, deliveryDriversPath(branchId, driverId)));
+      const driverRef = ref(db, deliveryDriversPath(branchId, driverId));
+      const driverSnap = await get(driverRef);
+      const driverData = driverSnap.val();
+
+      // If driver is busy, unassign from active orders first
+      if (driverData && driverData.available === false) {
+        const allOrdersSnap = await get(ref(db, ordersPath(branchId)));
+        const allOrders = allOrdersSnap.val();
+        if (allOrders) {
+          const orderUpdates: Record<string, null> = {};
+          for (const [oid, order] of Object.entries(allOrders)) {
+            const o = order as Record<string, unknown>;
+            if (o.driverId === driverId) {
+              orderUpdates[`${ordersPath(branchId, oid)}/driverId`] = null;
+              orderUpdates[`${ordersPath(branchId, oid)}/driverName`] = null;
+            }
+          }
+          if (Object.keys(orderUpdates).length > 0) {
+            await update(ref(db), orderUpdates);
+          }
+        }
+      }
+
+      await remove(driverRef);
       return { success: true as const };
     } catch (error) {
       console.error('Error deleting driver:', error);
@@ -178,6 +201,8 @@ export const deliveryService = {
 
   async assignDriver(branchId: string, orderId: string, driverId: string, driverName: string) {
     const driverRef = ref(db, deliveryDriversPath(branchId, driverId));
+    const orderRef = ref(db, ordersPath(branchId, orderId));
+    let logKey: string | null = null;
     try {
       const driverSnap = await get(driverRef);
       if (!driverSnap.exists()) {
@@ -188,20 +213,9 @@ export const deliveryService = {
         return { success: false as const, error: 'Repartidor no disponible' };
       }
 
-      const orderRef = ref(db, ordersPath(branchId, orderId));
-      const orderResult = await runTransaction(orderRef, (current) => {
-        if (current === null) return null;
-        if (current.driverId) return;
-        return { ...current, driverId, driverName, status: 'en_camino', updatedAt: nowISO() };
-      });
-
-      if (!orderResult.committed || !orderResult.snapshot?.val()) {
-        return { success: false as const, error: 'Orden no disponible o ya asignada' };
-      }
-
-      await update(driverRef, { available: false });
-
+      // 1. Create delivery log FIRST (cheap, easy to revert)
       const logRef = push(ref(db, deliveryLogsPath(branchId)));
+      logKey = logRef.key;
       await set(logRef, {
         orderId, driverId, driverName,
         assignedAt: nowISO(),
@@ -209,8 +223,28 @@ export const deliveryService = {
         deliveredAt: null,
         status: 'en_camino',
       });
+
+      // 2. Mark driver unavailable
+      await update(driverRef, { available: false });
+
+      // 3. Transaction on order LAST — most critical, atomic
+      const orderResult = await runTransaction(orderRef, (current) => {
+        if (current === null) return null;
+        if (current.driverId) return;
+        return { ...current, driverId, driverName, status: 'en_camino', updatedAt: nowISO() };
+      });
+
+      if (!orderResult.committed || !orderResult.snapshot?.val()) {
+        // Order was taken — revert log + driver
+        try { if (logKey) await remove(ref(db, deliveryLogsPath(branchId, logKey))); } catch (_) {}
+        try { await update(driverRef, { available: true }); } catch (_) {}
+        return { success: false as const, error: 'Orden no disponible o ya asignada' };
+      }
+
       return { success: true as const };
     } catch (error) {
+      // Revert all side effects on failure
+      try { if (logKey) await remove(ref(db, deliveryLogsPath(branchId, logKey))); } catch (_) {}
       try { await update(driverRef, { available: true }); } catch (_) {}
       console.error('Error assigning driver:', error);
       return { success: false as const };
