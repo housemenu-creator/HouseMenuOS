@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/inject-sw-config.mjs && vite build",
-"build:ci": "node scripts/inject-sw-config.mjs && vite build",
+    "build:ci": "node scripts/inject-sw-config.mjs && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "firebase": "^12.13.0",
     "framer-motion": "^12.26.2",
+    "html2pdf.js": "^0.14.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "react": "^19.2.6",

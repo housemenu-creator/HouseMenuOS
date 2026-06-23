@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import BranchSwitcher from './BranchSwitcher';
 import { useAuth } from '../context/AuthContext';
+import { ROUTES, STAFF_ROUTES } from '../lib/routes';
 import logo from '../assets/logo.jpg';
 import {
   UtensilsCrossed,
@@ -26,7 +27,7 @@ import {
 const SECTIONS = [
   {
     id: 'inicio',
-    path: '/',
+    path: ROUTES.HOME,
     label: 'Inicio',
     sublabel: 'Página Principal',
     icon: Home,
@@ -37,7 +38,7 @@ const SECTIONS = [
   },
   {
     id: 'customer',
-    path: '/carta',
+    path: ROUTES.CARTA,
     label: 'Carta & Pedidos',
     sublabel: 'Menú Digital',
     icon: UtensilsCrossed,
@@ -48,7 +49,7 @@ const SECTIONS = [
   },
   {
     id: 'cocina',
-    path: '/staff/cocina',
+    path: STAFF_ROUTES.COCINA,
     label: 'Cocina KDS',
     sublabel: 'Módulo de Cocina',
     icon: ChefHat,
@@ -59,7 +60,7 @@ const SECTIONS = [
   },
   {
     id: 'despacho',
-    path: '/staff/despacho',
+    path: STAFF_ROUTES.DESPACHO,
     label: 'Despacho',
     sublabel: 'Panel de Reparto',
     icon: Truck,
@@ -70,7 +71,7 @@ const SECTIONS = [
   },
   {
     id: 'rastreo',
-    path: '/rastreo',
+    path: ROUTES.RASTREO,
     label: 'Rastrear Pedido',
     sublabel: 'Seguimiento',
     icon: Search,
@@ -81,7 +82,7 @@ const SECTIONS = [
   },
   {
     id: 'mozo',
-    path: '/staff/mozo',
+    path: STAFF_ROUTES.MOZO,
     label: 'Mozo',
     sublabel: 'Toma de Pedidos',
     icon: ClipboardList,
@@ -92,7 +93,7 @@ const SECTIONS = [
   },
   {
     id: 'delivery',
-    path: '/staff/delivery',
+    path: STAFF_ROUTES.DELIVERY,
     label: 'Delivery',
     sublabel: 'Portal de Reparto',
     icon: Bike,
@@ -103,7 +104,7 @@ const SECTIONS = [
   },
   {
     id: 'staff',
-    path: '/staff',
+    path: STAFF_ROUTES.ROOT,
     label: 'Staff Hub',
     sublabel: 'Dashboard General',
     icon: LayoutDashboard,
@@ -114,7 +115,7 @@ const SECTIONS = [
   },
   {
     id: 'admin',
-    path: '/admin',
+    path: ROUTES.ADMIN,
     label: 'Admin Hub',
     sublabel: 'Panel de Control',
     icon: Settings,
@@ -126,7 +127,7 @@ const SECTIONS = [
   {
     id: 'empleados',
     path: null,
-    url: '/empleados',
+    url: ROUTES.EMPLEADOS,
     label: 'Portal Empleados',
     sublabel: 'Fichado, Horarios, Tareas',
     icon: Monitor,
@@ -145,7 +146,7 @@ function HouseMenuNav() {
 
   const currentSection = SECTIONS.find(s => {
     if (!s.path) return false;
-    if (s.path === '/') return location.pathname === '/';
+    if (s.path === ROUTES.HOME) return location.pathname === ROUTES.HOME;
     return location.pathname === s.path || location.pathname.startsWith(s.path + '/');
   }) || SECTIONS[0];
 
@@ -165,7 +166,7 @@ function HouseMenuNav() {
         {/* Brand — clickeable → Inicio */}
         <div className="p-6 border-b border-cm-border">
           <button
-            onClick={() => { navigate('/'); setMobileOpen(false); }}
+            onClick={() => { navigate(ROUTES.HOME); setMobileOpen(false); }}
             className="flex items-center gap-3 w-full text-left hover:opacity-80 transition-opacity"
           >
             <img src={logo} alt="House Logo" className="w-10 h-10 rounded-xl object-cover border border-cm-border shadow-cm-md" />
@@ -286,7 +287,7 @@ function HouseMenuNav() {
             >
               <div className="flex justify-between items-center mb-6">
                 <button
-                  onClick={() => { navigate('/'); setMobileOpen(false); }}
+            onClick={() => { navigate(ROUTES.HOME); setMobileOpen(false); }}
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                 >
                   <img src={logo} alt="House Logo" className="w-8 h-8 rounded-lg object-cover border border-cm-border shadow-cm-md" />

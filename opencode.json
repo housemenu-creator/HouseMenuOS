@@ -96,7 +96,10 @@
     "docs/developer-preferences.md",
     "docs/architecture.md",
     ".opencode/rules/design-tokens.md",
-    ".opencode/rules/conventions.md"
+    ".opencode/rules/conventions.md",
+    ".opencode/rules/coding-standards.md",
+    ".opencode/rules/testing-standards.md",
+    ".opencode/rules/security-guidelines.md"
   ],
   "mcp": {
     "ruflo": {

@@ -39,7 +39,7 @@ export const ROLE_REGISTRY = {
     permissions: { ...allPermissions(), 'system:audit': true, 'system:manage': true },
     loginScreen: { title: 'Admin Hub', subtitle: 'Gestión del Sistema · House', icon: Settings },
     defaultUser: { email: 'super@house.local', name: 'Super Admin', pin: 'super' },
-    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'roles', 'audit'],
+    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'roles', 'audit', 'reservations'],
   },
   admin: {
     name: 'Administrador',
@@ -47,7 +47,7 @@ export const ROLE_REGISTRY = {
     permissions: allPermissions(),
     loginScreen: { title: 'Admin Hub', subtitle: 'Gestión y Analítica · House', icon: Settings },
     defaultUser: { email: 'admin@house.local', name: 'Admin', pin: 'admin' },
-    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings'],
+    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'reservations'],
   },
   cajero: {
     name: 'Cajero',
@@ -153,7 +153,9 @@ export function getAdminTabs(userRole) {
 }
 
 export function getDefaultUsers() {
-  if (import.meta.env.PROD) return [];
+  // En producción real (Firebase Hosting o dominio público) NO exponemos dev users
+  // Pero en localhost / Docker local sí los mostramos para testing
+  if (import.meta.env.PROD && !location.hostname.match(/^(localhost|127\.0\.0\.1|::1)$/)) return [];
   return Object.values(ROLE_REGISTRY)
     .filter(r => r.defaultUser)
     .map(r => ({ id: `default-${r.key}`, role: r.key, ...r.defaultUser }));

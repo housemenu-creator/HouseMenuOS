@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { cuentaService } from '../../lib/cuentaService';
 import useVendedorStore from '../store/vendedorStore';
-import useOrderStore from '../../worker/store/orderStore';
+import { useOrderStore } from '../store/vendedorOrderStore';
 import type { Order } from '../../worker/workerTypes';
 
 interface UseVendedorSyncOptions {

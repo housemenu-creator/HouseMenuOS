@@ -44,11 +44,15 @@ vi.mock('../../kds/utils/kitchenSound', () => ({
 }));
 
 // ── Store mocks (Zustand) ──────────────────────────────────
-vi.mock('../../worker/store/orderStore', () => {
+vi.mock('../../kds/store/orderStore', () => {
   const state = { orders: {}, orderIndex: [], isLoading: false };
   const useStore = (selector) => (selector ? selector(state) : state);
   useStore.getState = () => state;
-  return { default: useStore };
+  return {
+    useOrderStore: useStore,
+    useEnrichedOrders: () => [],
+    useIsKDSLoading: () => false,
+  };
 });
 
 vi.mock('../../kds/store/timerStore', () => {

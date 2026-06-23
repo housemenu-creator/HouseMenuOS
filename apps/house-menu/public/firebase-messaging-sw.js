@@ -44,10 +44,10 @@ if (!config) {
     event.notification.close();
     if (event.action === 'dismiss') return;
 
-    const url = event.notification.data?.url || '/menu-app/staff/despacho';
+    const url = event.notification.data?.url || '/staff/despacho';
     event.waitUntil(
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-        const appClient = clientList.find((c) => c.url.includes('/menu-app/'));
+        const appClient = clientList.find((c) => c.url.includes('/staff/') || c.url.includes('/admin') || c.url.includes('/carta'));
         if (appClient && 'focus' in appClient) {
           if ('navigate' in appClient) {
             appClient.navigate(url);

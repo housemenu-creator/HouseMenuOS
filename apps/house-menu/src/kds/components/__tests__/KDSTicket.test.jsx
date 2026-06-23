@@ -6,7 +6,7 @@ import { PRIORITY } from '../../kdsTypes';
 // --- Mocks ---
 
 vi.mock('../../../context/BranchContext', () => ({
-  useBranch: () => ({ activeBranchId: 'castilla' }),
+  useBranch: () => ({ activeBranchId: 'monteverde' }),
 }));
 
 vi.mock('../../../lib/ordersService', () => ({

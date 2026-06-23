@@ -1,4 +1,4 @@
-import useOrderStore from '../../worker/store/orderStore';
+import useOrderStore from '../../stores/shared/orderStore';
 import { STATION_PREP_TIMES } from '../kdsTypes';
 import { inferStationFromItem, inferOrderStation } from '../utils/stationInference';
 
@@ -35,5 +35,12 @@ export function useEnrichedOrders() {
   }).filter(Boolean);
 }
 
-export { calcDueTime };
-export default useOrderStore;
+export function useIsKDSLoading() {
+  return useOrderStore((s) => s.isLoading);
+}
+
+// Re-export the raw store so KDS views can access it when needed
+// (e.g. imperative .getState() calls in KitchenView).
+// Views should prefer the enriched hooks above, but this is available
+// as an escape hatch without importing from the shared store directly.
+export { useOrderStore, calcDueTime };

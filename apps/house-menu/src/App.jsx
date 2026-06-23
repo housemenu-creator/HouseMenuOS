@@ -9,6 +9,8 @@ import AppLayout from './layouts/AppLayout';
 import WorkerShell from './layouts/WorkerShell';
 import { MarketingProvider } from './context/MarketingContext';
 
+const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 const LandingView = lazy(() => import('./pages/LandingView'));
 const CustomerView = lazy(() => import('./pages/CustomerView'));
 const KitchenView = lazy(() => import('./pages/KitchenView'));
@@ -20,10 +22,14 @@ const RepartidorView = lazy(() => import('./pages/RepartidorView'));
 const VendedorView = lazy(() => import('./pages/VendedorView'));
 const CajeroView = lazy(() => import('./pages/CajeroView'));
 const NotificacionesView = lazy(() => import('./pages/NotificacionesView'));
+const ControlCenterView = lazy(() => import('./pages/ControlCenterView'));
 const EmpleadosView = lazy(() => import('./staff/empleados/EmpleadosView'));
 const WorkerDashboard = lazy(() => import('./worker/components/WorkerDashboard'));
+const DashboardRedirect = lazy(() => import('./worker/components/DashboardRedirect'));
 const KioskMode = lazy(() => import('./kds/components/KioskMode'));
 const MonitorView = lazy(() => import('./pages/MonitorView'));
+const ReservaView = lazy(() => import('./pages/ReservaView'));
+const MisPedidosView = lazy(() => import('./pages/MisPedidosView'));
 
 function SuspenseBoundary({ children, message }) {
   return (
@@ -61,17 +67,27 @@ export default function App() {
             <UIProvider>
               <MarketingProvider>
               <Routes>
+                {/* ── Onboarding (sin layout, full page) ── */}
+                <Route path="/onboarding" element={<SuspenseBoundary message="Error en el onboarding"><OnboardingWizard /></SuspenseBoundary>} />
+                <Route path="/login" element={<SuspenseBoundary message="Error en el inicio de sesión"><LoginPage /></SuspenseBoundary>} />
+
                 {/* ── Zona Pública + Admin (con sidebar) ── */}
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<SuspenseBoundary message="Error en la landing"><LandingView /></SuspenseBoundary>} />
                   <Route path="/carta" element={<SuspenseBoundary message="Error en la vista de cliente"><CustomerView /></SuspenseBoundary>} />
                   <Route path="/rastreo" element={<SuspenseBoundary message="Error en el rastreador de pedidos"><OrderTracker /></SuspenseBoundary>} />
                   <Route path="/admin" element={<AuthGuard allowedRoles={['admin', 'superadmin', 'cajero']}><SuspenseBoundary message="Error en el panel de administración"><AdminView /></SuspenseBoundary></AuthGuard>} />
+                  <Route path="/control-center" element={<AuthGuard allowedRoles={['admin', 'superadmin']}><SuspenseBoundary message="Error en el control center"><ControlCenterView /></SuspenseBoundary></AuthGuard>} />
                 </Route>
 
                 {/* ── Zona Staff (sin sidebar, con WorkerShell) ── */}
                 <Route path="/staff" element={<StaffGuard><WorkerShell /></StaffGuard>}>
-                  <Route index element={<SuspenseBoundary message="Error en el dashboard"><WorkerDashboard /></SuspenseBoundary>} />
+                  {/* Redirige al dashboard específico del rol */}
+                  <Route index element={<DashboardRedirect />} />
+                  {/* Dashboard por rol: /staff/{role}/dashboard */}
+                  <Route path=":role/dashboard" element={
+                    <SuspenseBoundary message="Error en el dashboard"><WorkerDashboard /></SuspenseBoundary>
+                  } />
                   <Route path="mozo" element={
                     <AuthGuard requirePermission="orders:create">
                       <SuspenseBoundary message="Error en el módulo mozo"><MozoView /></SuspenseBoundary>
@@ -117,6 +133,8 @@ export default function App() {
                 {/* ── Zona Pública sin layout ── */}
                   <Route path="/kiosko" element={<SuspenseBoundary message="Error en el kiosko"><KioskMode /></SuspenseBoundary>} />
                   <Route path="/monitor" element={<SuspenseBoundary message="Error en el monitor"><MonitorView /></SuspenseBoundary>} />
+                  <Route path="/reserva" element={<SuspenseBoundary message="Error en reservas"><ReservaView /></SuspenseBoundary>} />
+                  <Route path="/mis-pedidos" element={<SuspenseBoundary message="Error en historial"><MisPedidosView /></SuspenseBoundary>} />
 
                 {/* ── Redirects viejas → nuevas ──────── */}
                 <Route path="/cocina" element={<Navigate to="/staff/cocina" replace />} />

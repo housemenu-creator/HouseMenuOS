@@ -1,60 +1,103 @@
 import { useAppStore } from '@house/store';
-import { ShoppingCart, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ChevronRight, Minus, Plus, Trash2 } from 'lucide-react';
 
 export default function SidebarCart({ onCheckout }) {
-  const { cart } = useAppStore();
+  const { cart, updateCartItemQty, removeFromCart } = useAppStore();
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+  const itemCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   if (cart.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-cm-muted">
-        <ShoppingCart className="w-12 h-12 mb-4 opacity-30" />
-        <p className="text-sm font-bold">Tu carrito está vacío</p>
-        <p className="text-xs mt-1 opacity-70">Agrega productos para comenzar</p>
+      <div className="flex flex-col items-center justify-center h-full text-cm-text-tertiary px-4">
+        <div className="w-14 h-14 bg-cm-bg rounded-full flex items-center justify-center mb-3">
+          <ShoppingCart className="w-7 h-7 opacity-40" />
+        </div>
+        <p className="text-sm font-bold text-cm-text-secondary">Carrito vacío</p>
+        <p className="text-xs mt-1 text-cm-text-tertiary text-center">Agregá productos para armar tu pedido</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-1 pb-3">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="w-4 h-4 text-cm-accent" />
+          <span className="text-xs font-bold text-cm-text uppercase tracking-wide">
+            {itemCount} {itemCount === 1 ? 'ítem' : 'ítems'}
+          </span>
+        </div>
+        <span className="text-sm font-black text-cm-accent">
+          S/ {cartTotal.toFixed(2)}
+        </span>
+      </div>
+
       {/* Items */}
-      <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
         {cart.map((item) => (
           <div
             key={item.id}
-            className="bg-cm-surface rounded-xl p-3 border border-cm-border/40"
+            className="bg-cm-bg rounded-xl p-3 border border-cm-border hover:border-cm-accent/40 transition-colors group"
           >
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-sm font-bold text-cm-text leading-tight">{item.name}</h4>
-                {item.details?.length > 0 && (
-                  <p className="text-[10px] text-cm-muted mt-1">{item.details.join(', ')}</p>
-                )}
+            {/* Name & Remove */}
+            <div className="flex justify-between items-start gap-2">
+              <h4 className="text-sm font-bold text-cm-text leading-tight flex-1 pr-1">
+                {item.name}
+              </h4>
+              <button
+                onClick={() => removeFromCart(item.id)}
+                className="p-1 text-cm-text-tertiary hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors shrink-0"
+                title="Eliminar"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Details */}
+            {item.details?.length > 0 && (
+              <p className="text-[11px] text-cm-text-tertiary mt-1 leading-relaxed">
+                {item.details.join(' · ')}
+              </p>
+            )}
+
+            {/* Quantity & Price */}
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-cm-border">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => updateCartItemQty(item.id, (item.quantity || 1) - 1)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-cm-surface border border-cm-border hover:border-cm-accent/50 text-cm-text-secondary hover:text-cm-accent transition-colors"
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+                <span className="w-7 text-center text-sm font-bold text-cm-text tabular-nums">
+                  {item.quantity || 1}
+                </span>
+                <button
+                  onClick={() => updateCartItemQty(item.id, (item.quantity || 1) + 1)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-cm-surface border border-cm-border hover:border-cm-accent/50 text-cm-text-secondary hover:text-cm-accent transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
               </div>
-              <span className="text-xs font-bold text-cm-accent">
+              <span className="text-sm font-black text-cm-accent">
                 S/ {((item.price || 0) * (item.quantity || 1)).toFixed(2)}
               </span>
-            </div>
-            <div className="flex justify-between items-center mt-2 pt-2 border-t border-cm-border/30">
-              <span className="text-xs text-cm-muted">Cant: {item.quantity || 1}</span>
-              {(item.price || 0) > 0 && (
-                <span className="text-xs text-cm-muted">S/ {item.price.toFixed(2)} c/u</span>
-              )}
             </div>
           </div>
         ))}
       </div>
 
       {/* Total & Checkout */}
-      <div className="border-t border-cm-border/40 pt-4 mt-4 space-y-3">
-        <div className="flex justify-between items-center">
+      <div className="pt-3 mt-3 border-t border-cm-border space-y-3">
+        <div className="flex justify-between items-center px-1">
           <span className="text-sm font-bold text-cm-text-secondary">Total</span>
           <span className="text-lg font-black text-cm-text">S/ {cartTotal.toFixed(2)}</span>
         </div>
         <button
           onClick={onCheckout}
-          className="w-full py-3.5 bg-gradient-to-r from-cm-accent to-amber-500 text-white rounded-xl font-black text-sm uppercase tracking-wider shadow-cm-md hover:shadow-cm-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+          className="w-full py-3 bg-cm-accent hover:bg-cm-accent/90 text-white rounded-xl font-black text-sm uppercase tracking-wide transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
         >
           <span>Ver Pedido</span>
           <ChevronRight className="w-4 h-4" />

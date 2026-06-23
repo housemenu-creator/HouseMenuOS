@@ -104,7 +104,7 @@ describe('vendedorStore', () => {
       const store = useVendedorStore.getState();
       store.applyAdd(mockCuenta({ id: 'cta-1', name: 'Cliente A', assignedVendedor: 'vend@house.local', status: 'activa', lastOrderAt: Date.now() }));
       store.applyAdd(mockCuenta({ id: 'cta-2', name: 'Cliente B', assignedVendedor: 'vend@house.local', status: 'activa', lastOrderAt: Date.now() - 86400000 }));
-      store.applyAdd(mockCuenta({ id: 'cta-3', name: 'Cliente C', assignedVendedor: 'vend@house.local', status: 'inactiva', isActive: false }));
+      store.applyAdd(mockCuenta({ id: 'cta-3', name: 'Cliente C', assignedVendedor: 'vend@house.local', status: 'inactiva', isActive: false, lastOrderAt: null }));
       store.applyAdd(mockCuenta({ id: 'cta-4', name: 'Cliente D', assignedVendedor: 'otro@house.local', status: 'activa' }));
     });
 

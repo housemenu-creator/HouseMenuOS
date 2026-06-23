@@ -1,5 +1,5 @@
-const BRANCH_PREFIX = (branchId) => `branches/${branchId || 'hq'}`;
-const BRANCH_CONFIG_PREFIX = (branchId) => `branches_config/${branchId || 'hq'}`;
+const BRANCH_PREFIX = (branchId) => `branches/${branchId || 'monteverde'}`;
+const BRANCH_CONFIG_PREFIX = (branchId) => `branches_config/${branchId || 'monteverde'}`;
 const TENANT_PREFIX = (tenantId) => `tenants/${tenantId || 'default'}`;
 
 export const TENANT_ID = 'default';
@@ -9,11 +9,11 @@ export function tenantPath(sub) {
 }
 
 export function branchPath(branchId, sub) {
-  return `branches/${branchId || 'hq'}${sub ? `/${sub}` : ''}`;
+  return `branches/${branchId || 'monteverde'}${sub ? `/${sub}` : ''}`;
 }
 
 export function branchConfigPath(branchId, sub) {
-  return `branches_config/${branchId || 'hq'}${sub ? `/${sub}` : ''}`;
+  return `branches_config/${branchId || 'monteverde'}${sub ? `/${sub}` : ''}`;
 }
 
 export function ordersPath(branchId, orderId) {
@@ -168,19 +168,23 @@ export function branchesConfigByIdPath(branchId) {
 }
 
 export function storageProductImagesPath(branchId) {
-  return `branches/${branchId || 'hq'}/product-images`;
+  return `branches/${branchId || 'monteverde'}/product-images`;
 }
 
 export function storageCategoryImagesPath(branchId) {
-  return `branches/${branchId || 'hq'}/category-images`;
+  return `branches/${branchId || 'monteverde'}/category-images`;
 }
 
 export function storageVouchersPath(branchId) {
-  return `branches/${branchId || 'hq'}/vouchers`;
+  return `branches/${branchId || 'monteverde'}/vouchers`;
+}
+
+export function storageYapeQrPath(branchId) {
+  return `branches/${branchId || 'monteverde'}/yape-qr`;
 }
 
 export function storageOptionImagesPath(branchId) {
-  return `branches/${branchId || 'hq'}/option-images`;
+  return `branches/${branchId || 'monteverde'}/option-images`;
 }
 
 export function flashOfferPath(branchId) {

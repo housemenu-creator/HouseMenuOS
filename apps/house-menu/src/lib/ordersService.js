@@ -183,7 +183,17 @@ export const ordersService = {
         sessionId: getSessionId(),
       };
 
+      const sessionId = getSessionId();
       await set(newOrderRef, order);
+      // Link order to session so "Mis pedidos" works in the tracker
+      if (sessionId) {
+        try {
+          const sessionRef = ref(db, `branches/${branchId}/orders_by_session/${sessionId}/${newOrderRef.key}`);
+          await set(sessionRef, true);
+        } catch (sessionErr) {
+          console.warn('Failed to link order to session:', sessionErr);
+        }
+      }
       return { success: true, orderId: newOrderRef.key };
     } catch (error) {
       console.error('Error creating order:', error);

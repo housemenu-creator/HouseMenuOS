@@ -1,97 +1,30 @@
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
-import {
-  LayoutDashboard, ClipboardList, UtensilsCrossed, Package, Store, Users,
-  DollarSign, CheckCircle2,
-  Activity, MapPin, Warehouse, Truck, Receipt, LogOut, Sun, Moon, Loader2,
-  TrendingUp, ShieldBan, Megaphone, Menu, Grid, ChevronDown, Settings, ShieldCheck, History
-} from 'lucide-react';
-import { ref, onValue, set } from 'firebase/database';
+import { useState, useEffect, useMemo } from 'react';
+import { CheckCircle2, Activity, MapPin, Package } from 'lucide-react';
 import AdminMegaMenu from '../admin/components/AdminMegaMenu';
-import { realtimeDB as db } from '@house/db';
-import { ordersService } from '../lib/ordersService';
-import { menuService } from '../lib/menuService';
-import { cashService } from '../lib/cashService';
-import { dailyMenuService } from '../lib/dailyMenuService';
+import AdminTopBar from '../admin/components/AdminTopBar';
+import exportToCSV from '../admin/utils/exportToCSV';
+import { TAB_DEFS } from '../admin/config/tabDefs';
+import AdminTabRenderer from '../admin/components/AdminTabRenderer';
+import { AdminLoadingView, AdminAccessDenied, PendingPaymentBanner } from '../admin/components/AdminStatusViews';
 import { ROLE_REGISTRY } from '../lib/roleRegistry';
-import ErrorBoundary from '../components/ErrorBoundary';
-import { useToast } from '../components/ToastContext';
-import { confirmDialog } from '../components/ConfirmDialog';
 import { useBranch } from '../context/BranchContext';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { useAccessibleBranches } from '../hooks/useAccessibleBranches';
-import { playChime } from '../lib/notificationSound';
-import NotificationBell from '../components/NotificationBell';
-import { createNotification } from '../lib/notificationService';
 import { useFCM } from '../hooks/useFCM';
-const DashboardTab = lazy(() => import('../admin/tabs/DashboardTab'));
-const OrdersTab = lazy(() => import('../admin/tabs/OrdersTab'));
-const MenuTab = lazy(() => import('../admin/tabs/MenuTab'));
-const InventoryTab = lazy(() => import('../admin/tabs/InventoryTab'));
-const CajaTab = lazy(() => import('../admin/tabs/CajaTab'));
-const FinanzasTab = lazy(() => import('../admin/tabs/FinanzasTab'));
-const SucursalesTab = lazy(() => import('../admin/tabs/SucursalesTab'));
-const DeliveryManager = lazy(() => import('../admin/components/DeliveryManager'));
-const FiscalManager = lazy(() => import('../admin/components/FiscalManager'));
-const UserManager = lazy(() => import('../admin/components/UserManager'));
-const MarketingTab = lazy(() => import('../admin/tabs/MarketingTab'));
-const AnalyticsTab = lazy(() => import('../admin/tabs/AnalyticsTab'));
-const CustomersTab = lazy(() => import('../admin/tabs/CustomersTab'));
-const LogisticsTab = lazy(() => import('../admin/tabs/LogisticsTab'));
-const EmployeesTab = lazy(() => import('../admin/tabs/EmployeesTab'));
-const SystemConfigTab = lazy(() => import('../admin/tabs/config'));
-const RolesTab = lazy(() => import('../admin/tabs/RolesTab'));
-const AuditTab = lazy(() => import('../admin/tabs/AuditTab'));
-
-function exportToCSV(orders, branchName) {
-  if (!orders?.length) return;
-  const headers = ['ID', 'Cliente', 'Ubicacion', 'Estado', 'Total', 'Items', 'Fecha'];
-  const rows = orders.map(o => [
-    o.id, o.customerName, o.location, o.status, o.financials?.total || 0,
-    (o.items || []).map(i => i.name).join('; '),
-    new Date(o.createdAt).toLocaleString('es-PE')
-  ]);
-  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `house-menu-${branchName}-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-const TAB_DEFS = {
-  dashboard: { label: 'Dashboard', icon: LayoutDashboard },
-  orders: { label: 'Pedidos', icon: ClipboardList, perm: 'orders:read' },
-  menu: { label: 'Menu', icon: UtensilsCrossed, perm: 'menu:read' },
-  inventory: { label: 'Inventario', icon: Warehouse, perm: 'inventory:read' },
-  caja: { label: 'Caja', icon: DollarSign, perm: 'orders:read' },
-  finanzas: { label: 'Finanzas', icon: TrendingUp },
-  sucursales: { label: 'Sucursales', icon: Store, perm: 'config:manage' },
-  delivery: { label: 'Delivery', icon: Truck },
-  fiscal: { label: 'Facturación', icon: Receipt, perm: 'config:manage' },
-  users: { label: 'Usuarios', icon: Users, perm: 'users:manage' },
-  marketing: { label: 'Marketing', icon: Megaphone, perm: 'marketing:read' },
-  analytics: { label: 'Analytics', icon: TrendingUp, perm: 'analytics:read' },
-  customers: { label: 'Clientes', icon: Users, perm: 'analytics:read' },
-  logistics: { label: 'Logística', icon: Package, perm: 'inventory:read' },
-  employees: { label: 'Personal', icon: Users, perm: 'users:manage' },
-  settings: { label: 'Config', icon: Settings, perm: 'config:manage' },
-  roles: { label: 'Roles', icon: ShieldCheck, perm: 'system:manage' },
-  audit: { label: 'Auditoría', icon: History, perm: 'system:audit' },
-};
+import { useAdminOrders } from '../admin/hooks/useAdminOrders';
+import { useAdminData } from '../admin/hooks/useAdminData';
 
 export default function AdminView() {
   const { activeBranchId, branches } = useBranch();
-  const { user, can, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const [orders, setOrders] = useState(null);
-  const [allOrders, setAllOrders] = useState([]);
+  const { user, can } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
-  
+
+  // ── Hooks extraídos ──
+  const { allOrders, loading, pendingVerificationCount, cancelOrder } = useAdminOrders(activeBranchId, user, can);
+  const { catalog, dailyMenus, cashSessions, kioskEnabled, toggleKiosk, updateField } = useAdminData(activeBranchId);
+
+  // ── Keyboard shortcut: Ctrl+K → mega menu ──
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -103,41 +36,8 @@ export default function AdminView() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
+  // ── Clock tick ──
   const [now, setNow] = useState(new Date());
-  const [kioskEnabled, setKioskEnabled] = useState(false);
-  const [catalog, setCatalog] = useState({ products: {}, modifiers: {}, variations: {} });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState('');
-  const [dailyMenus, setDailyMenus] = useState({});
-  const [cashSessions, setCashSessions] = useState([]);
-  const prevPendingRef = useRef(0);
-  const pendingVerificationCount = useMemo(
-    () => allOrders.filter(o => o.payment_status === 'por_verificar').length,
-    [allOrders]
-  );
-
-  // Notificación sonora cuando llega un nuevo pedido pendiente de verificación
-  useEffect(() => {
-    if (prevPendingRef.current > 0 && pendingVerificationCount > prevPendingRef.current) {
-      playChime();
-    }
-    prevPendingRef.current = pendingVerificationCount;
-  }, [pendingVerificationCount]);
-
-  const availableTabs = user ? (ROLE_REGISTRY[user.role]?.adminTabs || ['dashboard']) : ['dashboard'];
-
-  useEffect(() => {
-    if (!availableTabs.includes(activeTab)) {
-      setActiveTab('dashboard');
-    }
-  }, [activeTab, availableTabs]);
-
-  const accessibleBranches = useAccessibleBranches();
-  const branchAccessDenied = accessibleBranches.length > 0 && !accessibleBranches.some(b => b.id === activeBranchId);
-  useFCM({ branchId: activeBranchId, userId: user?.email });
-
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     const onVisChange = () => {
@@ -147,71 +47,50 @@ export default function AdminView() {
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisChange); };
   }, []);
 
-  useEffect(() => {
-    if (!activeBranchId) return;
-    const kioskRef = ref(db, `branches/${activeBranchId}/config/kioskEnabled`);
-    const unsub = onValue(kioskRef, (snap) => setKioskEnabled(!!snap.val()));
-    return unsub;
-  }, [activeBranchId]);
+  // ── Search & filters ──
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
 
-  const prevOrderIdsRef = useRef(new Set());
-  useEffect(() => {
-    if (!activeBranchId) return;
-    const unsub = ordersService.subscribeToOrders(activeBranchId, (data) => {
-      setAllOrders(data);
-      setLoading(false);
-      // Notify on new delivery orders
-      const prevIds = prevOrderIdsRef.current;
-      for (const order of data) {
-        if (!order.id || prevIds.has(order.id)) continue;
-        const isDelivery = (order.type || order.order_type || '').toLowerCase().includes('delivery');
-        if (isDelivery && order.status === 'pendiente' || order.status === 'listo') {
-          createNotification({
-            branchId: activeBranchId,
-            userId: user?.email,
-            type: 'order_new',
-            title: '¡Nuevo pedido delivery!',
-            body: `${order.customerName || 'Cliente'} — ${order.location || 'sin dirección'} — S/ ${(order.financials?.total ?? order.total ?? 0).toFixed(2)}`,
-            orderId: order.id,
-            url: '/admin?tab=orders',
-          });
-        }
-      }
-      prevOrderIdsRef.current = new Set(data.map((o) => o.id));
-    });
-    return unsub;
-  }, [activeBranchId]);
+  const filteredOrders = useMemo(() => {
+    let result = allOrders;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(o =>
+        (o.customerName || '').toLowerCase().includes(q) ||
+        (o.id || '').toLowerCase().includes(q) ||
+        (o.location || '').toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter) {
+      result = result.filter(o => o.status === statusFilter);
+    }
+    if (paymentFilter) {
+      result = result.filter(o => o.payment_status === paymentFilter);
+    }
+    return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [allOrders, searchQuery, statusFilter, paymentFilter]);
+
+  // ── Tabs ──
+  const availableTabs = user ? (ROLE_REGISTRY[user.role]?.adminTabs || ['dashboard']) : ['dashboard'];
+  const PRIMARY_TABS = ['dashboard', 'orders', 'menu', 'caja'];
+  const inlineTabs = useMemo(
+    () => PRIMARY_TABS.filter(t => availableTabs.includes(t)),
+    [availableTabs]
+  );
 
   useEffect(() => {
-    if (!activeBranchId) return;
-    setCatalog({ products: {}, modifiers: {}, variations: {} });
-    const unsub = menuService.subscribeToCatalog(activeBranchId, (data) => {
-      setCatalog(data);
-    });
-    return unsub;
-  }, [activeBranchId]);
+    if (!availableTabs.includes(activeTab)) {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, availableTabs]);
 
-  useEffect(() => {
-    if (!activeBranchId) return;
-    const unsub = cashService.subscribeToSessions(activeBranchId, (data) => {
-      setCashSessions(data);
-    });
-    return unsub;
-  }, [activeBranchId]);
+  // ── Branch access ──
+  const accessibleBranches = useAccessibleBranches();
+  const branchAccessDenied = accessibleBranches.length > 0 && !accessibleBranches.some(b => b.id === activeBranchId);
+  useFCM({ branchId: activeBranchId, userId: user?.email });
 
-  useEffect(() => {
-    if (!activeBranchId) return;
-    const unsub = dailyMenuService.subscribeToDailyMenus(activeBranchId, (data) => {
-      setDailyMenus(data);
-    });
-    return unsub;
-  }, [activeBranchId]);
-
-  const toggleKiosk = async () => {
-    if (!activeBranchId) return;
-    await set(ref(db, `branches/${activeBranchId}/config/kioskEnabled`), !kioskEnabled);
-  };
-
+  // ── Derivados ──
   const activeBranchName = branches.find(b => b.id === activeBranchId)?.name || 'Sede Principal';
 
   const kpiData = useMemo(() => {
@@ -247,110 +126,21 @@ export default function AdminView() {
     return stages.map(s => ({ ...s, count: allOrders.filter(o => o.status === s.key).length, total }));
   }, [allOrders]);
 
-  const cancelOrder = async (orderId) => {
-    if (!can('orders:cancel')) return;
-    if (!(await confirmDialog('¿Estás seguro de cancelar este pedido?'))) return;
-    const result = await ordersService.updateOrderStatus(activeBranchId, orderId, 'cancelado', user?.email);
-    if (result.success) {
-      showToast('Pedido cancelado');
-    } else {
-      showToast('Error al cancelar el pedido', 'error');
-    }
-  };
+  // ── Props compuestos para tabs ──
+  const tabData = useMemo(() => ({
+    kpiData, funnelData, kioskEnabled, toggleKiosk, allOrders, now,
+    activeBranchName, userRole: user?.role, cashSessions, activeBranchId, user,
+    searchQuery, onSearchQueryChange: setSearchQuery,
+    statusFilter, onStatusFilterChange: setStatusFilter,
+    paymentFilter, onPaymentFilterChange: setPaymentFilter,
+    filteredOrders, onCancelOrder: cancelOrder, exportToCSV,
+    catalog, dailyMenus, onUpdateField: updateField,
+    branches,
+  }), [kpiData, funnelData, kioskEnabled, toggleKiosk, allOrders, now, activeBranchName, user?.role, cashSessions, activeBranchId, user, searchQuery, statusFilter, paymentFilter, filteredOrders, cancelOrder, exportToCSV, catalog, dailyMenus, updateField, branches]);
 
-  const filteredOrders = useMemo(() => {
-    let result = allOrders;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(o =>
-        (o.customerName || '').toLowerCase().includes(q) ||
-        (o.id || '').toLowerCase().includes(q) ||
-        (o.location || '').toLowerCase().includes(q)
-      );
-    }
-    if (statusFilter) {
-      result = result.filter(o => o.status === statusFilter);
-    }
-    if (paymentFilter) {
-      result = result.filter(o => o.payment_status === paymentFilter);
-    }
-    return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [allOrders, searchQuery, statusFilter, paymentFilter]);
+  if (loading) return <AdminLoadingView />;
 
-  const updateField = async (productId, field, value) => {
-    await menuService.updateProductField(activeBranchId, productId, field, value);
-  };
-
-  const renderTab = () => {
-    const tabDef = TAB_DEFS[activeTab];
-    if (!tabDef) return null;
-    if (tabDef.perm && !can(tabDef.perm)) {
-      return <div className="text-center py-12 text-sm text-cm-text-secondary">No tienes permiso para ver esta sección</div>;
-    }
-    const content = (() => {
-      switch (activeTab) {
-        case 'dashboard':
-          return <DashboardTab kpiData={kpiData} funnelData={funnelData} kioskEnabled={kioskEnabled} toggleKiosk={toggleKiosk} allOrders={allOrders} now={now} activeBranchName={activeBranchName} userRole={user?.role} cashSessions={cashSessions} activeBranchId={activeBranchId} user={user} />;
-        case 'orders':
-          return <OrdersTab allOrders={allOrders} searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} paymentFilter={paymentFilter} onPaymentFilterChange={setPaymentFilter} filteredOrders={filteredOrders} onCancelOrder={cancelOrder} exportToCSV={exportToCSV} activeBranchId={activeBranchId} activeBranchName={activeBranchName} />;
-        case 'menu':
-          return <MenuTab activeBranchId={activeBranchId} catalog={catalog} dailyMenus={dailyMenus} onUpdateField={updateField} />;
-        case 'inventory':
-          return <InventoryTab catalog={catalog} />;
-        case 'caja':
-          return <CajaTab cashSessions={cashSessions} allOrders={allOrders} activeBranchId={activeBranchId} user={user} />;
-        case 'finanzas':
-          return <FinanzasTab allOrders={allOrders} activeBranchId={activeBranchId} activeBranchName={activeBranchName} />;
-        case 'sucursales':
-          return <SucursalesTab branches={branches} activeBranchId={activeBranchId} />;
-        case 'delivery':
-          return activeBranchId ? <DeliveryManager branchId={activeBranchId} /> : <p className="text-sm text-cm-muted text-center py-8">Selecciona una sucursal para gestionar el delivery</p>;
-        case 'fiscal':
-          return activeBranchId ? <FiscalManager branchId={activeBranchId} /> : <p className="text-sm text-cm-muted text-center py-8">Selecciona una sucursal para gestionar la facturación</p>;
-        case 'users':
-          return <UserManager />;
-        case 'marketing':
-          return activeBranchId ? <MarketingTab activeBranchId={activeBranchId} branches={branches} /> : <p className="text-sm text-cm-muted text-center py-8">Selecciona una sucursal para gestionar marketing</p>;
-        case 'analytics':
-          return <AnalyticsTab allOrders={allOrders} />;
-        case 'customers':
-          return <CustomersTab allOrders={allOrders} />;
-        case 'logistics':
-          return <LogisticsTab />;
-        case 'employees':
-          return <EmployeesTab allOrders={allOrders} />;
-        case 'roles':
-          return <RolesTab />;
-        case 'audit':
-          return <AuditTab />;
-        case 'settings':
-          return <SystemConfigTab />;
-        default:
-          return null;
-      }
-    })();
-    return <ErrorBoundary message={`Error en ${tabDef.label}`}>{content}</ErrorBoundary>;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-cm-bg p-6 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-cm-accent animate-spin" />
-      </div>
-    );
-  }
-
-  if (branchAccessDenied) {
-    return (
-      <div className="min-h-screen bg-cm-bg p-6 flex items-center justify-center">
-        <div className="text-center max-w-sm">
-          <ShieldBan className="w-16 h-16 text-cm-error mx-auto mb-4" />
-          <h2 className="text-lg font-bold text-cm-text mb-2">Acceso restringido</h2>
-          <p className="text-sm text-cm-text-secondary">No tienes acceso a la sucursal "{activeBranchName}". Contacta al administrador para obtener permisos.</p>
-        </div>
-      </div>
-    );
-  }
+  if (branchAccessDenied) return <AdminAccessDenied branchName={activeBranchName} />;
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-cm-bg">
@@ -363,112 +153,25 @@ export default function AdminView() {
         activeOrdersCount={kpiData.activeOrders}
       />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* TopBar */}
-        <header className="h-16 shrink-0 border-b border-cm-border bg-cm-surface px-6 flex items-center justify-between z-30 shadow-cm-sm">
-          <div className="flex items-center gap-3">
-            {/* Branding */}
-            <div className="flex items-center gap-2 mr-2">
-              <div className="w-8 h-8 bg-cm-accent rounded-lg flex items-center justify-center font-black text-white text-sm shrink-0">
-                H
-              </div>
-              <span className="text-sm font-black text-cm-text hidden sm:inline">Admin Hub</span>
-            </div>
+        <AdminTopBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          availableTabs={availableTabs}
+          inlineTabs={inlineTabs}
+          tabDefs={TAB_DEFS}
+          now={now}
+          megaMenuOpen={megaMenuOpen}
+          onMegaMenuToggle={() => setMegaMenuOpen((prev) => !prev)}
+          activeBranchName={activeBranchName}
+        />
 
-            {/* MegaMenu Trigger Button */}
-            <button
-              onClick={() => setMegaMenuOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-cm-border hover:border-cm-accent/40 bg-cm-bg-alt hover:bg-cm-accent/5 text-cm-text font-bold text-xs transition-all active:scale-95 group"
-            >
-              <Grid className="w-3.5 h-3.5 text-cm-muted group-hover:text-cm-accent transition-colors" />
-              <span>Navegar</span>
-              <ChevronDown className="w-3 h-3 text-cm-muted" />
-            </button>
-
-            {/* Breadcrumb Indicator */}
-            <div className="w-[1px] h-4 bg-cm-border mx-1" />
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-cm-accent uppercase tracking-wider">
-                {TAB_DEFS[activeTab]?.label || 'Admin'}
-              </span>
-              <span className="hidden md:inline text-xs text-cm-muted font-semibold px-2 py-0.5 rounded-full bg-cm-bg-alt border border-cm-border flex items-center gap-1">
-                <Store className="w-3 h-3 text-cm-accent" />
-                {activeBranchName}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="hidden md:inline text-xs font-semibold text-cm-muted">
-              {now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </span>
-            <div className="w-[1px] h-4 bg-cm-border hidden md:block" />
-
-            {/* Notifications */}
-            <NotificationBell
-              branchId={activeBranchId}
-              userId={user?.email}
-              onNavigate={(url) => {}}
-            />
-            
-            {/* User display */}
-            <span className="text-xs text-cm-muted font-medium hidden sm:inline">
-              {user?.name || user?.email}
-            </span>
-
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-cm-accent/8 text-cm-muted hover:text-cm-text transition-colors"
-              title="Cambiar tema"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            <button
-              onClick={logout}
-              className="flex items-center gap-1 text-xs font-semibold text-cm-muted hover:text-cm-error hover:bg-cm-error/10 p-2 rounded-lg transition-all"
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </header>
-
-        {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-6">
-          {/* Pending payment banner */}
-          {pendingVerificationCount > 0 && (
-            <div className="px-6 pt-3 shrink-0">
-              <button onClick={() => { setActiveTab('orders'); setPaymentFilter('por_verificar'); }}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-cm-accent/10 border border-cm-accent/30 text-sm font-semibold text-cm-accent hover:bg-cm-accent/20 transition-colors text-left">
-                <span className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cm-accent opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cm-accent" />
-                  </span>
-                  {pendingVerificationCount} pedido{pendingVerificationCount !== 1 ? 's' : ''} pendiente{pendingVerificationCount !== 1 ? 's' : ''} de verificación de pago
-                </span>
-                <span className="text-cm-text-tertiary text-xs">Ir a Pedidos →</span>
-              </button>
-            </div>
-          )}
-
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
-            </div>
-          }>
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.15 }}
-              className="h-full"
-            >
-              {renderTab()}
-            </motion.div>
-          </Suspense>
+          <PendingPaymentBanner
+            count={pendingVerificationCount}
+            onClick={() => { setActiveTab('orders'); setPaymentFilter('por_verificar'); }}
+          />
+          <AdminTabRenderer activeTab={activeTab} can={can} data={tabData} />
         </main>
       </div>
     </div>

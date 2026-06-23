@@ -8,7 +8,7 @@ import { useAccessibleBranches } from '../../hooks/useAccessibleBranches';
 import BranchSwitcher from '../../components/BranchSwitcher';
 import { TrendingUp, LogOut, Plus, Loader2, FilterX } from 'lucide-react';
 import useOrderSync from '../../worker/hooks/useOrderSync';
-import useOrderStore from '../../worker/store/orderStore';
+import { useOrderStore } from '../store/vendedorOrderStore';
 import useVendedorSync, { useCuentaStats, useOrdersByCuentaId } from '../hooks/useVendedorSync';
 import useVendedorStore from '../store/vendedorStore';
 import VendedorDashboard from '../components/VendedorDashboard';

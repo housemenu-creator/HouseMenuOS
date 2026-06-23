@@ -187,6 +187,7 @@ function RecipesSection({ branchId }) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ productId: '', productName: '', yield: 1, ingredients: [] });
+  const [error, setError] = useState('');
 
   useEffect(() => { const u = subscribeRecipes(branchId, setRecipes); return u; }, [branchId]);
   useEffect(() => { const u = subscribeIngredients(branchId, setIngredients); return u; }, [branchId]);
@@ -200,10 +201,11 @@ function RecipesSection({ branchId }) {
     return u;
   }, [branchId]);
 
-  const resetForm = () => { setForm({ productId: '', productName: '', yield: 1, ingredients: [] }); setEditing(null); };
+  const resetForm = () => { setForm({ productId: '', productName: '', yield: 1, ingredients: [] }); setEditing(null); setError(''); };
 
   const handleSave = async () => {
-    if (!form.productId && !form.productName) return;
+    setError('');
+    if (!form.productId) { setError('Debés seleccionar un producto para la receta.'); return; }
     const data = {
       productId: form.productId || null,
       productName: form.productName || products.find(p => p.id === form.productId)?.name || '',
@@ -251,9 +253,17 @@ function RecipesSection({ branchId }) {
 
       {showForm && (
         <div className="bg-cm-bg-alt border border-cm-border rounded-xl p-4 space-y-4">
+          {products.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-xs text-cm-text-secondary mb-2">No hay productos en el catálogo.</p>
+              <p className="text-[0.6rem] text-cm-text-secondary">Creá productos en la sección Productos primero.</p>
+            </div>
+          ) : (
+          <>  
+          {error && <p className="text-xs font-semibold text-cm-error bg-cm-error/5 px-3 py-1.5 rounded-lg">{error}</p>}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase block mb-1">Producto</label>
+              <label className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase block mb-1">Producto <span className="text-cm-error">*</span></label>
               <select value={form.productId} onChange={e => setForm({ ...form, productId: e.target.value, productName: products.find(p => p.id === e.target.value)?.name || '' })}
                 className="w-full bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text">
                 <option value="">Seleccionar producto...</option>
@@ -299,6 +309,8 @@ function RecipesSection({ branchId }) {
               <Save className="w-3.5 h-3.5" /> {editing ? 'Guardar' : 'Crear'}
             </button>
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -321,7 +333,12 @@ function RecipesSection({ branchId }) {
                 <td className="py-3 px-3 text-center text-cm-text-secondary">{r.ingredients ? Object.keys(r.ingredients).length : 0}</td>
                 <td className="py-3 px-3 text-right font-bold text-cm-accent">{fmtCurrency(r.costPerPortion || 0)}</td>
                 <td className="py-3 pl-3 pr-4 text-right">
-                  <button onClick={() => { /* TODO: edit */ }} className="p-1.5 rounded-lg hover:bg-cm-accent/10 text-cm-text-secondary"><Edit3 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => {
+                    const ings = r.ingredients ? Object.entries(r.ingredients).map(([id, ing]) => ({ ingredientId: id, ...ing })) : [];
+                    setForm({ productId: r.productId || '', productName: r.productName, yield: r.yield, ingredients: ings });
+                    setEditing(r.id);
+                    setShowForm(true);
+                  }} className="p-1.5 rounded-lg hover:bg-cm-accent/10 text-cm-text-secondary"><Edit3 className="w-3.5 h-3.5" /></button>
                   <button onClick={() => deleteRecipe(branchId, r.id).then(() => {})} className="p-1.5 rounded-lg hover:bg-cm-error/10 text-cm-text-secondary"><Trash2 className="w-3.5 h-3.5" /></button>
                 </td>
               </tr>
@@ -472,12 +489,13 @@ function PurchaseOrdersSection({ branchId }) {
   const [ingredients, setIngredients] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ supplierId: '', items: [], notes: '' });
+  const [error, setError] = useState('');
 
   useEffect(() => { const u = subscribePurchaseOrders(branchId, setOrders); return u; }, [branchId]);
   useEffect(() => { const u = subscribeSuppliers(branchId, setSuppliers); return u; }, [branchId]);
   useEffect(() => { const u = subscribeIngredients(branchId, setIngredients); return u; }, [branchId]);
 
-  const resetForm = () => { setForm({ supplierId: '', items: [], notes: '' }); };
+  const resetForm = () => { setForm({ supplierId: '', items: [], notes: '' }); setError(''); };
 
   const addItem = () => {
     const first = ingredients[0];
@@ -497,7 +515,9 @@ function PurchaseOrdersSection({ branchId }) {
   const removeItem = (idx) => setForm({ ...form, items: form.items.filter((_, i) => i !== idx) });
 
   const handleCreate = async () => {
-    if (!form.supplierId || form.items.length === 0) return;
+    setError('');
+    if (!form.supplierId) { setError('Debés seleccionar un proveedor.'); return; }
+    if (form.items.length === 0) { setError('Agregá al menos un insumo a la orden.'); return; }
     const supplier = suppliers.find(s => s.id === form.supplierId);
     await createPurchaseOrder(branchId, {
       supplierId: form.supplierId,
@@ -519,6 +539,15 @@ function PurchaseOrdersSection({ branchId }) {
 
       {showForm && (
         <div className="bg-cm-bg-alt border border-cm-border rounded-xl p-4 space-y-3">
+          {suppliers.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-xs text-cm-text-secondary mb-2">No hay proveedores registrados.</p>
+              <p className="text-[0.6rem] text-cm-text-secondary">Creá proveedores en la sección Proveedores primero.</p>
+            </div>
+          ) : (
+          <>
+          {error && <p className="text-xs font-semibold text-cm-error bg-cm-error/5 px-3 py-1.5 rounded-lg">{error}</p>}
+          <label className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase block mb-1">Proveedor <span className="text-cm-error">*</span></label>
           <select value={form.supplierId} onChange={e => setForm({ ...form, supplierId: e.target.value })}
             className="w-full bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text">
             <option value="">Seleccionar proveedor...</option>
@@ -547,6 +576,8 @@ function PurchaseOrdersSection({ branchId }) {
               <Save className="w-3.5 h-3.5" /> Crear orden
             </button>
           </div>
+          </>
+          )}
         </div>
       )}
 

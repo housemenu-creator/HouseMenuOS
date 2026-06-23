@@ -9,6 +9,7 @@ import { startScheduler } from "./services/scheduler.js";
 import { initFirebase, authenticateBot } from "./lib/firebase.js";
 import { reportHeartbeat, reportSystemHealth } from "./lib/telemetry.js";
 import { getPrimaryBranchId, getAllBranchIds } from "./lib/branch.js";
+import { syncBranchKnowledge } from "./rag/syncFirebase.js";
 
 const branchId = getPrimaryBranchId();
 const allBranchIds = getAllBranchIds();
@@ -85,6 +86,18 @@ console.log(`\n📡 HousePySbot`);
 console.log(`   Sucursales: ${allBranchIds.join(", ")}`);
 console.log(`   Primaria: ${branchId}`);
 console.log(`   Modelo: ${process.env.OPENROUTER_MODEL || "openrouter/free"}`);
+
+// ── RAG: Sync knowledge base at startup ───────────────
+(async () => {
+  for (const bId of allBranchIds) {
+    try {
+      const result = await syncBranchKnowledge(bId);
+      console.log(`   🧠 RAG: ${result.total} docs sync'd for ${bId}`);
+    } catch (e: any) {
+      console.warn(`   ⚠️ RAG sync failed for ${bId}: ${e.message}`);
+    }
+  }
+})();
 
 // ── Graceful shutdown ──────────────────────────────────
 async function shutdown(signal: string) {

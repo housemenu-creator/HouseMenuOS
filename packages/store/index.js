@@ -5,10 +5,9 @@ import { persist } from 'zustand/middleware';
 const CART_KEY = 'house_cart';
 
 function getInitialBranchId() {
-  if (typeof window === 'undefined') return 'castilla';
+  if (typeof window === 'undefined') return 'monteverde';
   const stored = localStorage.getItem('house_active_branch');
-  // Migration: 'hq' was the old default, remap to actual branch
-  if (!stored || stored === 'hq') return 'castilla';
+  if (!stored || stored === 'hq' || stored === 'castilla') return 'monteverde';
   return stored;
 }
 
@@ -26,6 +25,17 @@ export const appStore = createStore(
       removeFromCart: (id) => set((state) => ({
         cart: state.cart.filter(item => item.id !== id)
       })),
+      updateCartItem: (id, updates) => set((state) => ({
+        cart: state.cart.map(item => (item.id === id ? { ...item, ...updates } : item))
+      })),
+      updateCartItemQty: (id, quantity) => set((state) => {
+        if (quantity <= 0) {
+          return { cart: state.cart.filter(item => item.id !== id) };
+        }
+        return {
+          cart: state.cart.map(item => (item.id === id ? { ...item, quantity } : item))
+        };
+      }),
       clearCart: () => set({ cart: [] }),
 
       // UI State

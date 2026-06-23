@@ -15,12 +15,12 @@ import ConnectionStatus from '../kds/components/ConnectionStatus';
 import VoiceCommandBar from '../kds/components/VoiceCommandBar';
 import WorkflowSettings from '../kds/components/WorkflowSettings';
 import StationSoundToggle from '../kds/components/StationSoundToggle';
-import useOrderStore from '../worker/store/orderStore';
 import useTimerStore from '../kds/store/timerStore';
 import useOrderSync from '../worker/hooks/useOrderSync';
 import { useVoiceCommands } from '../kds/hooks/useVoiceCommands';
 import { KITCHEN_STATIONS, STATION_PREP_TIMES } from '../kds/kdsTypes';
 import { inferStationFromItem, inferOrderStation } from '../kds/utils/stationInference';
+import { useOrderStore, useEnrichedOrders, useIsKDSLoading } from '../kds/store/orderStore';
 import { useAuth } from '../context/AuthContext';
 
 import NewOrderFlash from '../kds/components/NewOrderFlash';

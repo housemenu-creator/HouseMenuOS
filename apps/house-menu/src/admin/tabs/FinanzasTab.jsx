@@ -81,7 +81,7 @@ export default function FinanzasTab({ allOrders, activeBranchId, activeBranchNam
   const [editingExpense, setEditingExpense] = useState(null);
   const [period, setPeriod] = useState('month');
 
-  const getExpensesPath = () => `branches/${activeBranchId || 'hq'}/finanzas/gastos`;
+  const getExpensesPath = () => `branches/${activeBranchId || 'monteverde'}/finanzas/gastos`;
 
   useEffect(() => {
     if (!activeBranchId) return;

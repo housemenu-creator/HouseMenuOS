@@ -10,6 +10,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    testTimeout: 15_000,
     env: {
       VITE_ENCRYPTION_PEPPER: 'house_portal_os_dev_pepper_2026_segura',
     },

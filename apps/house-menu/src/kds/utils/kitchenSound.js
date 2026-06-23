@@ -21,7 +21,7 @@ export function getAudioContext() {
 export function playKitchenAlert(station) {
   try {
     const ctx = getAudioContext();
-    const playTone = (freq, startTime, duration, gain = 0.4) => {
+    const playTone = (freq, startTime, duration, gain = 0.8) => {
       const osc = ctx.createOscillator();
       const gainNode = ctx.createGain();
       osc.connect(gainNode);
@@ -35,8 +35,8 @@ export function playKitchenAlert(station) {
     };
     const now = ctx.currentTime;
     const tones = STATION_TONES[station] || STATION_TONES.grill;
-    playTone(tones[0], now, 0.35, 0.5);
-    playTone(tones[1], now + 0.18, 0.45, 0.4);
+    playTone(tones[0], now, 0.45, 0.85);
+    playTone(tones[1], now + 0.18, 0.55, 0.75);
   } catch (e) {
     console.warn('Audio context not available:', e);
   }

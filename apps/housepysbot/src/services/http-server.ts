@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { registry } from "../mcp/registry.js";
 import { renderDSStyles, renderFontPreload, icon } from "../lib/render-ds.js";
 import { getAllBranchIds, getBranchInfo } from "../lib/branch.js";
+import { syncBranchKnowledge } from "../rag/syncFirebase.js";
 
 export const qrEmitter = new EventEmitter();
 
@@ -914,7 +915,7 @@ export function startHttpServer(port: number = 3000) {
       };
 
       // Multi-path update: write the order + the orders_by_session index atomically
-      const updates = {
+      const updates: Record<string, any> = {
         [`branches/${bid}/orders/${newRef.key}`]: order,
       };
       if (orderData.sessionId) {
@@ -1060,6 +1061,21 @@ export function startHttpServer(port: number = 3000) {
         res.status(500).json({ success: false, error: e.message });
       }
     })();
+  });
+
+  // ── RAG Sync ──────────────────────────────────────────
+  app.post("/api/sync-knowledge", async (req, res) => {
+    const { branchId: targetBranch } = req.body;
+    const branches = targetBranch ? [targetBranch] : getAllBranchIds();
+    const results: Record<string, any> = {};
+    for (const b of branches) {
+      try {
+        results[b] = await syncBranchKnowledge(b);
+      } catch (e: any) {
+        results[b] = { error: e.message };
+      }
+    }
+    res.json({ success: true, results });
   });
 
   // ══════════════════════════════════════════════════════

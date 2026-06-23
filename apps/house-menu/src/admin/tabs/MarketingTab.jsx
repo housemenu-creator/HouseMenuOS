@@ -127,7 +127,7 @@ const SECTIONS = [
 ];
 
 const EMPTY_FORM = {
-  campaign: { name: '', description: '', type: 'promo', startDate: '', endDate: '', creatives: { heroTitle: '', heroSubtitle: '', ctaText: 'Ver ofertas', ctaLink: '/' } },
+  campaign: { name: '', description: '', type: 'promo', startDate: '', endDate: '', creatives: { heroTitle: '', heroSubtitle: '', ctaText: 'Ver ofertas', ctaLink: ROUTES.HOME } },
   banner: { title: '', subtitle: '', ctaText: '', ctaLink: '', bgColor: '#1a1a2e', textColor: '#ffffff', position: 'hero' },
   promo: { code: '', type: 'percentage', value: '', minOrder: '', maxUses: '', expiresAt: '' },
   testimonial: { author: '', rating: 5, text: '', order: 0 },

@@ -1,0 +1,44 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Yape QR codes — public read for customer checkout flow
+    match /branches/{branchId}/yape-qr/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Product images — read by authenticated users
+    match /branches/{branchId}/product-images/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Category images
+    match /branches/{branchId}/category-images/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Option images
+    match /branches/{branchId}/option-images/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Voucher images — read/write by authenticated users
+    match /branches/{branchId}/vouchers/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // All other paths — require auth
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

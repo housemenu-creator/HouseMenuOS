@@ -14,7 +14,6 @@ import { storageService } from '../lib/storageService';
 import { useBranch } from '../context/BranchContext';
 import { useMarketing } from '../context/MarketingContext';
 import { findOrCreateCustomer, addCustomerPoints } from '../lib/customerService';
-import { getAnonymousToken } from '../lib/anonymousAuth';
 import { isEmail, isPhone, isTime, isRequired } from '@house/validation';
 import { marketingService } from '../lib/marketingService';
 import { getSessionId } from '@house/db';
@@ -51,20 +50,20 @@ function CartItemsList({ cart, removeFromCart, updateCartItemQty, itemsByDate, f
                 </div>
               )}
               
-              <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/5">
+              <div className="flex justify-between items-center pt-2 mt-2 border-t border-cm-border">
                 <p className="text-cm-accent font-black text-base">S/ {item.price.toFixed(2)}</p>
                 
                 {/* Micro Quantity Adjuster */}
                 <div className="flex items-center gap-1 bg-cm-bg p-1 rounded-xl border border-cm-border shrink-0">
-                  <button 
+                  <button
                     onClick={() => handleUpdateQty(item.id, (item.quantity || 1) - 1)}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-cm-text-secondary hover:bg-cm-surface hover:text-cm-text transition-all font-bold text-sm"
                     type="button"
                   >
                     −
                   </button>
-                  <span className="w-6 text-center text-xs font-black text-white tabular-nums">{item.quantity || 1}</span>
-                  <button 
+                  <span className="w-6 text-center text-xs font-black text-cm-text tabular-nums">{item.quantity || 1}</span>
+                  <button
                     onClick={() => handleUpdateQty(item.id, (item.quantity || 1) + 1)}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-cm-text-secondary hover:bg-cm-surface hover:text-cm-text transition-all font-bold text-sm"
                     type="button"
@@ -186,11 +185,13 @@ function PaymentSelector({ paymentMethod, setPaymentMethod }) {
 }
 
 function StepYapePlin({
-  selectedWallet, setSelectedWallet, yapeNumber, yapeName, plinNumber, plinName,
+  selectedWallet, setSelectedWallet, yapeNumber, yapeName, yapeQrUrl, plinNumber, plinName,
   operationNumber, setOperationNumber, handleFileUpload, isUploading, voucherUploaded,
   fileName, copiedStatus, handleCopyNumber, submitError, step, setStep, handleConfirmOrder,
   isSubmitting, total,
 }) {
+  const showRealQr = selectedWallet === 'yape' && yapeQrUrl;
+
   return (
     <motion.div key="step3" custom={2}
       variants={{ hidden: (d) => ({ x: d > 0 ? 100 : -100, opacity: 0 }), visible: { x: 0, opacity: 1 }, exit: (d) => ({ x: d > 0 ? -100 : 100, opacity: 0 }) }}
@@ -220,16 +221,20 @@ function StepYapePlin({
 
         <div className={`p-5 rounded-2xl border-2 text-center space-y-4 shadow-cm-md bg-cm-surface/30 ${selectedWallet === 'yape' ? 'border-purple-500/30' : 'border-cyan-500/30'}`}>
           <div className="w-40 h-40 mx-auto bg-white p-2.5 rounded-xl border border-cm-border shadow-inner flex items-center justify-center relative group">
-            <svg className="w-full h-full text-cm-text" viewBox="0 0 100 100">
-              <rect x="0" y="0" width="25" height="25" fill="currentColor" /><rect x="5" y="5" width="15" height="15" fill="#fff" />
-              <rect x="75" y="0" width="25" height="25" fill="currentColor" /><rect x="80" y="5" width="15" height="15" fill="#fff" />
-              <rect x="0" y="75" width="25" height="25" fill="currentColor" /><rect x="5" y="80" width="15" height="15" fill="#fff" />
-              <path d="M 35,5 H 40 V 15 H 35 Z M 45,5 H 55 V 10 H 45 Z M 60,5 H 70 V 20 H 60 Z M 35,20 H 50 V 25 H 35 Z" fill="currentColor" />
-              <path d="M 5,35 H 15 V 40 H 5 Z M 20,35 H 25 V 45 H 20 Z M 30,35 H 45 V 40 H 30 Z M 50,35 H 65 V 50 H 50 Z" fill="currentColor" />
-              <path d="M 75,35 H 85 V 40 H 75 Z M 90,35 H 95 V 55 H 90 Z M 5,50 H 15 V 60 H 5 Z M 20,50 H 30 V 55 H 20 Z" fill="currentColor" />
-              <path d="M 35,55 H 45 V 65 H 35 Z M 60,55 H 70 V 60 H 60 Z M 75,60 H 85 V 70 H 75 Z M 35,70 H 50 V 75 H 35 Z" fill="currentColor" />
-              <path d="M 55,75 H 65 V 85 H 55 Z M 70,75 H 75 V 95 H 70 Z M 80,75 H 95 V 80 H 80 Z M 85,85 H 95 V 95 H 85 Z" fill="currentColor" />
-            </svg>
+            {showRealQr ? (
+              <img src={yapeQrUrl} alt="QR Yape" className="w-full h-full object-contain" />
+            ) : (
+              <svg className="w-full h-full text-cm-text" viewBox="0 0 100 100">
+                <rect x="0" y="0" width="25" height="25" fill="currentColor" /><rect x="5" y="5" width="15" height="15" fill="#fff" />
+                <rect x="75" y="0" width="25" height="25" fill="currentColor" /><rect x="80" y="5" width="15" height="15" fill="#fff" />
+                <rect x="0" y="75" width="25" height="25" fill="currentColor" /><rect x="5" y="80" width="15" height="15" fill="#fff" />
+                <path d="M 35,5 H 40 V 15 H 35 Z M 45,5 H 55 V 10 H 45 Z M 60,5 H 70 V 20 H 60 Z M 35,20 H 50 V 25 H 35 Z" fill="currentColor" />
+                <path d="M 5,35 H 15 V 40 H 5 Z M 20,35 H 25 V 45 H 20 Z M 30,35 H 45 V 40 H 30 Z M 50,35 H 65 V 50 H 50 Z" fill="currentColor" />
+                <path d="M 75,35 H 85 V 40 H 75 Z M 90,35 H 95 V 55 H 90 Z M 5,50 H 15 V 60 H 5 Z M 20,50 H 30 V 55 H 20 Z" fill="currentColor" />
+                <path d="M 35,55 H 45 V 65 H 35 Z M 60,55 H 70 V 60 H 60 Z M 75,60 H 85 V 70 H 75 Z M 35,70 H 50 V 75 H 35 Z" fill="currentColor" />
+                <path d="M 55,75 H 65 V 85 H 55 Z M 70,75 H 75 V 95 H 70 Z M 80,75 H 95 V 80 H 80 Z M 85,85 H 95 V 95 H 85 Z" fill="currentColor" />
+              </svg>
+            )}
             <div className={`absolute w-10 h-10 rounded-full border-2 border-white flex items-center justify-center font-bold text-white shadow-md group-hover:scale-110 transition-transform ${selectedWallet === 'yape' ? 'bg-purple-600' : 'bg-cyan-500'}`}>
               {selectedWallet === 'yape' ? 'Y' : 'P'}
             </div>
@@ -528,6 +533,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
 
   const yapeNumber = activeBranch?.yapePhone || activeBranch?.phone || '999 888 777';
   const yapeName = activeBranch?.yapeName || activeBranch?.name || 'HOUSE MENU';
+  const yapeQrUrl = activeBranch?.yapeQrUrl || '';
   const plinNumber = activeBranch?.plinPhone || activeBranch?.phone || '999 888 777';
   const plinName = activeBranch?.plinName || activeBranch?.name || 'HOUSE MENU';
 
@@ -623,26 +629,8 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
 
     let result;
     try {
-      // Retry logic: if 401, refresh token and retry once
-      let retried = false;
-      const doFetch = async () => {
-        const token = await getAnonymousToken();
-        const headers = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        const response = await fetch("/api/orders", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ branchId: activeBranchId, ...orderData, source: "web" }),
-        });
-        if (!response.ok && response.status === 401 && !retried) {
-          retried = true;
-          // Force re-auth and retry once
-          await getAnonymousToken();
-          return doFetch();
-        }
-        return response.json();
-      };
-      result = await doFetch();
+      // Escribe el pedido directo a RTDB — el API /api/orders no existe en producción
+      result = await ordersService.createOrder(activeBranchId, orderData, customerEmail || null);
     } catch (err) {
       console.error("Error al enviar pedido:", err);
       setIsSubmitting(false);
@@ -668,11 +656,13 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
         console.warn("CRM post-order skipped (anonymous user or permissions):", crmErr);
       }
       trackPixel('Purchase', { value: total, currency: 'PEN' });
-      
+
+      // Save snapshot BEFORE clearing cart (OrderConfirmation needs the items)
+      const cartSnapshot = [...cart];
+      onOrderComplete(result.orderId, cartSnapshot);
       clearCart(); setLocation(''); setObservaciones(''); setMesa(initialMesa || null); setDeliveryFeeOverride(null);
       setPackaging({}); setSelectedZoneId(null); setSubmitError(''); setStep(1);
       setOperationNumber(''); setVoucherUploaded(false); setVoucherUrl(''); setFileName(''); removeDiscount(); setTipPercentage(0);
-      onOrderComplete(result.orderId);
     } else if (result.error === 'stock_insufficient') {
       setSubmitError(`⚠️ ${result.message || 'Uno o más platos se acaban de agotar.'}`);
     } else {
@@ -990,7 +980,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> PROCESANDO...
                             </div>
                           ) : (
-                            <><span>{paymentMethod === 'yape_plin' ? 'PAGAR CON YAPE / PLIN' : 'CONFIRMAR PEDIDO'}</span><span className="text-xl">S/ {total.toFixed(2)}</span></>
+                            <>                            <span>{paymentMethod === 'yape_plin' ? 'PAGAR CON YAPE / PLIN' : 'CONFIRMAR PEDIDO'}</span><span className="text-xl">S/ {total.toFixed(2)}</span></>
                           )}
                         </div>
                       </button>
@@ -1002,7 +992,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                 {step === 3 && (
                   <StepYapePlin
                     selectedWallet={selectedWallet} setSelectedWallet={setSelectedWallet}
-                    yapeNumber={yapeNumber} yapeName={yapeName} plinNumber={plinNumber} plinName={plinName}
+                    yapeNumber={yapeNumber} yapeName={yapeName} yapeQrUrl={yapeQrUrl} plinNumber={plinNumber} plinName={plinName}
                     operationNumber={operationNumber} setOperationNumber={setOperationNumber}
                     handleFileUpload={handleFileUpload} isUploading={isUploading} voucherUploaded={voucherUploaded}
                     fileName={fileName} copiedStatus={copiedStatus} handleCopyNumber={handleCopyNumber}

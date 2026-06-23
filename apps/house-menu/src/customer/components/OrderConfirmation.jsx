@@ -1,7 +1,84 @@
+import { useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Copy, Search as SearchIcon, Navigation } from 'lucide-react';
+import { CheckCircle2, Copy, Search as SearchIcon, Navigation, FileDown } from 'lucide-react';
 
-export default function OrderConfirmation({ open, orderId, cartItems, branchId, onTrackOrder, onNewOrder }) {
+function formatCurrency(n) { return 'S/ ' + (n ?? 0).toFixed(2); }
+
+function ReceiptContent({ orderId, cartItems, branchName, mesa }) {
+  const subtotal = cartItems.reduce((s, i) => s + (i.price || 0), 0);
+  const date = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return (
+    <div id="receipt-content" className="bg-white text-black p-6 text-xs leading-relaxed font-sans" style={{ width: '320px' }}>
+      {/* Header */}
+      <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
+        <p className="text-sm font-bold tracking-wider">{branchName || 'House Portal'}</p>
+        <p className="text-[10px] text-gray-500 mt-1">COMPROBANTE DE PEDIDO</p>
+        <p className="text-[10px] text-gray-500">#{orderId?.slice(-8).toUpperCase()}</p>
+        <p className="text-[10px] text-gray-400">{date}</p>
+        {mesa && <p className="text-[10px] text-gray-500 mt-1">Mesa: {mesa}</p>}
+      </div>
+
+      {/* Items */}
+      <table className="w-full mb-4">
+        <thead>
+          <tr className="border-b border-gray-200 text-[9px] text-gray-500 uppercase tracking-wider">
+            <th className="text-left pb-1">Item</th>
+            <th className="text-right pb-1">Precio</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cartItems.map((item, i) => (
+            <tr key={item.productId || i}>
+              <td className="py-1">
+                <span className="font-semibold">{item.name}</span>
+                {item.details?.length > 0 && (
+                  <div className="text-[9px] text-gray-400">{item.details.join(', ')}</div>
+                )}
+              </td>
+              <td className="text-right py-1">{formatCurrency(item.price)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Total */}
+      <div className="border-t-2 border-dashed border-gray-300 pt-3 flex justify-between text-sm font-bold">
+        <span>TOTAL</span>
+        <span>{formatCurrency(subtotal)}</span>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center mt-6 text-[9px] text-gray-400 border-t border-dashed border-gray-300 pt-4">
+        <p>Gracias por tu pedido</p>
+        <p className="mt-1">Rastrea tu pedido con el código: {orderId?.slice(-4).toUpperCase()}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function OrderConfirmation({ open, orderId, cartItems, branchId, branchName, mesa, onTrackOrder, onNewOrder }) {
+  const printingRef = useRef(false);
+
+  const handleDownloadPDF = useCallback(async () => {
+    if (printingRef.current) return;
+    printingRef.current = true;
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const el = document.getElementById('receipt-content');
+      if (!el) return;
+      await html2pdf().set({
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `comprobante-${orderId?.slice(-8).toUpperCase() || 'pedido'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'a5', orientation: 'portrait' },
+      }).from(el).save();
+    } catch (err) {
+      console.error('PDF error:', err);
+    } finally {
+      printingRef.current = false;
+    }
+  }, [orderId]);
   return (
     <AnimatePresence>
       {open && (
@@ -93,7 +170,19 @@ export default function OrderConfirmation({ open, orderId, cartItems, branchId, 
               >
                 + Hacer otro pedido
               </button>
+              <button
+                onClick={handleDownloadPDF}
+                className="w-full py-3 border border-cm-border rounded-xl font-bold text-xs text-cm-text-secondary hover:bg-cm-surface hover:border-cm-accent/30 transition-all flex items-center justify-center gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                Descargar Comprobante (PDF)
+              </button>
             </motion.div>
+          </div>
+
+          {/* Hidden receipt for PDF generation */}
+          <div className="absolute -left-[9999px]">
+            <ReceiptContent orderId={orderId} cartItems={cartItems} branchName={branchName} mesa={mesa} />
           </div>
         </motion.div>
       )}

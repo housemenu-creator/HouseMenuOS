@@ -11,6 +11,7 @@ import logo from '../assets/logo.jpg';
 
 import { useAppStore } from '@house/store';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES, rastreoRoute } from '../lib/routes';
 
 import MenuCard from '../components/MenuCard';
 import { useBranch } from '../context/BranchContext';
@@ -37,7 +38,7 @@ const OrderConfirmation = lazy(() => import('../customer/components/OrderConfirm
 export default function CustomerView() {
   const navigate = useNavigate();
   const { branches, activeBranchId, setActiveBranchId } = useBranch();
-  const { cart, addToCart: addStoreCart } = useAppStore();
+  const { cart, addToCart: addStoreCart, updateCartItemQty } = useAppStore();
 
   const [cartLength, setCartLength] = useState(cart.length);
   const [shouldAnimateCart, setShouldAnimateCart] = useState(false);
@@ -455,7 +456,7 @@ export default function CustomerView() {
       <UrgencyBar />
       <nav className="sticky top-0 z-40 bg-cm-bg/75 backdrop-blur-md border-b border-cm-border/60 px-6 py-3.5 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-1.5 hover:bg-cm-accent/10 rounded-full transition-colors text-cm-text shrink-0" title="Volver al inicio">
+          <button onClick={() => navigate(ROUTES.HOME)} className="p-1.5 hover:bg-cm-accent/10 rounded-full transition-colors text-cm-text shrink-0" title="Volver al inicio">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
@@ -517,18 +518,30 @@ export default function CustomerView() {
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
               <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} categoryImages={categoryImages} />
               <ProductGrid products={filteredProducts} onSelectProduct={handleSelectProduct} onDirectAdd={(id, prod) => {
-                const newItem = {
-                  id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-                  productId: id,
-                  name: prod.name,
-                  details: [],
-                  price: (prod.base_price ?? prod.price ?? 0),
-                  unitPrice: (prod.base_price ?? prod.price ?? 0),
-                  quantity: 1,
-                  packaging: 0,
-                  deliveryDate: selectedDate,
-                };
-                addStoreCart(newItem);
+                const isWizard = prod.isWizard || (prod.steps && prod.steps.length > 0);
+                if (isWizard) {
+                  handleSelectProduct(id, prod);
+                  return;
+                }
+                
+                // Buscar si ya existe en el carrito un item del mismo producto sin opciones
+                const existingItem = cart.find(item => item.productId === id && (!item.details || item.details.length === 0));
+                if (existingItem) {
+                  updateCartItemQty(existingItem.id, (existingItem.quantity || 1) + 1);
+                } else {
+                  const newItem = {
+                    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                    productId: id,
+                    name: prod.name,
+                    details: [],
+                    price: (prod.base_price ?? prod.price ?? 0),
+                    unitPrice: (prod.base_price ?? prod.price ?? 0),
+                    quantity: 1,
+                    packaging: 0,
+                    deliveryDate: selectedDate,
+                  };
+                  addStoreCart(newItem);
+                }
               }} searchQuery={searchQuery} />
               {layoutConfig.cartaShowHighlights && (
                 <MarketingHighlights />
@@ -538,12 +551,9 @@ export default function CustomerView() {
         </main>
 
         {/* Right Sidebar - Cart (Desktop) */}
-        <aside className="hidden lg:block w-80 sticky top-0 h-screen shrink-0 border-l border-cm-border/40 bg-cm-surface/40 backdrop-blur-sm flex flex-col">
-          <div className="p-4 flex-1 flex flex-col min-h-0">
-            <h2 className="text-sm font-black uppercase tracking-widest text-cm-accent mb-4">Tu Pedido</h2>
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <SidebarCart onCheckout={() => setIsCartOpen(true)} />
-            </div>
+        <aside className="hidden lg:block w-80 sticky top-0 h-screen shrink-0 border-l border-cm-border/40 bg-cm-surface/40 backdrop-blur-sm">
+          <div className="p-4 h-full">
+            <SidebarCart onCheckout={() => setIsCartOpen(true)} />
           </div>
         </aside>
       </div>
@@ -551,7 +561,7 @@ export default function CustomerView() {
       <AnimatePresence>
         {view === 'wizard' && (
           <>
-            {/* Backdrop Blur Overlay */}
+            {/* Backdrop Overlay - solid dark, no blur */}
             <motion.div
               key="wizard-backdrop"
               initial={{ opacity: 0 }}
@@ -559,49 +569,43 @@ export default function CustomerView() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
               onClick={() => setView('landing')}
-              className="fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm"
+              className="fixed inset-0 z-[55] bg-black/80"
             />
 
-            {/* Bottom Sheet Container */}
+            {/* Centered Modal Container */}
             <motion.div
               key="wizard-overlay"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 32, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-[60] flex flex-col h-[90vh] sm:h-auto sm:max-h-[88vh] sm:top-auto sm:bottom-0 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-2xl sm:w-full bg-cm-bg/95 backdrop-blur-xl rounded-t-[2rem] sm:rounded-t-[2.5rem] border-t border-x border-cm-border/60 shadow-cm-lg overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed inset-4 z-[60] flex flex-col bg-cm-bg rounded-2xl border border-cm-border shadow-cm-lg overflow-hidden sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg sm:h-auto sm:max-h-[85vh]"
             >
-              {/* Drag Handle Indicator */}
-              <div className="flex justify-center pt-3 pb-1 shrink-0">
-                <div className="w-10 h-1 rounded-full bg-cm-border/60" />
-              </div>
-
-              {/* Glassmorphic Header */}
-              <div className="sticky top-0 bg-cm-bg/80 backdrop-blur-md border-b border-cm-border/40 px-6 py-3 flex items-center z-10 shrink-0">
+              {/* Clean Header */}
+              <div className="sticky top-0 bg-cm-bg border-b border-cm-border/40 px-6 py-3 flex items-center z-10 shrink-0">
                 <button onClick={() => setView('landing')} className="p-2 -ml-2 hover:bg-cm-accent/10 rounded-full transition-colors mr-3">
                   <ArrowLeft className="w-5 h-5 text-cm-text" />
                 </button>
-                <h2 className="text-base font-black text-cm-text truncate flex-1">{liveProduct?.name}</h2>
-                <span className="text-xs font-black text-cm-accent bg-cm-accent/10 px-2.5 py-1 rounded-full border border-cm-accent/20 shrink-0">
+                <h2 className="text-base font-bold text-cm-text truncate flex-1">{liveProduct?.name}</h2>
+                <span className="text-xs font-bold text-cm-accent bg-cm-accent/10 px-2.5 py-1 rounded-full border border-cm-accent/20 shrink-0">
                   S/ {(liveProduct?.base_price ?? liveProduct?.price ?? 0).toFixed(2)}
                 </span>
               </div>
               
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto px-6 pt-6 pb-32 overscroll-contain">
+              <div className="flex-1 overflow-y-auto px-6 pt-4 pb-4 overscroll-contain">
                 <div className="max-w-2xl mx-auto w-full">
-                  {/* Product Hero */}
+                  {/* Product Hero - smaller */}
                   {liveProduct?.image && (
-                    <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-cm-border/60 shadow-cm-md mb-6">
+                    <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-cm-border/60 mx-auto mb-4">
                       <img src={liveProduct.image} alt={liveProduct.name} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-cm-bg/70 via-transparent to-transparent" />
                     </div>
                   )}
 
-                  <div className="text-center mb-8">
-                    <h2 className="text-2xl sm:text-3xl font-black text-cm-accent tracking-tight">{liveProduct?.name}</h2>
+                  <div className="text-center mb-4">
+                    <h2 className="text-lg font-bold text-cm-text">{liveProduct?.name}</h2>
                     {liveProduct?.description && (
-                      <p className="text-sm text-cm-text-secondary mt-3 max-w-md mx-auto leading-relaxed">{liveProduct.description}</p>
+                      <p className="text-xs text-cm-text-secondary mt-1 max-w-md mx-auto leading-relaxed">{liveProduct.description}</p>
                     )}
                   </div>
 
@@ -714,7 +718,7 @@ export default function CustomerView() {
           onTrackOrder={(id) => {
             setOrderComplete(false);
             setOrderId('');
-            navigate(`/rastreo?id=${id}&branch=${activeBranchId}`);
+            navigate(rastreoRoute(id, activeBranchId));
           }}
           onNewOrder={() => {
             setOrderComplete(false);

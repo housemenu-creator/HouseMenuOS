@@ -34,7 +34,7 @@ export default function OrderTracker() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const urlId = searchParams.get('id') || '';
-  const urlBranch = searchParams.get('branch') || 'hq';
+  const urlBranch = searchParams.get('branch') || 'monteverde';
 
   const [query, setQuery] = useState(urlId ? urlId.slice(-4).toUpperCase() : '');
   const [orderData, setOrderData] = useState(null);
@@ -125,12 +125,12 @@ export default function OrderTracker() {
     return () => { cancelled = true; };
   }, [orderData?.driverId, urlBranch]);
 
-  const subscribeToFoundOrder = useCallback((fullOrderId, normalized) => {
+  const subscribeToFoundOrderByBranch = useCallback((branchId, fullOrderId, normalized) => {
     if (unsubRef.current) {
       unsubRef.current();
       unsubRef.current = null;
     }
-    const unsub = ordersService.subscribeToOrder(urlBranch, fullOrderId, (order) => {
+    const unsub = ordersService.subscribeToOrder(branchId, fullOrderId, (order) => {
       setLoading(false);
       if (order) {
         setOrderData(order);
@@ -141,7 +141,11 @@ export default function OrderTracker() {
       }
     });
     unsubRef.current = unsub;
-  }, [urlBranch]);
+  }, []);
+
+  const subscribeToFoundOrder = useCallback((fullOrderId, normalized) => {
+    subscribeToFoundOrderByBranch(urlBranch, fullOrderId, normalized);
+  }, [urlBranch, subscribeToFoundOrderByBranch]);
 
   const performSearch = useCallback(async (shortQuery, fullIdHint = null) => {
     setSearchLoading(true);
@@ -166,21 +170,51 @@ export default function OrderTracker() {
     }
 
     try {
-      const ordersRef = ref(db, `branches/${urlBranch || 'hq'}/orders`);
+      // Search across all branches if not found in the specific one
+      let matchKey = null;
+      let foundBranch = urlBranch;
+
+      // Try specific branch first
+      const ordersRef = ref(db, `branches/${urlBranch || 'monteverde'}/orders`);
       const snap = await get(ordersRef);
-      setSearchLoading(false);
-      if (!snap.exists()) {
-        setLoading(false);
-        setError(`No se encontró ningún pedido con el código #${normalized}`);
-        return;
+      if (snap.exists()) {
+        const orders = snap.val();
+        matchKey = Object.keys(orders).find(
+          k => k.slice(-4).toUpperCase() === normalized
+        );
       }
-      const orders = snap.val();
-      const matchKey = Object.keys(orders).find(
-        k => k.slice(-4).toUpperCase() === normalized
-      );
+
+      // If not found, search other known branches individually.
+      // AVOID reading /branches root — it downloads catalog, config, orders
+      // for ALL branches at once (megabytes). Instead, discover branch IDs
+      // from /branches_config (lightweight) and search each orders path.
+      if (!matchKey) {
+        // Get known branch IDs from /branches_config (lightweight)
+        const configSnap = await get(ref(db, 'branches_config'));
+        const knownBranches = configSnap.exists() ? Object.keys(configSnap.val()) : [];
+        // Include the default branch too, always
+        const searchBranches = [...new Set([knownBranches, urlBranch || 'monteverde'].flat())];
+
+        for (const bId of searchBranches) {
+          if (bId === foundBranch) continue; // already searched
+          const snap = await get(ref(db, `branches/${bId}/orders`));
+          if (snap.exists()) {
+            const orders = snap.val();
+            matchKey = Object.keys(orders).find(
+              k => k.slice(-4).toUpperCase() === normalized
+            );
+            if (matchKey) {
+              foundBranch = bId;
+              break;
+            }
+          }
+        }
+      }
+
+      setSearchLoading(false);
       if (matchKey) {
         setFoundId(matchKey);
-        subscribeToFoundOrder(matchKey, normalized);
+        subscribeToFoundOrderByBranch(foundBranch, matchKey, normalized);
       } else {
         setLoading(false);
         setError(`No se encontró ningún pedido con el código #${normalized}`);
@@ -206,7 +240,7 @@ export default function OrderTracker() {
     const q = query.trim().toUpperCase();
     if (!q) return;
     performSearch(q);
-    navigate(`/rastreo?id=${q}&branch=${urlBranch}`, { replace: true });
+    navigate(rastreoRoute(q, urlBranch), { replace: true });
   };
 
   const isDelivered = orderData?.status === 'entregado';
@@ -230,7 +264,7 @@ export default function OrderTracker() {
 
           {/* Back */}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTES.HOME)}
             className="flex items-center gap-2 text-cm-muted hover:text-cm-accent transition-colors text-sm font-bold"
           >
             <ArrowLeft className="w-4 h-4" /> Volver al Menú
@@ -264,7 +298,7 @@ export default function OrderTracker() {
                           key={o.id}
                           onClick={() => {
                             const code = o.id.slice(-4).toUpperCase();
-                            navigate(`/rastreo?id=${code}&branch=${urlBranch}`, { replace: true });
+                            navigate(rastreoRoute(code, urlBranch), { replace: true });
                             performSearch(code, o.id);
                           }}
                           className="w-full flex items-center justify-between p-3 hover:bg-cm-accent/5 transition-colors text-left"
@@ -537,7 +571,7 @@ export default function OrderTracker() {
                     <p className="text-3xl">🎉</p>
                     <p className="font-black text-cm-success text-lg">¡Buen provecho!</p>
                     <button
-                      onClick={() => navigate('/')}
+                      onClick={() => navigate(ROUTES.HOME)}
                       className="mt-2 px-6 py-2.5 bg-cm-accent text-white font-bold rounded-xl text-sm hover:bg-cm-accent/90 transition-colors"
                     >
                       Hacer otro pedido

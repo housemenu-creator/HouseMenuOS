@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import HouseMenuNav from '../components/HouseMenuNav';
+import { ROUTES } from '../lib/routes';
 import ThemeToggle from '../components/ThemeToggle';
 import ChatWindow from '../components/ChatWindow';
 
@@ -12,13 +13,13 @@ interface ChatConfigEntry {
 const CHAT_CONFIG: Record<string, ChatConfigEntry> = {
   '/cocina': { sender: 'kitchen', senderName: 'Cocina', title: 'Chat Cocina ↔ Despacho' },
   '/despacho': { sender: 'dispatch', senderName: 'Despacho', title: 'Chat Despacho ↔ Cocina' },
-  '/admin': { sender: 'admin', senderName: 'Admin', title: 'Chat Admin' },
+  [ROUTES.ADMIN]: { sender: 'admin', senderName: 'Admin', title: 'Chat Admin' },
 };
 
 export default function AppLayout() {
   const location = useLocation();
-  const isLanding = location.pathname === '/';
-  const isAdmin = location.pathname.startsWith('/admin');
+  const isLanding = location.pathname === ROUTES.HOME;
+  const isAdmin = location.pathname.startsWith(ROUTES.ADMIN);
   const chatConfig = CHAT_CONFIG[location.pathname];
 
   // Determine wrapper class based on current route

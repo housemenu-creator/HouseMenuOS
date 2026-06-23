@@ -6,6 +6,7 @@ import { loadTools, registry } from "../mcp/server.js";
 import { getAgentConfigCached } from "../lib/agentConfig.js";
 import { reportToolCall } from "../lib/telemetry.js";
 import { initFirebase, ref, get, child } from "../lib/firebase.js";
+import { getRelevantContext } from "../rag/retrieval.js";
 
 // Lazy init to avoid circular dependency:
 //   agent/index → server.ts → notificaciones.ts → whatsapp.ts → agent/index
@@ -273,6 +274,16 @@ async function _processMessage(
       const customerContext = buildCustomerContext(customer);
       systemPrompt += "\n\n" + customerContext;
     }
+  }
+
+  // ── RAG: inject relevant menu/policy knowledge ──
+  try {
+    const ragContext = await getRelevantContext(message, 3);
+    if (ragContext) {
+      systemPrompt += "\n\n" + ragContext;
+    }
+  } catch (e) {
+    console.warn("RAG retrieval error (non-blocking):", e);
   }
 
   const allowedSet = new Set(config.allowedTools);

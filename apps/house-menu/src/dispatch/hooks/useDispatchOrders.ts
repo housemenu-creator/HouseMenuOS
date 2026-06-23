@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
-import useOrderStore from '../../worker/store/orderStore';
+import { useOrderStore } from '../store/dispatchOrderStore';
 import { calculateWaitingTime } from '../../lib/deliveryService';
 import type { Order } from '../../worker/workerTypes';
 

@@ -65,21 +65,21 @@ const fontSizes = {
   normal: {
     title: 'text-sm font-bold',
     items: 'text-xs',
-    details: 'text-[0.6rem]',
+    details: 'text-xs',
     meta: 'text-[0.65rem]',
     button: 'text-xs py-3',
   },
   large: {
     title: 'text-base font-bold',
     items: 'text-sm',
-    details: 'text-[0.7rem]',
+    details: 'text-sm',
     meta: 'text-[0.75rem]',
     button: 'text-sm py-3.5',
   },
   huge: {
     title: 'text-lg font-black',
     items: 'text-base',
-    details: 'text-[0.8rem]',
+    details: 'text-base',
     meta: 'text-[0.85rem]',
     button: 'text-base py-4',
   },
@@ -267,7 +267,7 @@ function KDSTicket({
                 </p>
               )}
               {order.observaciones && (
-                <p className="text-[0.6rem] text-cm-warning font-semibold mt-2 bg-cm-warning/10 border border-cm-warning/20 rounded-lg px-2.5 py-1.5 leading-tight">
+                <p className={cn(fStyles.details, 'text-cm-warning font-semibold mt-2 bg-cm-warning/10 border border-cm-warning/20 rounded-lg px-2.5 py-1.5 leading-tight')}>
                   📝 {order.observaciones}
                 </p>
               )}

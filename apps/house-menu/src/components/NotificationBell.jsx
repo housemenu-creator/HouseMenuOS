@@ -11,6 +11,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../lib/routes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCheck, Loader2, Clock } from 'lucide-react';
 import { subscribeToNotifications, markAsRead, markAllAsRead, getUnreadCount, NOTIF_ICONS } from '../lib/notificationService';
@@ -172,7 +173,7 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
 
               {/* Ver todas */}
               <button
-                onClick={() => { navigate('/staff/notificaciones'); setOpen(false); }}
+                onClick={() => { navigate(ROUTES.NOTIFICACIONES); setOpen(false); }}
                 className="w-full py-2.5 text-xs font-bold text-cm-accent hover:bg-cm-accent/5 transition-colors border-t border-cm-border/50"
               >
                 Ver todas las notificaciones

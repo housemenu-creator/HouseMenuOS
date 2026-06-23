@@ -52,7 +52,7 @@ export default function DeliveryManager({ branchId }) {
   }, [branchId]);
 
   const isReady = !loading.drivers && !loading.zones && !loading.logs;
-  const allLoaded = isReady || error;
+  const allLoaded = isReady || subscriptionError;
 
   // ─── Drivers ───────────────────────────────────────
 

@@ -284,7 +284,7 @@ export default function DemoRunner({ isOpen: controlledOpen, onClose }) {
                     </p>
                     <div className="flex gap-2 mt-4">
                       <a
-                        href="/admin"
+                        href={ROUTES.ADMIN}
                         className="flex-1 py-2.5 bg-white/20 hover:bg-white/30 text-white font-bold text-xs rounded-xl transition-colors border border-white/30"
                       >
                         Ver Admin Hub

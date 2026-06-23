@@ -1,7 +1,7 @@
 import { ref, onChildAdded, onChildChanged, onChildRemoved, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 
-const getOrdersPath = (branchId) => `branches/${branchId || 'hq'}/orders`;
+const getOrdersPath = (branchId) => `branches/${branchId || 'monteverde'}/orders`;
 
 export function subscribeOrdersDelta(branchId, { onAdd, onChange, onRemove }) {
   const ordersRef = ref(db, getOrdersPath(branchId));

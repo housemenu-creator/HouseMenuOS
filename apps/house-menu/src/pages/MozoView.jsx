@@ -10,9 +10,9 @@ import BranchSwitcher from '../components/BranchSwitcher';
 import {
   ClipboardList, Search, LogOut, Plus, FilterX, Loader2,
 } from 'lucide-react';
-import useOrderStore from '../worker/store/orderStore';
 import useOrderSync from '../worker/hooks/useOrderSync';
 import { useMozoOrders } from '../mozo/hooks/useMozoOrders';
+import { useOrderStore } from '../mozo/store/mozoOrderStore';
 import NewOrderModal from '../mozo/components/NewOrderModal';
 import CobrarModal from '../mozo/components/CobrarModal';
 import MozoOrderList from '../mozo/components/MozoOrderList';

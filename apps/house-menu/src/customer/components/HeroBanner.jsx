@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Clock, ShieldCheck, UtensilsCrossed } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTrackCampaignView } from '../../marketing/hooks/useMarketingAnalytics';
+import { ROUTES } from '../../lib/routes';
 import { useBranch } from '../../context/BranchContext';
 import { marketingService } from '../../lib/marketingService';
 import logo from '../../assets/logo.jpg';
@@ -78,7 +79,7 @@ export default function HeroBanner({ branchName, campaign, kitchenHours }) {
     if (campaign?.id && activeBranchId) {
       marketingService.incrementCampaignConversions(activeBranchId, campaign.id).catch(() => {});
     }
-    navigate('/carta');
+    navigate(ROUTES.CARTA);
   };
 
   return (
@@ -124,7 +125,7 @@ export default function HeroBanner({ branchName, campaign, kitchenHours }) {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/rastreo')}
+                onClick={() => navigate(ROUTES.RASTREO)}
                 className="inline-flex items-center justify-center gap-2 rounded-cm-md border border-cm-border bg-cm-bg-alt px-5 py-3 text-sm font-black text-cm-text transition hover:border-cm-border-hover hover:bg-cm-surface-hover focus:outline-none focus:ring-2 focus:ring-cm-accent/30"
               >
                 Seguir pedido

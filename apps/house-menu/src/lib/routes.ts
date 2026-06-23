@@ -1,0 +1,60 @@
+/**
+ * Rutas centralizadas del frontend.
+ * Toda navegación (`navigate()`, `path`, comparaciones) DEBE usar estas constantes,
+ * no strings hardcodeados.
+ *
+ * Las definiciones de `<Route path="...">` en App.jsx son la fuente de verdad
+ * y NO se reemplazan — solo los usos (navigate, config, comparaciones).
+ */
+
+// ── Públicas ──
+export const ROUTES = {
+  HOME: '/',
+  CARTA: '/carta',
+  RASTREO: '/rastreo',
+  ADMIN: '/admin',
+  LOGIN: '/login',
+  ONBOARDING: '/onboarding',
+  RESERVA: '/reserva',
+  MIS_PEDIDOS: '/mis-pedidos',
+  KIOSKO: '/kiosko',
+  MONITOR: '/monitor',
+  NOTIFICACIONES: '/staff/notificaciones',
+  EMPLEADOS: '/staff/empleados',
+} as const;
+
+// ── Staff ──
+export const STAFF_ROUTES = {
+  ROOT: '/staff',
+  MOZO: '/staff/mozo',
+  COCINA: '/staff/cocina',
+  DESPACHO: '/staff/despacho',
+  DELIVERY: '/staff/delivery',
+  VENDEDOR: '/staff/vendedor',
+  CAJA: '/staff/caja',
+} as const;
+
+// ── Helpers ──
+
+/** Construye `/staff/:role/dashboard` */
+export const staffDashboardRoute = (role: string) =>
+  `/staff/${role}/dashboard` as const;
+
+/** Construye `/rastreo?id=${id}&branch=${branchId}` */
+export const rastreoRoute = (id: string, branchId: string) =>
+  `/rastreo?id=${id}&branch=${branchId}` as const;
+
+/** Retorna el staff route para un role dado */
+export const staffRouteForRole = (role: string): string => {
+  const map: Record<string, string> = {
+    mozo: STAFF_ROUTES.MOZO,
+    cocina: STAFF_ROUTES.COCINA,
+    despacho: STAFF_ROUTES.DESPACHO,
+    delivery: STAFF_ROUTES.DELIVERY,
+    vendedor: STAFF_ROUTES.VENDEDOR,
+    cajero: STAFF_ROUTES.CAJA,
+    repartidor: STAFF_ROUTES.DELIVERY,
+    admin: ROUTES.ADMIN,
+  };
+  return map[role] || STAFF_ROUTES.MOZO;
+};

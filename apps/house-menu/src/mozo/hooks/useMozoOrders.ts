@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import useOrderStore from '../../worker/store/orderStore';
+import { useOrderStore } from '../store/mozoOrderStore';
 
 export function useMozoOrders(filter: 'activos' | 'entregados' | 'todos', searchQuery: string) {
   const orders = useOrderStore((s) => s.orders);

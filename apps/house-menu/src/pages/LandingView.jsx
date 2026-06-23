@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../lib/routes';
 import { ref, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
+import { isFirstRun } from '../lib/onboardingService';
 import {
   Clock,
   UtensilsCrossed, ArrowRight, Sparkles,
-  ChefHat, ShieldCheck, Heart, Star, Package,
+  ChefHat, ShieldCheck, Heart, Star, Package, Calendar, ShoppingBag,
 } from 'lucide-react';
 import { useBranch } from '../context/BranchContext';
 import { useMarketing } from '../context/MarketingContext';
@@ -30,6 +32,13 @@ const VALUES = [
 export default function LandingView() {
   const navigate = useNavigate();
   const { branches, activeBranchId } = useBranch();
+
+  // ── First-run detection → redirect to onboarding ──
+  useEffect(() => {
+    isFirstRun().then(first => {
+      if (first) navigate(ROUTES.ONBOARDING, { replace: true });
+    });
+  }, [navigate]);
   const branchName = branches.find((b) => b.id === activeBranchId)?.name;
   const { activeCampaigns, stats } = useMarketing();
   const campaign = activeCampaigns?.[0] || null;
@@ -104,12 +113,22 @@ export default function LandingView() {
           </div>
         </div>
 
-        <button
-          onClick={() => navigate('/carta')}
-          className="px-4 py-1.5 bg-cm-accent/10 hover:bg-cm-accent text-cm-accent hover:text-white rounded-full transition-all text-xs font-bold border border-cm-accent/20"
-        >
-          Pedir Ahora
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate(ROUTES.MIS_PEDIDOS)}
+            className="px-3 py-1.5 bg-cm-surface border border-cm-border text-cm-text-secondary hover:text-cm-accent hover:border-cm-accent rounded-full transition-all text-xs font-bold flex items-center gap-1.5">
+            <ShoppingBag className="w-3.5 h-3.5" /> Mis Pedidos
+          </button>
+          <button onClick={() => navigate(ROUTES.RESERVA)}
+            className="px-3 py-1.5 bg-cm-surface border border-cm-border text-cm-text-secondary hover:text-cm-accent hover:border-cm-accent rounded-full transition-all text-xs font-bold flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" /> Reservar
+          </button>
+          <button
+            onClick={() => navigate('/carta')}
+            className="px-4 py-1.5 bg-cm-accent/10 hover:bg-cm-accent text-cm-accent hover:text-white rounded-full transition-all text-xs font-bold border border-cm-accent/20"
+          >
+            Pedir Ahora
+          </button>
+        </div>
       </nav>
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10 pb-32">
