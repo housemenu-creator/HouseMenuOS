@@ -76,6 +76,13 @@ export function AuthProvider({ children }) {
           });
           setSession({ ...sessionData, firebaseUid: firebaseUser.uid });
           saveSession({ ...sessionData, firebaseUid: firebaseUser.uid });
+        } else {
+          // Usuario no registrado o eliminado — cerrar sesión de Firebase
+          console.warn('AuthContext: ensureFirebaseUser falló en onAuthChange, cerrando sesión');
+          await fbSignOut();
+          setSession(null);
+          clearSession();
+          setError(result.error || 'No tenés acceso al sistema. Contactá al administrador.');
         }
       } else {
         const saved = loadSession();

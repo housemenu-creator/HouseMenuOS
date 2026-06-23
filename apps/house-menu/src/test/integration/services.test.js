@@ -512,7 +512,7 @@ describe('authService', () => {
     store.set('tenants/default/employees/u1', {
       profile: { email: 'chef@rest.com', name: 'Chef', pin: '4321', active: true },
       role: 'kitchen',
-      branches: { hq: true },
+      branches: { monteverde: true },
     });
     store.set('tenants/default/roles', {
       admin: { name: 'Admin', permissions: { 'orders:read': true, 'users:manage': true } },
@@ -530,7 +530,7 @@ describe('authService', () => {
     store.set('tenants/default/employees/u2', {
       profile: { email: 'nobody@rest.com', name: 'Nobody', pin: '0000', active: true },
       role: 'mozo',
-      branches: { hq: true },
+      branches: { monteverde: true },
     });
     store.set('tenants/default/roles', {
       admin: { name: 'Admin', permissions: { 'orders:read': true } },
@@ -542,7 +542,7 @@ describe('authService', () => {
     expect(r.success).toBe(true);
     expect(r.user.role).toBe('mozo');
     expect(r.user.name).toBe('Nobody');
-    expect(r.user.branchIds).toEqual({ hq: true });
+    expect(r.user.branchIds).toEqual({ monteverde: true });
   });
 
   it('findUserByFirebaseUid returns null for unknown uid', async () => {
@@ -551,17 +551,11 @@ describe('authService', () => {
     expect(r).toBeNull();
   });
 
-  it('ensureFirebaseUser creates user if not found (employee path)', async () => {
+  it('ensureFirebaseUser rejects unknown user', async () => {
     const { ensureFirebaseUser } = await import('../../lib/authService.js');
-    const r = await ensureFirebaseUser({ uid: 'new-uid-123', email: 'new@rest.com', displayName: 'New Chef' });
-    expect(r.success).toBe(true);
-    expect(r.user.role).toBe('kitchen');
-    expect(r.user.email).toBe('new@rest.com');
-    const employee = store.get('tenants/default/employees/new-uid-123');
-    expect(employee).toBeDefined();
-    expect(employee.profile.name).toBe('New Chef');
-    expect(employee.firebaseUid).toBe('new-uid-123');
-    // No membership indirection — role and branches are directly on the employee
+    const r = await ensureFirebaseUser({ uid: 'unknown-uid', email: 'stranger@gmail.com', displayName: 'Stranger' });
+    expect(r.success).toBe(false);
+    expect(r.error).toContain('No tenés acceso');
   });
 
   it('hasPermission checks correctly', async () => {
@@ -585,7 +579,7 @@ describe('authService', () => {
       store.set('tenants/default/employees/u1', {
         profile: { email: 'chef@rest.com', name: 'Chef', pin: '4321', active: true },
         role: 'kitchen',
-        branches: { hq: true },
+        branches: { monteverde: true },
       });
       store.set('tenants/default/roles', {
         admin: { name: 'Admin', permissions: { 'orders:read': true } },
@@ -606,7 +600,7 @@ describe('authService', () => {
       store.set('tenants/default/employees/u2', {
         profile: { email: 'cook@rest.com', name: 'Cook', pinHash: testPinHash, active: true },
         role: 'kitchen',
-        branches: { hq: true },
+        branches: { monteverde: true },
       });
       store.set('tenants/default/roles', {
         kitchen: { name: 'Cocina', permissions: { 'orders:read': true } },

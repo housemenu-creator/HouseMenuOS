@@ -14,6 +14,26 @@ interface ScheduleViewProps {
   uid: string;
 }
 
+function formatMinutes(min: number) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h}h ${m.toString().padStart(2, '0')}m`;
+}
+
+function weeklyTotal(schedule: Record<string, unknown> | null): number {
+  if (!schedule) return 0;
+  let total = 0;
+  for (const day of DAYS) {
+    const d = schedule[day] as { active?: boolean; start?: string; end?: string } | undefined;
+    if (d?.active && d.start && d.end) {
+      const [sh, sm] = d.start.split(':').map(Number);
+      const [eh, em] = d.end.split(':').map(Number);
+      total += (eh * 60 + em) - (sh * 60 + sm);
+    }
+  }
+  return total;
+}
+
 export default function ScheduleView({ uid }: ScheduleViewProps) {
   const [state, setState] = useState<'loading' | 'empty' | 'error' | 'populated'>('loading');
   const [schedule, setSchedule] = useState<Record<string, unknown> | null>(null);
@@ -73,6 +93,7 @@ export default function ScheduleView({ uid }: ScheduleViewProps) {
   }
 
   // ── Populated ──
+  const total = weeklyTotal(schedule);
   return (
     <div className="space-y-2">
       {DAYS.map((day) => {
@@ -112,6 +133,14 @@ export default function ScheduleView({ uid }: ScheduleViewProps) {
           </div>
         );
       })}
+
+      {/* Weekly total */}
+      {total > 0 && (
+        <div className="bg-cm-accent/5 border border-cm-accent/20 rounded-[--cm-radius-lg] p-4 flex items-center justify-between">
+          <span className="text-sm font-semibold text-cm-text">Total semanal</span>
+          <span className="text-lg font-bold text-cm-accent tabular-nums">{formatMinutes(total)}</span>
+        </div>
+      )}
     </div>
   );
 }

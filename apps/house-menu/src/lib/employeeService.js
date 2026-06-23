@@ -1,7 +1,8 @@
 import { ref, get, set, push, update, remove, onValue, runTransaction } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { nowISO, todayISO } from './format';
-import { createUser, updateUser } from './authService';
+import { nowISO, todayISO, dateKey } from './format';
+import { createUser, updateUser, deleteUser } from './authService';
+import { tenantRef, tenantPath } from './tenantService';
 
 // ── Employee CRUD ──────────────────────────────────────
 
@@ -37,9 +38,13 @@ export async function createEmployee(branchId, data) {
     name: data.name || '',
     email: data.email || '',
     phone: data.phone || '',
+    docType: data.docType || 'dni',
+    docNum: data.docNum || '',
     role: data.role || 'mozo',
+    area: data.area || '',
+    station: data.station || '',
     pin: data.pin || '',
-    active: true,
+    status: data.status || 'active',
     startDate: data.startDate || nowISO(),
     hourlyRate: data.hourlyRate || 0,
     notes: data.notes || '',
@@ -77,13 +82,15 @@ export async function updateEmployee(branchId, employeeId, data) {
   const existing = existingSnap.val();
   const currentUserId = existing?.userId;
 
-  if (currentUserId && (updates.email || updates.name || updates.role || updates.pin || updates.active !== undefined)) {
+  if (currentUserId && (updates.email || updates.name || updates.role || updates.pin || updates.active !== undefined || updates.status || updates.statusEnd)) {
     const userUpdates = {};
     if (updates.email) userUpdates.email = updates.email;
     if (updates.name) userUpdates.name = updates.name;
     if (updates.role) userUpdates.role = updates.role;
     if (updates.pin) userUpdates.pin = updates.pin;
     if (updates.active !== undefined) userUpdates.active = updates.active;
+    if (updates.status) userUpdates.status = updates.status;
+    if (updates.statusEnd) userUpdates.statusEnd = updates.statusEnd;
     if (Object.keys(userUpdates).length > 0) {
       await updateUser(currentUserId, userUpdates);
     }
@@ -94,12 +101,35 @@ export async function updateEmployee(branchId, employeeId, data) {
 }
 
 export async function deleteEmployee(branchId, employeeId) {
+  // Read employee to get linked userId before deleting
+  const snap = await get(employeeRef(branchId, employeeId));
+  const emp = snap.val();
+  const userId = emp?.userId;
+
+  // If linked to a system user, clean up user record + role cache FIRST
+  // Doing this before branch removal so we can still read the employee
+  let userResult = { success: true };
+  if (userId) {
+    userResult = await deleteUser(userId, 'admin');
+  }
+
+  // Remove from branch path (only if user clean succeeded or no link)
   await remove(employeeRef(branchId, employeeId));
+
+  // If cascade delete failed, the branch record is already gone but user remains
+  // — caller can inspect userResult.success to know there's a dangling user
+  return userResult;
 }
 
 // ── Schedule ───────────────────────────────────────────
 
 const DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const DAY_MAP = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+function todayDayName() {
+  const [y, m, d] = dateKey().split('-').map(Number);
+  return DAY_MAP[new Date(y, m - 1, d).getDay()];
+}
 
 function scheduleRef(branchId, employeeId) {
   return ref(db, `branches/${branchId}/employees/${employeeId}/schedule`);
@@ -109,11 +139,11 @@ export async function getSchedule(branchId, employeeId) {
   const snap = await get(scheduleRef(branchId, employeeId));
   if (!snap.exists()) return DAYS.map(d => ({ day: d, start: '', end: '', active: false }));
   const saved = snap.val();
-  // Merge with full week
-  return DAYS.map(d => saved[d] || { day: d, start: '', end: '', active: false });
+  // Merge with full week — ensure `day` is always present
+  return DAYS.map(d => ({ day: d, ...(saved[d] || { start: '', end: '', active: false }) }));
 }
 
-export async function saveSchedule(branchId, employeeId, weekData) {
+export async function saveSchedule(branchId, employeeId, weekData, userId) {
   // weekData is array of { day, start, end, active }
   const obj = {};
   for (const entry of weekData) {
@@ -123,32 +153,98 @@ export async function saveSchedule(branchId, employeeId, weekData) {
       obj[entry.day] = { start: '', end: '', active: false };
     }
   }
+  // Save to branch path (admin reads from here)
   await set(scheduleRef(branchId, employeeId), obj);
+  // Sync to tenant path so the employee can see their schedule in /staff/empleados
+  if (userId) {
+    await set(tenantRef(`employees/${userId}/schedule`), obj);
+  }
 }
 
-// ── Attendance ─────────────────────────────────────────
+// ── Attendance (unified — reads from tenants/{tenant}/employees/{uid}/attendance) ──
 
-function attendanceRef(branchId) {
-  return ref(db, `branches/${branchId}/attendance`);
-}
-
-function employeeAttendanceRef(branchId, employeeId) {
-  return ref(db, `branches/${branchId}/attendance/${employeeId}`);
-}
-
-export async function clockIn(branchId, employeeId) {
+/**
+ * Subscribe to today's attendance for ALL employees under the tenant path.
+ * Returns data keyed by userId (the tenant-level UID).
+ * The consumer (EmployeesTab) maps userId → pushId using the employee list.
+ */
+export function subscribeTodayAttendance(branchId, callback) {
   const today = todayISO();
-  const recordRef = ref(db, `branches/${branchId}/attendance/${employeeId}/${today}`);
 
-  // Run transaction to avoid double clock-in
+  // Subscribe to all employees under tenants path, extract today's attendance per employee
+  const unsub = onValue(tenantRef('employees'), (snap) => {
+    const data = snap.val();
+    if (!data) { callback({}); return; }
+    const result = {};
+    for (const [userId, emp] of Object.entries(data)) {
+      if (emp.attendance && emp.attendance[today]) {
+        result[userId] = emp.attendance[today];
+      }
+    }
+    callback(result);
+  });
+  return unsub;
+}
+
+/**
+ * Clock in an employee. Validates they have a schedule for today first.
+ * Auto-calculates breakMinutes based on shift duration:
+ *   >= 6h → 60min, >= 4h → 30min, < 4h → 0min
+ * Writes to tenants/{tenant}/employees/{userId}/attendance/{today}.
+ */
+export async function clockIn(branchId, employeeId, userId) {
+  if (!userId) {
+    console.warn('clockIn: no userId provided, skipping');
+    return null;
+  }
+
+  // ── Validar horario para hoy ──
+  const schedule = await getSchedule(branchId, employeeId);
+  const todayName = todayDayName();
+  const todayEntry = schedule.find(d => d.day === todayName);
+  if (!todayEntry || !todayEntry.active || !todayEntry.start || !todayEntry.end) {
+    throw new Error(`No tenés horario asignado para ${todayName}. Consultá con tu administrador.`);
+  }
+
+  // ── Validar estado del empleado ──
+  const empSnap = await get(employeeRef(branchId, employeeId));
+  const empData = empSnap.val();
+  const empStatus = empData?.status || (empData?.active !== false ? 'active' : 'inactive');
+  if (empStatus === 'suspended') {
+    throw new Error('El empleado está suspendido. No puede marcar entrada.');
+  }
+  if (empStatus === 'vacation') {
+    throw new Error('El empleado está de vacaciones. No puede marcar entrada.');
+  }
+  if (empStatus === 'inactive') {
+    throw new Error('El empleado está inactivo. No puede marcar entrada.');
+  }
+
+  // ── Calcular break esperado ──
+  // Duración programada del turno
+  const [sh, sm] = todayEntry.start.split(':').map(Number);
+  const [eh, em] = todayEntry.end.split(':').map(Number);
+  const scheduledMin = (eh * 60 + em) - (sh * 60 + sm);
+  // Política: >= 6h → 60min break, >= 4h → 30min, sino 0
+  const breakMinutes = scheduledMin >= 360 ? 60 : scheduledMin >= 240 ? 30 : 0;
+
+  const today = todayISO();
+  const recordRef = tenantRef(`employees/${userId}/attendance/${today}`);
+
   const result = await runTransaction(recordRef, (current) => {
     if (current === null) {
       return {
-        employeeId,
-        date: today,
+        state: 'active',
         clockIn: Date.now(),
         clockOut: null,
-        branchId,
+        date: today,
+        area: '',
+        station: '',
+        areaSnapshot: null,
+        breakMinutes,
+        checklists: { inicio: {}, cierre: {} },
+        timeline: [{ at: Date.now(), type: 'clock_in' }],
+        handover: { notes: '', receivedBy: null, receivedAt: null },
       };
     }
     // Already clocked in — no-op
@@ -158,13 +254,28 @@ export async function clockIn(branchId, employeeId) {
   return result.snapshot.val();
 }
 
-export async function clockOut(branchId, employeeId) {
+/**
+ * Admin force clock-out. Writes to tenants/{tenant}/employees/{userId}/attendance/{today}.
+ */
+export async function clockOut(branchId, employeeId, userId) {
+  if (!userId) {
+    console.warn('clockOut: no userId provided, skipping');
+    return null;
+  }
   const today = todayISO();
-  const recordRef = ref(db, `branches/${branchId}/attendance/${employeeId}/${today}`);
+  const recordRef = tenantRef(`employees/${userId}/attendance/${today}`);
 
   const result = await runTransaction(recordRef, (current) => {
     if (current && current.clockIn && !current.clockOut) {
-      return { ...current, clockOut: Date.now() };
+      return {
+        ...current,
+        state: 'completed',
+        clockOut: Date.now(),
+        timeline: [
+          ...(current.timeline || []),
+          { at: Date.now(), type: 'clock_out' },
+        ],
+      };
     }
     return current;
   });
@@ -172,48 +283,28 @@ export async function clockOut(branchId, employeeId) {
   return result.snapshot.val();
 }
 
-export async function getTodayAttendance(branchId) {
-  const today = todayISO();
-  const snap = await get(attendanceRef(branchId));
-  if (!snap.exists()) return {};
+/**
+ * Get attendance history for a specific employee (by userId).
+ */
+export async function getAttendanceHistory(branchId, employeeId, userId, daysBack = 30) {
+  if (!userId) return [];
 
-  const all = snap.val();
-  const result = {};
-  for (const [empId, days] of Object.entries(all)) {
-    if (days[today]) {
-      result[empId] = days[today];
-    }
-  }
-  return result;
-}
-
-export function subscribeTodayAttendance(branchId, callback) {
-  const today = todayISO();
-
-  // We subscribe to the whole attendance node and filter client-side
-  const unsub = onValue(attendanceRef(branchId), (snap) => {
-    const data = snap.val();
-    if (!data) { callback({}); return; }
-    const result = {};
-    for (const [empId, days] of Object.entries(data)) {
-      if (days[today]) {
-        result[empId] = days[today];
-      }
-    }
-    callback(result);
-  });
-  return unsub;
-}
-
-export async function getAttendanceHistory(branchId, employeeId, daysBack = 30) {
-  const snap = await get(employeeAttendanceRef(branchId, employeeId));
+  const snap = await get(tenantRef(`employees/${userId}/attendance`));
   if (!snap.exists()) return [];
 
   const cutoff = Date.now() - daysBack * 86400000;
   return Object.entries(snap.val())
     .map(([date, record]) => ({ date, ...record }))
-    .filter(r => r.clockIn >= cutoff || r.clockIn == null)
+    .filter(r => (r.clockIn || 0) >= cutoff)
     .sort((a, b) => (b.clockIn || 0) - (a.clockIn || 0));
+}
+
+/**
+ * Admin: update a specific attendance field (e.g. breakMinutes).
+ */
+export async function updateAttendance(userId, date, updates) {
+  if (!userId || !date) return;
+  await update(tenantRef(`employees/${userId}/attendance/${date}`), updates);
 }
 
 // ── Goals ──────────────────────────────────────────────

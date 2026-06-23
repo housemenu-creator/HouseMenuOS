@@ -1,6 +1,7 @@
 {
   "rules": {
     "tenants": {
+      ".read": "auth != null",
       "$tenantId": {
         ".read": "auth != null",
         ".write": "auth != null",
@@ -13,30 +14,30 @@
         "employees": {
           "$uid": {
             ".read": "auth != null",
-            ".write": "auth.uid === $uid || data.child('role').val() === 'admin' || data.child('role').val() === 'superadmin'",
+            ".write": "auth.uid === $uid || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'",
             "profile": {
-              ".write": "auth.uid === $uid || root.parent().child('role').val() === 'admin' || root.parent().child('role').val() === 'superadmin'"
+              ".write": "auth.uid === $uid || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
             },
             "role": {
-              ".write": "root.parent().child('role').val() === 'admin' || root.parent().child('role').val() === 'superadmin'"
+              ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
             },
             "branches": {
-              ".write": "root.parent().child('role').val() === 'admin' || root.parent().child('role').val() === 'superadmin'"
+              ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
             },
             "firebaseUid": {
-              ".write": false
+              ".write": "auth.uid === $uid || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
             },
             "attendance": {
               "$date": {
-                ".write": "auth.uid === $uid || root.parent().parent().child('role').val() === 'admin' || root.parent().parent().child('role').val() === 'superadmin"
+                ".write": "auth.uid === $uid || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
               }
             },
             "schedule": {
-              ".write": "root.parent().child('role').val() === 'admin' || root.parent().child('role').val() === 'superadmin'"
+              ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
             },
             "goals": {
               "$gid": {
-                ".write": "root.parent().parent().child('role').val() === 'admin' || root.parent().parent().child('role').val() === 'superadmin"
+                ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
               }
             }
           }
@@ -44,40 +45,41 @@
         "roles": {
           "$roleId": {
             ".read": "auth != null",
-            ".write": "root.parent().parent().child('employees').child(auth.uid).child('role').val() === 'admin' || root.parent().parent().child('employees').child(auth.uid).child('role').val() === 'superadmin'"
+            ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
           }
         },
         "cuentas": {
           ".read": "auth != null",
           "$cuentaId": {
-            ".write": "root.parent().parent().child('employees').child(auth.uid).child('role').val() in ['admin', 'superadmin', 'vendedor', 'cajero']"
+            ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'vendedor' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'cajero'"
           }
         }
       }
     },
     "branches": {
+      ".read": "auth != null",
       "$branchId": {
         ".read": "auth != null",
         ".write": "auth != null",
         ".indexOn": ["status", "createdAt", "deliveryDate"],
         "catalog": {
           ".read": true,
-          ".write": "auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() in ['admin', 'superadmin', 'vendedor']"
+          ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'vendedor')"
         },
         "config": {
-          ".read": "auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() in ['admin', 'superadmin']",
-          ".write": "auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() in ['admin', 'superadmin']"
+          ".read": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')",
+          ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')"
         },
         "cash_sessions": {
           ".read": "auth != null",
-          ".write": "auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() in ['admin', 'superadmin', 'cajero']"
+          ".write": "auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'cajero'"
         },
         "_role_cache": {
           ".read": false,
           ".write": false,
           "$uid": {
-            ".read": "auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() in ['admin', 'superadmin']",
-            ".write": "auth.uid === $uid || (auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() in ['admin', 'superadmin'])"
+            ".read": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')",
+            ".write": "auth.uid === $uid || (auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin'))"
           }
         },
         "orders": {
@@ -111,9 +113,9 @@
         },
         "attendance": {
           "$employeeId": {
-            ".write": "$employeeId === auth.uid",
+            ".write": "$employeeId === auth.uid || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin'",
             "$date": {
-              ".validate": "newData.hasChildren(['employeeId', 'date', 'clockIn'])"
+              ".validate": "newData.hasChildren(['clockIn'])"
             }
           }
         },
@@ -124,7 +126,9 @@
         },
         "notifications": {
           "$userId": {
-            ".write": "$userId === auth.uid"
+            ".indexOn": "createdAt",
+            ".write": "$userId === auth.uid",
+            ".read": "auth != null"
           }
         },
         "delivery": {
@@ -137,6 +141,7 @@
       }
     },
     "carts": {
+      ".read": "auth != null",
       "$sessionId": {
         ".read": "auth != null",
         ".write": "auth != null"
@@ -165,6 +170,15 @@
       ".write": "auth != null",
       "$taskId": {
         ".validate": "newData.hasChildren(['instruccion', 'activa'])"
+      }
+    },
+    "audit": {
+      ".read": "auth != null",
+      "logs": {
+        "$date": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
       }
     }
   }

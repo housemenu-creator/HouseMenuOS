@@ -41,14 +41,19 @@ export default function AttendanceView({ uid }: AttendanceViewProps) {
 
   // Compute stats for filtered month
   const totalDays = filtered.length;
-  const totalWorked = filtered.reduce((acc, r) => {
-    const rec = r as { clockIn?: number; clockOut?: number };
+  const totalGross = filtered.reduce((acc, r) => {
+    const rec = r as { clockIn?: number; clockOut?: number; breakMinutes?: number };
     if (rec.clockIn && rec.clockOut) {
       return acc + (rec.clockOut - rec.clockIn);
     }
     return acc;
   }, 0);
-  const avgHours = totalDays > 0 ? totalWorked / totalDays : 0;
+  const totalBreak = filtered.reduce((acc, r) => {
+    const rec = r as { breakMinutes?: number };
+    return acc + ((rec.breakMinutes || 0) * 60000);
+  }, 0);
+  const totalNet = Math.max(0, totalGross - totalBreak);
+  const avgHours = totalDays > 0 ? totalNet / totalDays : 0;
 
   // Available months from data
   const availableMonths = [...new Set(records.map((r) => (r.date as string)?.slice(0, 7)))] as string[];
@@ -101,35 +106,45 @@ export default function AttendanceView({ uid }: AttendanceViewProps) {
       className="space-y-6"
     >
       {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-cm-surface border border-cm-border rounded-[--cm-radius-lg] p-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-cm-surface border border-cm-border rounded-[--cm-radius-lg] p-4">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-[--cm-radius-sm] bg-cm-info-soft flex items-center justify-center">
-              <CalendarDays className="w-4 h-4 text-cm-info" />
+            <div className="w-8 h-8 rounded-[--cm-radius-sm] bg-cm-info-soft flex items-center justify-center">
+              <CalendarDays className="w-3.5 h-3.5 text-cm-info" />
             </div>
-            <div className="text-xs font-medium text-cm-text-secondary uppercase tracking-wider">Días</div>
+            <div className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase tracking-wider">Días</div>
           </div>
-          <div className="text-2xl font-bold text-cm-text tabular-nums">{totalDays}</div>
+          <div className="text-xl font-bold text-cm-text tabular-nums">{totalDays}</div>
         </div>
 
-        <div className="bg-cm-surface border border-cm-border rounded-[--cm-radius-lg] p-5">
+        <div className="bg-cm-surface border border-cm-border rounded-[--cm-radius-lg] p-4">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-[--cm-radius-sm] bg-cm-success-soft flex items-center justify-center">
-              <Timer className="w-4 h-4 text-cm-success" />
+            <div className="w-8 h-8 rounded-[--cm-radius-sm] bg-cm-warning-soft flex items-center justify-center">
+              <Timer className="w-3.5 h-3.5 text-cm-warning" />
             </div>
-            <div className="text-xs font-medium text-cm-text-secondary uppercase tracking-wider">Total</div>
+            <div className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase tracking-wider">Bruto</div>
           </div>
-          <div className="text-2xl font-bold text-cm-text tabular-nums">{formatDuration(totalWorked)}</div>
+          <div className="text-xl font-bold text-cm-text tabular-nums">{formatDuration(totalGross)}</div>
         </div>
 
-        <div className="bg-cm-surface border border-cm-border rounded-[--cm-radius-lg] p-5">
+        <div className="bg-cm-surface border border-cm-border rounded-[--cm-radius-lg] p-4">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-[--cm-radius-sm] bg-cm-accent-light flex items-center justify-center">
-              <Clock className="w-4 h-4 text-cm-accent" />
+            <div className="w-8 h-8 rounded-[--cm-radius-sm] bg-cm-accent-light flex items-center justify-center">
+              <TimerOff className="w-3.5 h-3.5 text-cm-accent" />
             </div>
-            <div className="text-xs font-medium text-cm-text-secondary uppercase tracking-wider">Promedio</div>
+            <div className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase tracking-wider">Refrigerio</div>
           </div>
-          <div className="text-2xl font-bold text-cm-text tabular-nums">{formatDuration(avgHours)}</div>
+          <div className="text-xl font-bold text-cm-text tabular-nums">{formatDuration(totalBreak) || '0m'}</div>
+        </div>
+
+        <div className="bg-cm-surface border border-cm-border rounded-[--cm-radius-lg] p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-[--cm-radius-sm] bg-cm-success-soft flex items-center justify-center">
+              <Clock className="w-3.5 h-3.5 text-cm-success" />
+            </div>
+            <div className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase tracking-wider">Neto</div>
+          </div>
+          <div className="text-xl font-bold text-cm-text tabular-nums">{formatDuration(totalNet)}</div>
         </div>
       </div>
 
@@ -164,14 +179,16 @@ export default function AttendanceView({ uid }: AttendanceViewProps) {
           </div>
         ) : (
           filtered.map((record) => {
-            const rec = record as { date: string; clockIn?: number; clockOut?: number };
+            const rec = record as { date: string; clockIn?: number; clockOut?: number; breakMinutes?: number };
             const d = new Date(rec.date + 'T00:00:00');
             const dayName = d.toLocaleDateString('es-PE', { weekday: 'long' });
             const dayNum = d.getDate();
             const isComplete = rec.clockIn && rec.clockOut;
-            const duration = isComplete
+            const grossDuration = isComplete
               ? rec.clockOut! - rec.clockIn!
               : 0;
+            const breakMs = (rec.breakMinutes || 0) * 60000;
+            const netDuration = Math.max(0, grossDuration - breakMs);
 
             return (
               <div
@@ -204,8 +221,10 @@ export default function AttendanceView({ uid }: AttendanceViewProps) {
                     )}
                   </div>
                   {isComplete && (
-                    <div className="text-xs text-cm-text-secondary mt-0.5">
-                      {formatDuration(duration)}
+                    <div className="flex items-center gap-2 text-[0.6rem] text-cm-text-secondary mt-0.5">
+                      <span>Bruto: {formatDuration(grossDuration)}</span>
+                      {rec.breakMinutes > 0 && <span>· Break: {rec.breakMinutes}m</span>}
+                      <span className="font-semibold text-cm-text">· Neto: {formatDuration(netDuration)}</span>
                     </div>
                   )}
                 </div>

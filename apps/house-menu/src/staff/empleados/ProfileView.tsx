@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { ComponentType } from 'react';
-import { User, BadgeCheck, Building2, Hash, Shield, AlertTriangle, RefreshCw } from 'lucide-react';
+import { User, BadgeCheck, Building2, Hash, Shield, AlertTriangle, RefreshCw, IdCard } from 'lucide-react';
 import { subscribeEmployee } from './employeeService';
 
 interface ProfileViewProps {
@@ -106,6 +106,7 @@ export default function ProfileView({ uid, branchId }: ProfileViewProps) {
         <div className="space-y-0 divide-y divide-cm-border">
           <DetailRow icon={Hash} label="UID" value={uid} />
           <DetailRow icon={Shield} label="Rol" value={(profile?.role as string) || '—'} />
+          {profile?.docNum && <DetailRow icon={IdCard} label={`Doc. Identidad (${((profile?.docType as string) || 'dni').toUpperCase()})`} value={profile.docNum as string} />}
           <DetailRow icon={Building2} label="Sucursal" value={branchId || '—'} />
           <DetailRow icon={User} label="Nombre" value={(profile?.name as string) || '—'} />
           <DetailRow

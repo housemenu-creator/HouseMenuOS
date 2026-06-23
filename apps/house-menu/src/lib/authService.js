@@ -37,10 +37,12 @@ function normaliseEmployee(id, record) {
     pinHash: profile.pinHash || record.pinHash || null,
     pin: profile.pin || record.pin || null,
     active: profile.active !== undefined ? profile.active : (record.active !== false),
+    status: profile.status || record.status || null,
+    statusEnd: profile.statusEnd || record.statusEnd || null,
     createdAt: profile.createdAt || record.createdAt || null,
     updatedAt: profile.updatedAt || record.updatedAt || null,
     firebaseUid: record.firebaseUid || null,
-    branches: record.branches || { hq: true },
+    branches: record.branches || { monteverde: true },
     homeBranch: record.homeBranch || null,
     profile,
   };
@@ -59,7 +61,7 @@ export async function verifyPin(email, pin) {
           name: du.name,
           role: du.role,
           permissions: roleDef?.permissions || {},
-          branchIds: { hq: true },
+          branchIds: { monteverde: true },
         },
       };
     }
@@ -114,7 +116,7 @@ export async function verifyPin(email, pin) {
       name: found.name,
       role: found.role,
       permissions: roleDef?.permissions || {},
-      branchIds: found.branches || { hq: true },
+      branchIds: found.branches || { monteverde: true },
     },
   };
 }
@@ -127,7 +129,7 @@ async function findUserByEmail(email) {
     if (!allEmployees) return null;
     for (const [id, emp] of Object.entries(allEmployees)) {
       const normalised = normaliseEmployee(id, emp);
-      if (normalised.email === email && normalised.active !== false) {
+      if (normalised.email === email && normalised.active !== false && normalised.status !== 'suspended' && normalised.status !== 'vacation') {
         return normalised;
       }
     }
@@ -148,7 +150,7 @@ export async function findUserByFirebaseUid(firebaseUid) {
     const data = snapshot.val();
     if (data) {
       const normalised = normaliseEmployee(firebaseUid, data);
-      if (normalised.active !== false) return normalised;
+      if (normalised.active !== false && normalised.status !== 'suspended' && normalised.status !== 'vacation') return normalised;
     }
     // Fallback: scan all employees (handles migration where employee isn't yet keyed by UID)
     const allRef = tenantRef('employees');
@@ -157,7 +159,7 @@ export async function findUserByFirebaseUid(firebaseUid) {
     if (!all) return null;
     for (const [id, emp] of Object.entries(all)) {
       const n = normaliseEmployee(id, emp);
-      if (n.firebaseUid === firebaseUid && n.active !== false) {
+      if (n.firebaseUid === firebaseUid && n.active !== false && n.status !== 'suspended' && n.status !== 'vacation') {
         return n;
       }
     }
@@ -168,7 +170,7 @@ export async function findUserByFirebaseUid(firebaseUid) {
   }
 }
 
-export async function ensureFirebaseUser(firebaseUser, defaultRole = 'kitchen', branchIds = { hq: true }) {
+export async function ensureFirebaseUser(firebaseUser, defaultRole = 'kitchen', branchIds = { monteverde: true }) {
   const existing = await findUserByFirebaseUid(firebaseUser.uid);
   if (existing) {
     const roles = await getRoles();
@@ -225,49 +227,11 @@ export async function ensureFirebaseUser(firebaseUser, defaultRole = 'kitchen', 
     };
   }
 
-  // Neither found — create new employee record
-  const newEmployee = {
-    profile: {
-      name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Usuario',
-      email: firebaseUser.email,
-      active: true,
-      createdAt: nowISO(),
-      updatedAt: nowISO(),
-    },
-    role: defaultRole,
-    branches: branchIds,
-    homeBranch: Object.keys(branchIds)[0] || null,
-    firebaseUid: firebaseUser.uid,
+  // No encontrado por firebaseUid ni por email — rechazar
+  return {
+    success: false,
+    error: 'No tenés acceso al sistema. Contactá al administrador para que te registre.',
   };
-
-  try {
-    const employeePath = tenantPath(`employees/${firebaseUser.uid}`);
-    await set(ref(db, employeePath), newEmployee);
-
-    // Sync role cache for all assigned branches
-    const cacheUpdates = {};
-    for (const branchId of Object.keys(branchIds)) {
-      cacheUpdates[`branches/${branchId}/_role_cache/${firebaseUser.uid}`] = defaultRole;
-    }
-    if (Object.keys(cacheUpdates).length > 0) {
-      await update(ref(db), cacheUpdates);
-    }
-
-    return {
-      success: true,
-      user: {
-        id: firebaseUser.uid,
-        email: firebaseUser.email,
-        name: newEmployee.profile.name,
-        role: defaultRole,
-        permissions: getDefaultRoles()[defaultRole]?.permissions || {},
-        branchIds,
-      },
-    };
-  } catch (err) {
-    console.error('authService.ensureFirebaseUser error:', err);
-    return { success: false, error: 'Error al crear usuario' };
-  }
 }
 
 export async function createSession(user) {
@@ -289,6 +253,17 @@ export async function createSession(user) {
   if (auth?.currentUser) {
     try {
       await set(ref(db, tenantPath(`sessions/${token}`)), sessionData);
+      // Sync _role_cache for the current Firebase Auth UID so branch-level
+      // rules (which check _role_cache/{auth.uid}) grant access immediately
+      const uid = auth.currentUser.uid;
+      const branchIds = user.branchIds || { monteverde: true };
+      const cacheUpdates = {};
+      for (const bid of Object.keys(branchIds)) {
+        cacheUpdates[`branches/${bid}/_role_cache/${uid}`] = user.role;
+      }
+      if (Object.keys(cacheUpdates).length > 0) {
+        await update(ref(db), cacheUpdates);
+      }
     } catch (err) {
       console.warn('authService.createSession error:', err);
     }
@@ -346,14 +321,14 @@ export async function createUser({ email, name, role, pin, branchIds, actor }) {
         createdAt: nowISO(),
       },
       role,
-      branches: branchIds || { hq: true },
+      branches: branchIds || { monteverde: true },
       homeBranch: branchIds ? Object.keys(branchIds)[0] : null,
       firebaseUid: null,
     };
     await set(newRef, employee);
 
     // Sync role cache for all assigned branches
-    const targetBranches = branchIds || { hq: true };
+    const targetBranches = branchIds || { monteverde: true };
     const cacheUpdates = {};
     for (const branchId of Object.keys(targetBranches)) {
       cacheUpdates[`branches/${branchId}/_role_cache/${newRef.key}`] = role;
@@ -375,7 +350,7 @@ export async function updateUser(userId, data, actor) {
     // Read current employee to compute role cache diff
     const currentSnap = await get(ref(db, tenantPath(`employees/${userId}`)));
     const current = currentSnap.val();
-    const oldBranches = current?.branches || { hq: true };
+    const oldBranches = current?.branches || { monteverde: true };
     const oldRole = current?.role || 'kitchen';
     const newBranches = data.branchIds || oldBranches;
     const newRole = data.role || oldRole;
@@ -384,7 +359,18 @@ export async function updateUser(userId, data, actor) {
     const updates = {};
     if (data.name !== undefined) updates['profile/name'] = data.name;
     if (data.email !== undefined) updates['profile/email'] = data.email;
-    if (data.active !== undefined) updates['profile/active'] = data.active;
+    if (data.status) {
+      updates.status = data.status;
+    }
+    if (data.statusEnd) {
+      updates.statusEnd = data.statusEnd;
+    }
+    if (data.active !== undefined) {
+      updates['profile/active'] = data.active;
+    } else if (data.status) {
+      // Derive active from status for legacy auth checks (findUserByEmail, findUserByFirebaseUid)
+      updates['profile/active'] = data.status !== 'inactive';
+    }
     if (data.pin) {
       updates['profile/pinHash'] = await hashPin(data.pin);
       updates['profile/pin'] = null;

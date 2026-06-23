@@ -56,17 +56,24 @@ describe('employeeService attendance dates', () => {
     vi.useFakeTimers();
   });
 
-  it('uses the America/Lima day instead of UTC for clock-in records', async () => {
+  it('creates a clock-in record at the tenant path with Lima date', async () => {
     vi.setSystemTime(new Date('2026-06-14T01:30:00.000Z'));
     const { clockIn } = await import('./employeeService.js');
 
-    await clockIn('castilla', 'emp-1');
-
-    expect(store.get('branches/castilla/attendance/emp-1/2026-06-13')).toMatchObject({
-      employeeId: 'emp-1',
-      date: '2026-06-13',
-      branchId: 'castilla',
+    // Seed schedule so validation passes (Lima time is Saturday 2026-06-13)
+    store.set('branches/monteverde/employees/emp-1/schedule', {
+      sábado: { start: '08:00', end: '17:00', active: true },
     });
-    expect(store.get('branches/castilla/attendance/emp-1/2026-06-14')).toBeUndefined();
+
+    // clockIn now requires userId (tenant-level UID)
+    await clockIn('monteverde', 'emp-1', 'user-1');
+
+    const record = store.get('tenants/default/employees/user-1/attendance/2026-06-13');
+    expect(record).toMatchObject({
+      state: 'active',
+      date: '2026-06-13',
+    });
+    expect(typeof record.clockIn).toBe('number');
+    expect(store.get('tenants/default/employees/user-1/attendance/2026-06-14')).toBeUndefined();
   });
 });

@@ -12,7 +12,7 @@ function UserFormModal({ user, roles, onSave, onClose }) {
   const [name, setName] = useState(user?.name || '');
   const [role, setRole] = useState(user?.role || 'kitchen');
   const [pin, setPin] = useState('');
-  const [branchIds, setBranchIds] = useState(user?.branchIds || { hq: true });
+  const [branchIds, setBranchIds] = useState(user?.branchIds || { monteverde: true });
   const [branches, setBranches] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
