@@ -276,6 +276,105 @@ export const sendNotificationPush = onValueWritten(
   }
 );
 
+// ── Comm message → Notification ───────────────────────────
+
+/**
+ * Channel→roles mapping. Must match frontend COMM_CHANNEL_CONFIG.
+ */
+const COMM_CHANNEL_ROLES = {
+  general: ['admin', 'superadmin', 'kitchen', 'mozo', 'delivery', 'cajero', 'vendedor', 'dispatch'],
+  kitchen: ['admin', 'superadmin', 'kitchen'],
+  cash: ['admin', 'superadmin', 'cajero', 'delivery'],
+  admin: ['admin', 'superadmin'],
+};
+
+/**
+ * Notify channel members when a new comm message is sent.
+ * Excludes the sender from receiving their own notification.
+ */
+export const onCommMessageWrite = onValueWritten(
+  {
+    ref: 'branches/{branchId}/comm/{channel}/messages/{messageId}',
+    region: 'us-central1',
+  },
+  async (event) => {
+    const { branchId, channel, messageId } = event.params;
+
+    // Solo en creación
+    if (event.data.before.val()) {
+      logger.debug(`Mensaje ${messageId} ya existía, skip.`);
+      return;
+    }
+    const msg = event.data.after.val();
+    if (!msg) {
+      logger.debug(`Mensaje ${messageId} eliminado, skip.`);
+      return;
+    }
+
+    // Ignorar mensajes del sistema o vacíos
+    if (!msg.senderId || !msg.senderName) {
+      logger.debug('Mensaje sin senderId/senderName, skip.');
+      return;
+    }
+
+    // Qué roles pueden ver este canal
+    const allowedRoles = COMM_CHANNEL_ROLES[channel];
+    if (!allowedRoles) {
+      logger.warn(`Canal desconocido: ${channel}, skip.`);
+      return;
+    }
+
+    // Leer role_cache del branch para saber quién tiene cada rol
+    let roleCache;
+    try {
+      const snap = await db.ref(`branches/${branchId}/_role_cache`).once('value');
+      roleCache = snap.val() || {};
+    } catch (e) {
+      logger.error(`Error leyendo role_cache para ${branchId}:`, e);
+      return;
+    }
+
+    // Construir lista de usuarios a notificar
+    const textPreview = (msg.text || '🎤 Nota de voz').slice(0, 120);
+    const notifTitle = `💬 ${msg.senderName}`;
+    const notifBody = textPreview;
+
+    const promises = [];
+
+    for (const [userId, role] of Object.entries(roleCache)) {
+      // No notificar al sender
+      if (userId === msg.senderId) continue;
+      // Solo roles que tienen acceso al canal
+      if (!allowedRoles.includes(role)) continue;
+
+      const notifRef = db.ref(`branches/${branchId}/notifications/${userId}`).push();
+      const notifId = notifRef.key;
+
+      const notification = {
+        type: 'comm_message',
+        title: notifTitle,
+        body: notifBody,
+        read: false,
+        url: '',
+        channel,
+        createdAt: admin.database.ServerValue.TIMESTAMP,
+        _createdAt_client: Date.now(),
+      };
+
+      promises.push(notifRef.set(notification));
+    }
+
+    if (promises.length > 0) {
+      await Promise.allSettled(promises);
+      logger.info(
+        `Comm notif: ${promises.length} notificación(es) creadas para mensaje ${messageId} en #${channel}`
+      );
+    } else {
+      logger.debug(`Comm notif: 0 destinatarios para mensaje ${messageId} (todos ignorados o sin miembros).`);
+    }
+  }
+);
+
 /**
  * Extrae tokens FCM de la estructura almacenada.
  * Soporta tanto objeto simple { token: '...' } como

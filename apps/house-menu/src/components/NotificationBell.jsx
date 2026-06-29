@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCheck, Loader2, Clock } from 'lucide-react';
 import { subscribeToNotifications, markAsRead, markAllAsRead, getUnreadCount, NOTIF_ICONS } from '../lib/notificationService';
 import { playChime } from '../lib/notificationSound';
+import { useCommStore } from '../comm/store/commStore';
 
 function timeAgo(dateVal) {
   if (!dateVal) return '';
@@ -75,7 +76,11 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
   const handleMarkRead = useCallback(async (notif) => {
     if (notif.read) return;
     await markAsRead(branchId, userId, notif.id);
-    if (notif.url) onNavigate(notif.url);
+    if (notif.type === 'comm_message') {
+      useCommStore.getState().setPanelOpen(true);
+    } else if (notif.url) {
+      onNavigate(notif.url);
+    }
     setOpen(false);
   }, [branchId, userId, onNavigate]);
 

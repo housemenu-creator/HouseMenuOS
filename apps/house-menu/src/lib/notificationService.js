@@ -130,6 +130,7 @@ export const NOTIF_ICONS = {
   delivery_confirmed: '🎉',
   driver_offline: '⚠️',
   system:        '🔔',
+  comm_message:  '💬',
 };
 
 export const NOTIF_TYPES = [
@@ -140,4 +141,5 @@ export const NOTIF_TYPES = [
   'delivery_confirmed',
   'driver_offline',
   'system',
+  'comm_message',
 ];
