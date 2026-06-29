@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Outlet, useOutletContext } from 'react-router-dom';
 import StaffTopBar from '../components/StaffTopBar';
-import ChatWindow from '../components/ChatWindow';
+import { CommPanel } from '../comm/components/CommPanel';
+import { CommFloatingButton } from '../comm/components/CommFloatingButton';
 import { useAuth } from '../context/AuthContext';
 
 export interface ShellContext {
@@ -28,8 +29,13 @@ export default function WorkerShell() {
         <Outlet context={{ setTopBarSlot } satisfies ShellContext} />
       </main>
 
-      {/* Chat disponible en todas las rutas staff */}
-      {isAuthenticated && <ChatWindow />}
+      {/* Panel de comunicación staff */}
+      {isAuthenticated && (
+        <>
+          <CommFloatingButton />
+          <CommPanel />
+        </>
+      )}
     </div>
   );
 }

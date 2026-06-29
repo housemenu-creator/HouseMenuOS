@@ -92,13 +92,67 @@ export function gastosPath(branchId, gastoId) {
   return gastoId ? `${base}/${gastoId}` : base;
 }
 
-export function chatPath(branchId, messageId) {
-  const base = `${BRANCH_PREFIX(branchId)}/chat`;
+// ── Legacy Chat (text-only, being replaced by Comm) ──────────────
+/** @deprecated Use COMM_CHANNELS + commPath() instead */
+export const CHAT_CHANNELS = Object.freeze({
+  GENERAL: 'general',
+  KITCHEN_DISPATCH: 'kitchen_dispatch',
+});
+
+/** @deprecated */
+export const CHAT_STAFF_ROLES = Object.freeze(['kitchen', 'dispatch', 'mozo', 'delivery', 'vendedor', 'cajero', 'admin', 'superadmin']);
+
+/** @deprecated */
+export const CHAT_KD_ROLES = Object.freeze(['kitchen', 'dispatch']);
+
+/** @deprecated Use commPath() instead */
+export function chatPath(branchId, channel = CHAT_CHANNELS.GENERAL, messageId) {
+  const base = `${BRANCH_PREFIX(branchId)}/chat/${channel}`;
   return messageId ? `${base}/${messageId}` : base;
 }
 
-export function chatReadByPath(branchId, messageId, userId) {
-  return `${BRANCH_PREFIX(branchId)}/chat/${messageId}/readBy/${userId}`;
+/** @deprecated Use commReadByPath() instead */
+export function chatReadByPath(branchId, channel, messageId, userId) {
+  return `${BRANCH_PREFIX(branchId)}/chat/${channel}/${messageId}/readBy/${userId}`;
+}
+
+// ── Comm System (voice, priorities, reactions, ACKs) ──────────────
+
+/** Comm channel IDs */
+export const COMM_CHANNELS = Object.freeze({
+  GENERAL: 'general',
+  KITCHEN: 'kitchen',
+  CASH: 'cash',
+  ADMIN: 'admin',
+});
+
+/**
+ * Channel config: label, which roles can see it, and their sort order.
+ * Admin/superadmin see ALL channels.
+ */
+export const COMM_CHANNEL_CONFIG = Object.freeze([
+  { id: COMM_CHANNELS.GENERAL, label: '#general', roles: ['admin', 'superadmin', 'kitchen', 'mozo', 'delivery', 'cajero', 'vendedor', 'dispatch'] },
+  { id: COMM_CHANNELS.KITCHEN, label: '#cocina',  roles: ['admin', 'superadmin', 'kitchen'] },
+  { id: COMM_CHANNELS.CASH,    label: '#caja-delivery', roles: ['admin', 'superadmin', 'cajero', 'delivery'] },
+  { id: COMM_CHANNELS.ADMIN,   label: '#admin',    roles: ['admin', 'superadmin'] },
+]);
+
+/** Root RTDB path for comm messages under a branch: /branches/{branchId}/comm/{channel} */
+export function commPath(branchId, channel, messageId) {
+  const base = `${BRANCH_PREFIX(branchId)}/comm/${channel}`;
+  return messageId ? `${base}/messages/${messageId}` : base;
+}
+
+/** Path for the readBy marker under a specific message */
+export function commReadByPath(branchId, channel, messageId, userId) {
+  return `${commPath(branchId, channel, messageId)}/readBy/${userId}`;
+}
+
+/** Channel IDs a given role can access (preserves COMM_CHANNEL_CONFIG order) */
+export function getCommChannelsForRole(role) {
+  return COMM_CHANNEL_CONFIG
+    .filter((ch) => ch.roles.includes(role))
+    .map((ch) => ch.id);
 }
 
 export function configKioskPath(branchId) {
