@@ -1,0 +1,112 @@
+/* Cashier Module — Industrial Retro Theme */
+/* Scoped via .cashier-theme — does not affect rest of the app */
+
+.cashier-theme {
+  /* ── Core palette ── */
+  --cashier-bg: #121212;
+  --cashier-surface: #1B1B1B;
+  --cashier-border: #343434;
+  --cashier-text: #F2F2F2;
+  --cashier-text-secondary: #B8B8B8;
+  --cashier-text-muted: #6B6B6B;
+
+  /* ── Status accents (only as accents, never full backgrounds) ── */
+  --cashier-info: #3B82F6;
+  --cashier-success: #22C55E;
+  --cashier-warning: #F59E0B;
+  --cashier-error: #EF4444;
+  --cashier-accent: #A855F7;
+
+  /* ── LED Display ── */
+  --cashier-display-bg: #0A0A0A;
+  --cashier-display-text: #22C55E;
+  --cashier-display-dim: rgba(34, 197, 94, 0.3);
+
+  /* ── Surface finish ── */
+  --cashier-noise-opacity: 0.02;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Surface texture (industrial metal finish) ── */
+.cashier-panel {
+  position: relative;
+  background-color: var(--cashier-surface);
+}
+.cashier-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: var(--cashier-noise-opacity, 0.02);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  pointer-events: none;
+  z-index: 0;
+}
+.cashier-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── LED Display ── */
+.cashier-display {
+  background: var(--cashier-display-bg);
+  border: 1px solid #2A2A2A;
+  border-radius: 12px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 4px rgba(34, 197, 94, 0.05);
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 0, 0, 0.15) 1px,
+    rgba(0, 0, 0, 0.15) 2px
+  );
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.cashier-display-text {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cashier-display-text);
+  text-shadow:
+    0 0 10px var(--cashier-display-dim),
+    0 0 20px var(--cashier-display-dim);
+}
+
+/* ── Physical buttons (for non-cashier modules) ── */
+.btn-physical {
+  border: 1px solid var(--cashier-border);
+  border-top-color: #4A4A4A;
+  border-bottom-color: #1A1A1A;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 120ms ease;
+}
+.btn-physical:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ── KPI Cards ── */
+.cashier-kpi-card {
+  background: var(--cashier-surface);
+  border: 1px solid var(--cashier-border);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: border-color 150ms ease;
+}
+.cashier-kpi-card:hover {
+  border-color: var(--cashier-accent);
+}
+
+/* ── Order rows ── */
+.cashier-order-item {
+  background: var(--cashier-surface);
+  border: 1px solid var(--cashier-border);
+  border-left-width: 4px;
+  transition: all 150ms ease;
+}
+.cashier-order-item:hover {
+  border-color: var(--cashier-accent);
+}
