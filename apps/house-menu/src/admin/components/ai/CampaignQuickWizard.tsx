@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Rocket, Eye } from 'lucide-react';
+import { X, Rocket, Eye } from 'lucide-react';
 import { AIProcessingDisplay } from './AIProcessingDisplay';
 import { useAICampaign } from '../../hooks/useAICampaign';
 import type { MenuProduct } from '../../types';

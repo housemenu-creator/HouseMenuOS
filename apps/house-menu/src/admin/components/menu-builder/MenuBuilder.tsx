@@ -4,8 +4,8 @@ import { Plus, Search, PackageOpen, Soup, Sparkles } from 'lucide-react';
 import MenuCategoryBlock from './MenuCategoryBlock';
 import { PromptModal } from '../ConfirmModal';
 import { Skeleton } from '../Skeleton';
-import SmartCreateModal from '../ai/SmartCreateModal';
-import CampaignQuickWizard from '../ai/CampaignQuickWizard';
+import { SmartCreateModal } from '../ai/SmartCreateModal';
+import { CampaignQuickWizard } from '../ai/CampaignQuickWizard';
 import type { MenuProduct } from '../../types';
 
 interface MenuBuilderProps {
@@ -247,7 +247,8 @@ export default function MenuBuilder({
         isOpen={showSmartCreate}
         onClose={() => setShowSmartCreate(false)}
         branchId={activeBranchId}
-        notify={notify}
+        categories={Object.keys(categoriesConfig)}
+        onProductCreated={() => setShowSmartCreate(false)}
       />
 
       {campaignProduct && (

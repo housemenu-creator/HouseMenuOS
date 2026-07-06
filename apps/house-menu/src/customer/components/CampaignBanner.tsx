@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Percent, Sparkles, ShoppingBag, X } from 'lucide-react';
 import { useMarketing } from '../../context/MarketingContext';
-import { useBranch } from '../../context/BranchContext';
 import type { Campaign } from '../../marketing/marketingTypes';
 
 // ---------------------------------------------------------------------------
@@ -25,10 +24,9 @@ export default function CampaignBanner({
   className = '',
   dismissible = true,
 }: CampaignBannerProps) {
-  const { activeCampaigns } = useMarketing();
-  const { activeBranchId } = useBranch();
+  const marketing = useMarketing() as { activeCampaigns: Campaign[] } | null;
+  const activeCampaigns = marketing?.activeCampaigns ?? [];
   const [dismissed, setDismissed] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -43,7 +41,6 @@ export default function CampaignBanner({
   // ── Reset dismiss on campaign change ──
   useEffect(() => {
     setDismissed(false);
-    setImageError(false);
   }, [campaign?.id]);
 
   // ── Empty state (no active campaign) ──

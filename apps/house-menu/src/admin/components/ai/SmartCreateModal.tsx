@@ -16,7 +16,7 @@ interface SmartCreateModalProps {
 type Step = 'upload' | 'processing' | 'form' | 'done';
 
 export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProductCreated }: SmartCreateModalProps) {
-  const { processing, progress, steps, result, error, analyze, saveProduct, reset } = useAIProduct(branchId);
+  const { progress, steps, result, error, analyze, saveProduct, reset } = useAIProduct(branchId);
   const [step, setStep] = useState<Step>('upload');
   const [form, setForm] = useState<ProductDescription>({
     name: '',
