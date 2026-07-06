@@ -16,6 +16,7 @@ interface MenuCategoryBlockProps {
   deleteProduct: (productId: string) => Promise<void>;
   duplicateProduct: (productId: string) => Promise<void>;
   onConfigureWizard: (productId: string) => void;
+  onCreateCampaign?: (product: MenuProduct & { id: string }) => void;
   renameCategory: (oldName: string, newName: string) => Promise<void>;
   activeBranchId: string;
   categoriesConfig: Record<string, { name: string; image?: string }>;
@@ -185,6 +186,7 @@ export default function MenuCategoryBlock({
                       deleteProduct={deleteProduct}
                       duplicateProduct={duplicateProduct}
                       onConfigureWizard={onConfigureWizard}
+                      onCreateCampaign={onCreateCampaign}
                       notify={notify}
                       onMoveItem={onMoveItem}
                       onReorder={onReorder}
