@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAIProduct } from '../useAIProduct';
 
@@ -21,6 +21,10 @@ vi.mock('../../../lib/menuService', () => ({
 }));
 
 describe('useAIProduct', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('initial state', () => {
     const { result } = renderHook(() => useAIProduct('branch-1'));
     expect(result.current.processing).toBe(false);
@@ -51,28 +55,25 @@ describe('useAIProduct', () => {
     expect(result.current.processing).toBe(false);
   });
 
-  it('saveProduct retorna id cuando createProductWithData funciona', async () => {
+  it('saveProduct retorna id en modo manual (sin result)', async () => {
     mockCreateProductWithData.mockResolvedValue('new-product-id');
 
     const { result } = renderHook(() => useAIProduct('branch-1'));
 
-    // Set a mock result directly
-    act(() => {
-      if (result.current.result === null) {
-        // Can't test through analyze without proper API key
-        // Test saveProduct when result is null
-      }
-    });
-
-    // result is null initially → saveProduct returns null
-    const id = await result.current.saveProduct({ name: 'Test' });
-    expect(id).toBeNull();
+    // Sin AI result, pero con name en overrides → debe guardar igual
+    const id = await result.current.saveProduct({ name: 'Test', price: 25 });
+    expect(id).toBe('new-product-id');
+    expect(mockCreateProductWithData).toHaveBeenCalledWith('branch-1', expect.objectContaining({
+      name: 'Test',
+      base_price: 25,
+    }));
   });
 
-  it('saveProduct retorna null si result es null', async () => {
+  it('saveProduct retorna null si no hay name', async () => {
     const { result } = renderHook(() => useAIProduct('branch-1'));
-    const id = await result.current.saveProduct({ name: 'Test' });
+    const id = await result.current.saveProduct({ price: 25 });
     expect(id).toBeNull();
+    expect(mockCreateProductWithData).not.toHaveBeenCalled();
   });
 
   it('setImage actualiza el estado', () => {

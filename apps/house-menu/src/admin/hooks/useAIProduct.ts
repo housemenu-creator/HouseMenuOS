@@ -62,18 +62,19 @@ export function useAIProduct(branchId: string) {
 
   const saveProduct = useCallback(
     async (overrides: Partial<ProductDescription>): Promise<string | null> => {
-      if (!result) return null;
-      const merged = { ...result, ...overrides };
+      // En modo manual no hay result, usamos overrides directamente
+      const data = result ? { ...result, ...overrides } : overrides;
+      if (!data.name) return null;
       try {
         const id = await menuService.createProductWithData(branchId, {
-          name: merged.name,
-          description: merged.description,
-          base_price: merged.price,
-          category: merged.category,
-          tags: merged.tags,
-          spicy: merged.isSpicy,
-          vegan: merged.isVegan,
-          glutenFree: merged.isGlutenFree,
+          name: data.name,
+          description: data.description ?? '',
+          base_price: data.price ?? 0,
+          category: data.category ?? 'General',
+          tags: data.tags ?? [],
+          spicy: data.isSpicy ?? false,
+          vegan: data.isVegan ?? false,
+          glutenFree: data.isGlutenFree ?? false,
           available: true,
         });
         return id;
