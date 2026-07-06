@@ -36,99 +36,112 @@ export default function FlatProductFlow({
   };
 
   return (
-    <div className="space-y-6 pb-28">
-      {/* Product Hero Image */}
-      {product?.image && (
-        <div className="relative w-full h-52 rounded-2xl overflow-hidden border border-cm-border/60 shadow-cm-lg">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-cm-bg/60 via-transparent to-transparent" />
-          {product?.category && (
-            <span className="absolute bottom-3 left-3 text-[0.6rem] font-black uppercase tracking-widest text-cm-text bg-cm-surface/70 backdrop-blur px-2.5 py-1 rounded-full border border-cm-border/50">
-              {product.category}
-            </span>
-          )}
-        </div>
-      )}
+    <div className="flex flex-col h-full">
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto overscroll-contain space-y-5 pb-4">
+        {/* Product Hero Image */}
+        {product?.image && (
+          <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-cm-border/60 shadow-cm-md">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-cm-bg/60 via-transparent to-transparent" />
+            {product?.category && (
+              <span className="absolute bottom-3 left-3 text-[0.6rem] font-black uppercase tracking-widest text-cm-text bg-cm-surface/70 backdrop-blur px-2.5 py-1 rounded-full border border-cm-border/50">
+                {product.category}
+              </span>
+            )}
+          </div>
+        )}
 
-      {/* Stock Banner */}
-      {product?.trackStock && (
-        <div className={`p-3.5 rounded-2xl border text-center font-bold text-xs ${
-          (product.stock ?? 0) > 0
-            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-            : 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400 animate-pulse'
-        }`}>
-          {(product.stock ?? 0) > 0
-            ? `✅ Unidades disponibles en stock: ${product.stock}`
-            : '❌ Este plato se encuentra agotado (Sin Stock)'}
-        </div>
-      )}
+        {/* Product name + description (only if no image to avoid redundancy) */}
+        {!product?.image && (
+          <div>
+            <h3 className="text-lg font-bold text-cm-text">{product?.name}</h3>
+            {product?.description && (
+              <p className="text-xs text-cm-text-secondary mt-1 leading-relaxed">{product.description}</p>
+            )}
+          </div>
+        )}
 
-      {/* Special Category Suggestion */}
-      {product?.category === 'Pas Tas' && (
-        <div className="bg-cm-accent/10 border border-cm-accent/30 p-4 rounded-2xl text-center shadow-cm-sm">
-          <p className="text-xs font-bold text-cm-accent flex items-center justify-center gap-1.5">
-            💡 Para potenciar el sabor de tu pasta, ¿le agregamos un Huevo Frito o Queso?
-          </p>
-        </div>
-      )}
+        {/* Stock Banner */}
+        {product?.trackStock && (
+          <div className={`p-3.5 rounded-2xl border text-center font-bold text-xs ${
+            (product.stock ?? 0) > 0
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+              : 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400 animate-pulse'
+          }`}>
+            {(product.stock ?? 0) > 0
+              ? `✅ Unidades disponibles en stock: ${product.stock}`
+              : '❌ Este plato se encuentra agotado (Sin Stock)'}
+          </div>
+        )}
 
-      {/* Variations Selector */}
-      {product?.name.includes('Tallarín') && !product?.name.includes('Saltado de Pollo') && (
+        {/* Special Category Suggestion */}
+        {product?.category === 'Pas Tas' && (
+          <div className="bg-cm-accent/10 border border-cm-accent/30 p-4 rounded-2xl text-center shadow-cm-sm">
+            <p className="text-xs font-bold text-cm-accent flex items-center justify-center gap-1.5">
+              💡 Para potenciar el sabor de tu pasta, ¿le agregamos un Huevo Frito o Queso?
+            </p>
+          </div>
+        )}
+
+        {/* Variations Selector */}
+        {product?.name.includes('Tallarín') && !product?.name.includes('Saltado de Pollo') && (
+          <div className="space-y-3">
+            <h3 className="font-black tracking-widest text-cm-text-secondary/60 uppercase text-[10px] pl-1">Elige tu Proteína</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {variationsList.map(v => (
+                <motion.button
+                  key={v.id}
+                  whileHover={{ scale: 1.015 }}
+                  whileTap={{ scale: 0.985 }}
+                  onClick={() => onSelectVariation(v.id)}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all shadow-cm-sm flex flex-col justify-between h-20 ${
+                    selectedVariation === v.id
+                      ? 'bg-cm-accent/10 border-cm-accent text-cm-text shadow-cm-md'
+                      : 'bg-cm-surface/40 border-cm-border/60 text-cm-text-secondary hover:border-cm-border'
+                  }`}
+                >
+                  <div className="font-bold text-sm text-cm-text">{v.name}</div>
+                  {v.adjustPrice > 0 && <div className="text-[11px] font-black text-cm-accent">+ S/ {v.adjustPrice.toFixed(2)}</div>}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Modifiers List */}
         <div className="space-y-3">
-          <h3 className="font-black tracking-widest text-cm-text-secondary/60 uppercase text-[10px] pl-1">Elige tu Proteína</h3>
+          <h3 className="font-black tracking-widest text-cm-text-secondary/60 uppercase text-[10px] pl-1">Adicionales a tu gusto</h3>
           <div className="grid grid-cols-2 gap-3">
-            {variationsList.map(v => (
+            {modifiersList.map(mod => (
               <motion.button
-                key={v.id}
+                key={mod.id}
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.985 }}
-                onClick={() => onSelectVariation(v.id)}
+                onClick={() => onToggleModifier(mod.id)}
                 className={`p-4 rounded-2xl border-2 text-left transition-all shadow-cm-sm flex flex-col justify-between h-20 ${
-                  selectedVariation === v.id
+                  selectedModifiers.includes(mod.id)
                     ? 'bg-cm-accent/10 border-cm-accent text-cm-text shadow-cm-md'
                     : 'bg-cm-surface/40 border-cm-border/60 text-cm-text-secondary hover:border-cm-border'
                 }`}
               >
-                <div className="font-bold text-sm text-cm-text">{v.name}</div>
-                {v.adjustPrice > 0 && <div className="text-[11px] font-black text-cm-accent">+ S/ {v.adjustPrice.toFixed(2)}</div>}
+                <div className="font-bold text-sm text-cm-text">{mod.name}</div>
+                <div className="text-[11px] font-black text-cm-accent">+ S/ {mod.price.toFixed(2)}</div>
               </motion.button>
             ))}
           </div>
         </div>
-      )}
-
-      {/* Modifiers List */}
-      <div className="space-y-3">
-        <h3 className="font-black tracking-widest text-cm-text-secondary/60 uppercase text-[10px] pl-1">Adicionales a tu gusto</h3>
-        <div className="grid grid-cols-2 gap-3">
-          {modifiersList.map(mod => (
-            <motion.button
-              key={mod.id}
-              whileHover={{ scale: 1.015 }}
-              whileTap={{ scale: 0.985 }}
-              onClick={() => onToggleModifier(mod.id)}
-              className={`p-4 rounded-2xl border-2 text-left transition-all shadow-cm-sm flex flex-col justify-between h-20 ${
-                selectedModifiers.includes(mod.id)
-                  ? 'bg-cm-accent/10 border-cm-accent text-cm-text shadow-cm-md'
-                  : 'bg-cm-surface/40 border-cm-border/60 text-cm-text-secondary hover:border-cm-border'
-              }`}
-            >
-              <div className="font-bold text-sm text-cm-text">{mod.name}</div>
-              <div className="text-[11px] font-black text-cm-accent">+ S/ {mod.price.toFixed(2)}</div>
-            </motion.button>
-          ))}
-        </div>
       </div>
 
-      {/* Sticky Bottom Actions Bar with Quantity Selector */}
-      <div className="fixed bottom-0 left-0 w-full bg-cm-bg/95 backdrop-blur-xl border-t border-cm-border/40 z-30 max-w-2xl mx-auto right-0 rounded-t-3xl shadow-cm-lg">
+      {/* Sticky Bottom Actions Bar — inside flex layout */}
+      <div className="shrink-0 bg-cm-bg/95 backdrop-blur-xl border-t border-cm-border/40 rounded-t-3xl shadow-cm-lg -mx-5 px-5 pt-3 pb-5">
         {/* Subtotal Row */}
         {!isOutOfStock && quantity > 1 && (
-          <div className="px-5 pt-3 pb-0 flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[0.65rem] text-cm-text-secondary font-bold uppercase tracking-wider">
               {quantity} × S/ {unitTotal.toFixed(2)}
             </span>
@@ -138,8 +151,8 @@ export default function FlatProductFlow({
           </div>
         )}
 
-        <div className="flex items-center gap-3 p-4">
-          {/* Quantity Selector — always visible when in stock */}
+        <div className="flex items-center gap-3">
+          {/* Quantity Selector */}
           {!isOutOfStock && (
             <div className="flex items-center gap-1 bg-cm-surface/60 border border-cm-border/50 rounded-2xl p-1.5 shrink-0">
               <button

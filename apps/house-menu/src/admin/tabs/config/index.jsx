@@ -6,9 +6,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Settings, Globe, Lock, Bell, Bot, History, Activity, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Settings, Globe, Lock, Bell, Bot, History, Activity, Loader2, CheckCircle2, AlertTriangle, Palette } from 'lucide-react';
 import { subscribeConfig, saveConfig } from './configService';
 import GeneralSection from './GeneralSection';
+import CustomizationSection from './CustomizationSection';
 import IntegrationsSection from './IntegrationsSection';
 import SecuritySection from './SecuritySection';
 import NotificationsSection from './NotificationsSection';
@@ -18,6 +19,7 @@ import HealthSection from './HealthSection';
 
 const SECTIONS = [
   { key: 'general',       label: 'General',        icon: Settings },
+  { key: 'customization', label: 'Personalización', icon: Palette },
   { key: 'integrations',  label: 'Integraciones',  icon: Globe },
   { key: 'security',      label: 'Seguridad',      icon: Lock },
   { key: 'notifications', label: 'Notificaciones',  icon: Bell },
@@ -134,6 +136,9 @@ export default function SystemConfigTab() {
       <div className="bg-cm-surface border border-cm-border rounded-xl p-5">
         {activeSection === 'general' && (
           <GeneralSection config={config} onSave={handleSave} saving={saving} />
+        )}
+        {activeSection === 'customization' && (
+          <CustomizationSection />
         )}
         {activeSection === 'integrations' && (
           <IntegrationsSection config={config} onSave={handleSave} saving={saving} />

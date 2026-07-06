@@ -16,7 +16,7 @@ export default function CategorySidebar({ categories, selected, onSelect }) {
             }`}
           >
             <span className="flex items-center gap-3">
-              <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-cm-border'}`} />
+              <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-cm-surface' : 'bg-cm-border'}`} />
               {cat === 'todos' ? '✨ Todos' : cat}
             </span>
           </button>

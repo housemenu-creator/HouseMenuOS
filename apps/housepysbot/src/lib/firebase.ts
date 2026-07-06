@@ -46,8 +46,15 @@ export async function authenticateBot() {
   const botPassword = process.env.BOT_FIREBASE_PASSWORD;
   if (botEmail && botPassword) {
     const auth = getAuth(_app);
-    await signInWithEmailAndPassword(auth, botEmail, botPassword);
-    console.log("🔐 Firebase Auth: bot autenticado como", botEmail);
+    try {
+      await signInWithEmailAndPassword(auth, botEmail, botPassword);
+      console.log("🔐 Firebase Auth: bot autenticado como", botEmail);
+    } catch (e: any) {
+      // En desarrollo, si hay rate-limit, continuamos igual — las reglas
+      // de la DB permiten lecturas sin auth para datos públicos.
+      console.warn("⚠️ Firebase Auth:", e.message || e);
+      console.warn("   Continuando sin autenticación (modo degradado)");
+    }
   } else {
     throw new Error("Faltan BOT_FIREBASE_EMAIL y/o BOT_FIREBASE_PASSWORD en .env");
   }

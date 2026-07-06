@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, MapPin, Phone, Clock3, Edit3, Trash2, Copy, Loader2, AlertTriangle, X, Hash, QrCode, Upload, CheckCircle, Smartphone, Image } from 'lucide-react';
+import { Plus, MapPin, Phone, Clock3, Edit3, Trash2, Copy, Loader2, AlertTriangle, X, Hash, QrCode, Upload, CheckCircle, Smartphone, Image, Power, PowerOff } from 'lucide-react';
 import { ref, update } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { branchService } from '../../lib/branchService';
@@ -68,6 +68,41 @@ export default function SucursalesTab({ branches }) {
   const [uploadingYapeQr, setUploadingYapeQr] = useState(false);
   const [yapeQrPreview, setYapeQrPreview] = useState(null);
   const yapeQrInputRef = useRef(null);
+
+  // ── Delete confirmation modal ──
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name } o null
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleToggleActive = async (branch) => {
+    const newState = branch.active !== false ? false : true;
+    const action = newState ? 'reactivar' : 'desactivar';
+    if (!window.confirm(`¿Estás seguro de querer ${action} la sucursal "${branch.name}"?`)) return;
+    try {
+      const result = await branchService.setBranchActive(branch.id, newState);
+      if (!result.success) alert('Error al cambiar el estado de la sucursal');
+    } catch (err) {
+      alert('Error al cambiar el estado: ' + (err.message || 'Error inesperado'));
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteConfirmName !== deleteTarget.name) return;
+    setDeleting(true);
+    try {
+      const result = await branchService.deleteBranch(deleteTarget.id);
+      if (result.success) {
+        setDeleteTarget(null);
+        setDeleteConfirmName('');
+      } else {
+        alert('Error al eliminar la sucursal');
+      }
+    } catch (err) {
+      alert('Error al eliminar: ' + (err.message || 'Error inesperado'));
+    }
+    setDeleting(false);
+  };
 
   const addTable = () => {
     const nextNum = tablesConfig.length > 0 ? Math.max(...tablesConfig) + 1 : 1;
@@ -154,8 +189,12 @@ export default function SucursalesTab({ branches }) {
   const handleBranchSubmit = async (e) => {
     e.preventDefault();
     
-    // Validación de duplicados (nombre o dirección exacta)
-    const existsName = branches.some(b => b.name?.toLowerCase() === branchForm.name.toLowerCase() && (!editingBranch || b.id !== editingBranch.id));
+    // Validación de duplicados — solo contra branches que existen realmente en Firebase (tienen push key real)
+    const existsName = branches.some(b => 
+      b.name?.toLowerCase() === branchForm.name.toLowerCase() 
+      && b.id?.startsWith('-')  // Firebase push keys empiezan con "-"
+      && (!editingBranch || b.id !== editingBranch.id)
+    );
     if (existsName) {
       alert('Ya existe una sucursal con este nombre. Elige otro.');
       return;
@@ -214,8 +253,10 @@ export default function SucursalesTab({ branches }) {
       if (result.success && editingBranch) {
         await update(ref(db, `branches/${editingBranch.id}`), { tables: tablesConfig });
       } else if (result.success) {
-        const branchId = result.id;
-        await update(ref(db, `branches/${branchId}`), { tables: tablesConfig });
+        const branchId = result.branchId || result.id;
+        if (branchId) {
+          await update(ref(db, `branches/${branchId}`), { tables: tablesConfig });
+        }
       }
       if (result.success) {
         setShowBranchModal(false);
@@ -224,16 +265,6 @@ export default function SucursalesTab({ branches }) {
       }
     } catch (err) {
       alert('Error al guardar la sucursal: ' + (err.message || 'Error inesperado'));
-    }
-  };
-
-  const deleteBranch = async (id, name) => {
-    if (!window.confirm(`Estas seguro de que deseas eliminar la sucursal "${name}"? Esta accion no se puede deshacer.`)) return;
-    try {
-      const result = await branchService.deleteBranch(id);
-      if (!result.success) alert('Error al eliminar la sucursal');
-    } catch (err) {
-      alert('Error al eliminar la sucursal: ' + (err.message || 'Error inesperado'));
     }
   };
 
@@ -301,23 +332,43 @@ export default function SucursalesTab({ branches }) {
 
       {/* Branch cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {branches.filter(b => !branchSearch || b.name?.toLowerCase().includes(branchSearch.toLowerCase()) || b.address?.toLowerCase().includes(branchSearch.toLowerCase()) || b.district?.toLowerCase().includes(branchSearch.toLowerCase()) || b.province?.toLowerCase().includes(branchSearch.toLowerCase())).map(b => (
-          <div key={b.id} className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm overflow-hidden hover:shadow-cm-md transition-all hover:border-cm-accent/30 group">
+        {branches
+          .filter(b => !branchSearch
+            || b.name?.toLowerCase().includes(branchSearch.toLowerCase())
+            || b.address?.toLowerCase().includes(branchSearch.toLowerCase())
+            || b.district?.toLowerCase().includes(branchSearch.toLowerCase())
+            || b.province?.toLowerCase().includes(branchSearch.toLowerCase()))
+          .sort((a, b) => (a.active === false ? 1 : -1) - (b.active === false ? 1 : -1))
+          .map(b => {
+          const isActive = b.active !== false;
+          return (
+          <div key={b.id} className={`bg-cm-surface rounded-xl border shadow-cm-sm overflow-hidden transition-all group ${isActive ? 'border-cm-border hover:shadow-cm-md hover:border-cm-accent/30' : 'border-cm-border/40 opacity-60 hover:opacity-80'}`}>
             {/* Card header */}
             <div className="p-4 border-b border-cm-border/50">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-cm-text truncate">{b.name}</h3>
+                    <h3 className={`font-bold truncate ${isActive ? 'text-cm-text' : 'text-cm-muted'}`}>{b.name}</h3>
                     {b.isHeadquarters && <span className="text-[9px] font-black bg-cm-warning/10 text-cm-warning px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">Matriz</span>}
-                    {b.id === activeBranchId && <span className="text-[9px] font-black bg-cm-accent/10 text-cm-accent px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">Activa</span>}
+                    {!isActive && <span className="text-[9px] font-black bg-cm-muted/20 text-cm-muted px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">Inactiva</span>}
+                    {isActive && b.id === activeBranchId && <span className="text-[9px] font-black bg-cm-accent/10 text-cm-accent px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">Activa</span>}
                   </div>
                   <p className="text-xs text-cm-muted mt-0.5 truncate">{b.address}{b.district ? `, ${b.district}` : ''}{b.province ? `, ${b.province}` : ''}</p>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button onClick={() => setQrModalBranch(b)} className="p-1.5 text-cm-muted hover:text-cm-accent hover:bg-cm-accent/10 rounded-lg transition-colors" title="QR mesas"><QrCode className="w-3.5 h-3.5" /></button>
                   <button onClick={() => openBranchForm(b)} className="p-1.5 text-cm-muted hover:text-cm-accent hover:bg-cm-accent/10 rounded-lg transition-colors"><Edit3 className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => deleteBranch(b.id, b.name)} className="p-1.5 text-cm-muted hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => handleToggleActive(b)}
+                    className={`p-1.5 rounded-lg transition-colors ${isActive ? 'text-cm-muted hover:text-cm-warning hover:bg-cm-warning/10' : 'text-cm-muted hover:text-cm-success hover:bg-cm-success/10'}`}
+                    title={isActive ? 'Desactivar sucursal' : 'Reactivar sucursal'}>
+                    {isActive ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                  </button>
+                  {!isActive && (
+                    <button onClick={() => { setDeleteTarget({ id: b.id, name: b.name }); setDeleteConfirmName(''); }}
+                      className="p-1.5 text-cm-muted hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors" title="Eliminar permanentemente">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -337,7 +388,8 @@ export default function SucursalesTab({ branches }) {
               )}
             </div>
           </div>
-        ))}
+          );
+          })}
       </div>
 
       {branches.length === 0 && (
@@ -394,10 +446,10 @@ export default function SucursalesTab({ branches }) {
 
       <AnimatePresence>
         {showBranchModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowBranchModal(false)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-cm-surface rounded-xl shadow-cm-lg p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <h3 className="text-lg font-bold text-cm-text mb-4">{editingBranch ? 'Editar sucursal' : 'Nueva sucursal'}</h3>
-              <form onSubmit={handleBranchSubmit} className="space-y-4">
+              <form onSubmit={handleBranchSubmit} className="space-y-4" onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}>
                 <div>
                   <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Nombre</label>
                   <input type="text" required value={branchForm.name} onChange={e => setBranchForm({ ...branchForm, name: e.target.value })} className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors" />
@@ -587,7 +639,7 @@ export default function SucursalesTab({ branches }) {
                     </div>
                     <button type="button" onClick={() => setBranchForm({ ...branchForm, isHeadquarters: !branchForm.isHeadquarters })}
                       className={`w-12 h-7 rounded-full transition-colors relative ${branchForm.isHeadquarters ? 'bg-cm-success' : 'bg-cm-border'}`}>
-                      <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${branchForm.isHeadquarters ? 'right-1' : 'left-1'}`} />
+                      <span className={`absolute top-1 w-5 h-5 bg-cm-surface rounded-full shadow transition-transform ${branchForm.isHeadquarters ? 'right-1' : 'left-1'}`} />
                     </button>
                   </div>
                 </div>
@@ -615,13 +667,13 @@ export default function SucursalesTab({ branches }) {
                           next[idx] = { ...next[idx], icon: e.target.value };
                           setBranchForm({ ...branchForm, packagingItems: next });
                         }} placeholder="🍾" className="w-10 text-center px-1 py-1 rounded-lg border border-cm-border bg-cm-surface text-xs font-semibold text-cm-text focus:outline-none focus:border-cm-accent" />
-                        <button onClick={() => setBranchForm({ ...branchForm, packagingItems: branchForm.packagingItems.filter((_, i) => i !== idx) })}
+                        <button type="button" onClick={() => setBranchForm({ ...branchForm, packagingItems: branchForm.packagingItems.filter((_, i) => i !== idx) })}
                           className="p-1 text-cm-text-tertiary hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors shrink-0">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
-                    <button onClick={() => setBranchForm({ ...branchForm, packagingItems: [...(branchForm.packagingItems || []), { id: 'item_' + Date.now(), name: '', icon: '📦', price: 0 }] })}
+                    <button type="button" onClick={() => setBranchForm({ ...branchForm, packagingItems: [...(branchForm.packagingItems || []), { id: 'item_' + Date.now(), name: '', icon: '📦', price: 0 }] })}
                       className="w-full py-2 border-2 border-dashed border-cm-border rounded-lg text-xs font-semibold text-cm-text-tertiary hover:text-cm-accent hover:border-cm-accent transition-colors flex items-center justify-center gap-1.5">
                       <Plus className="w-3.5 h-3.5" /> Agregar descartable
                     </button>
@@ -664,7 +716,7 @@ export default function SucursalesTab({ branches }) {
                   <div>
                     <label className="block text-xs font-semibold text-cm-text-secondary mb-2 uppercase tracking-wider">Código QR de Yape</label>
                     <div className="flex items-start gap-4">
-                      <div className="w-32 h-32 bg-white rounded-xl border border-cm-border overflow-hidden flex items-center justify-center shrink-0 shadow-inner">
+                      <div className="w-32 h-32 bg-cm-surface rounded-xl border border-cm-border overflow-hidden flex items-center justify-center shrink-0 shadow-inner">
                         {yapeQrPreview ? (
                           <img src={yapeQrPreview} alt="QR Yape" className="w-full h-full object-contain" />
                         ) : (
@@ -697,7 +749,7 @@ export default function SucursalesTab({ branches }) {
                       <div key={num} className="flex items-center gap-1 bg-cm-accent/10 border border-cm-accent/30 rounded-lg px-2.5 py-1.5">
                         <Hash className="w-3 h-3 text-cm-accent" />
                         <span className="text-xs font-bold text-cm-text">{num}</span>
-                        <button onClick={() => removeTable(num)} className="p-0.5 text-cm-text-tertiary hover:text-cm-error rounded">
+                        <button type="button" onClick={() => removeTable(num)} className="p-0.5 text-cm-text-tertiary hover:text-cm-error rounded">
                           <X className="w-2.5 h-2.5" />
                         </button>
                       </div>
@@ -727,6 +779,67 @@ export default function SucursalesTab({ branches }) {
         branchName={qrModalBranch?.name}
         tableCount={qrModalBranch?.tableCount || 0}
       />
+
+      {/* ── Delete confirmation modal ── */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => { setDeleteTarget(null); setDeleteConfirmName(''); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="bg-cm-surface rounded-xl shadow-cm-lg p-6 w-full max-w-sm mx-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-cm-error/10 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-cm-error" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-black text-cm-text">Eliminar sucursal</h3>
+                  <p className="text-xs text-cm-text-secondary leading-relaxed">
+                    Esta acción <strong className="text-cm-error">no se puede deshacer</strong>.
+                    Se eliminará la configuración de <strong>{deleteTarget?.name}</strong>.
+                    Los datos operativos (catálogo, empleados, pedidos) quedarán huérfanos.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <label className="text-xs font-bold text-cm-text-secondary uppercase tracking-wider block">
+                  Escribe <span className="text-cm-error">"{deleteTarget?.name}"</span> para confirmar
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmName}
+                  onChange={e => setDeleteConfirmName(e.target.value)}
+                  placeholder={deleteTarget?.name}
+                  autoFocus
+                  className="w-full px-3 py-2.5 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-error focus:ring-1 focus:ring-cm-error/30 transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setDeleteTarget(null); setDeleteConfirmName(''); }}
+                  className="flex-1 py-2.5 border border-cm-border text-sm font-semibold text-cm-text rounded-lg hover:bg-cm-surface-hover transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleHardDelete}
+                  disabled={deleteConfirmName !== deleteTarget?.name || deleting}
+                  className="flex-1 py-2.5 bg-cm-error text-white text-sm font-bold rounded-lg hover:bg-cm-error/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {deleting ? <><Loader2 className="w-4 h-4 animate-spin" /> Eliminando...</> : <><Trash2 className="w-4 h-4" /> Eliminar</>}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

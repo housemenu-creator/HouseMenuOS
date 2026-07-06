@@ -10,10 +10,12 @@ interface NewOrderModalProps {
   catalog: { products?: Record<string, any>; variations?: Record<string, any>; modifiers?: Record<string, any> };
   onClose: () => void;
   onCreated: () => void;
+  /** Optional — recibe el orderId al crear, para encadenar pago */
+  onCreatedWithId?: (orderId: string, data: { customerName: string; total: number; mesa?: number | null }) => void;
   mesas: number[] | null;
 }
 
-export default function NewOrderModal({ activeBranchId, userEmail, catalog, onClose, onCreated, mesas }: NewOrderModalProps) {
+export default function NewOrderModal({ activeBranchId, userEmail, catalog, onClose, onCreated, onCreatedWithId, mesas }: NewOrderModalProps) {
   const tableList = mesas;
   const [customerName, setCustomerName] = useState('');
   const [mesa, setMesa] = useState<number | null>(null);
@@ -99,6 +101,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
     }, userEmail);
     setSaving(false);
     if (result.success) {
+      onCreatedWithId?.(result.orderId, { customerName: customerName.trim(), total, mesa });
       onCreated();
       onClose();
     } else {

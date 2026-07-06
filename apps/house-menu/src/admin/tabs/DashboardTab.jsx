@@ -127,7 +127,7 @@ export default function DashboardTab({ kpiData, funnelData, kioskEnabled, toggle
         <div className="bg-cm-surface border border-cm-border rounded-2xl p-5 hover:shadow-cm-sm transition-all duration-200 relative group">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase text-cm-muted tracking-wider">Ingresos Hoy</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform"><DollarSign className="w-4 h-4" /></div>
+            <div className="w-7 h-7 rounded-lg bg-cm-success-soft flex items-center justify-center text-cm-success group-hover:scale-110 transition-transform"><DollarSign className="w-4 h-4" /></div>
           </div>
           <p className="text-2xl font-black text-cm-text mt-3">S/ {kpiData.revenue.toFixed(2)}</p>
           <p className="text-[10px] text-cm-muted font-medium mt-1">Cerrado en el día</p>
@@ -136,7 +136,7 @@ export default function DashboardTab({ kpiData, funnelData, kioskEnabled, toggle
         <div className="bg-cm-surface border border-cm-border rounded-2xl p-5 hover:shadow-cm-sm transition-all duration-200 relative group">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase text-cm-muted tracking-wider">Ticket Promedio</span>
-            <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform"><TrendingUp className="w-4 h-4" /></div>
+            <div className="w-7 h-7 rounded-lg bg-cm-info-soft flex items-center justify-center text-cm-info group-hover:scale-110 transition-transform"><TrendingUp className="w-4 h-4" /></div>
           </div>
           <p className="text-2xl font-black text-cm-text mt-3">S/ {kpiData.avgTicket.toFixed(2)}</p>
           <p className="text-[10px] text-cm-muted font-medium mt-1">Por transacción</p>
@@ -145,7 +145,7 @@ export default function DashboardTab({ kpiData, funnelData, kioskEnabled, toggle
         <div className="bg-cm-surface border border-cm-border rounded-2xl p-5 hover:shadow-cm-sm transition-all duration-200 relative group">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase text-cm-muted tracking-wider">Proyectado</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform"><TrendingDown className="w-4 h-4" /></div>
+            <div className="w-7 h-7 rounded-lg bg-cm-warning-soft flex items-center justify-center text-cm-warning group-hover:scale-110 transition-transform"><TrendingDown className="w-4 h-4" /></div>
           </div>
           <p className="text-2xl font-black text-cm-text mt-3">S/ {kpiData.projected.toFixed(2)}</p>
           <p className="text-[10px] text-cm-muted font-medium mt-1">Estimación fin de día</p>

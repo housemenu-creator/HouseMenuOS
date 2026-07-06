@@ -8,7 +8,8 @@ import { ordersService } from '../lib/ordersService';
 import { ref, get } from 'firebase/database';
 import { realtimeDB as db, getSessionId } from '@house/db';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import HouseMenuNav from '../components/HouseMenuNav';
+import { useTenant } from '../context/TenantContext';
+import { slugRoute, ROUTES } from '../lib/routes';
 import OrderTimeline, { STATUS_STEPS } from '../components/OrderTimeline';
 
 function timeAgo(dateStr) {
@@ -33,6 +34,7 @@ const PAYMENT_STATUS = {
 export default function OrderTracker() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { slug } = useTenant();
   const urlId = searchParams.get('id') || '';
   const urlBranch = searchParams.get('branch') || 'monteverde';
 
@@ -240,7 +242,8 @@ export default function OrderTracker() {
     const q = query.trim().toUpperCase();
     if (!q) return;
     performSearch(q);
-    navigate(rastreoRoute(q, urlBranch), { replace: true });
+    const route = slug ? `/r/${slug}/rastreo?id=${q}&branch=${urlBranch}` : rastreoRoute(q, urlBranch);
+    navigate(route, { replace: true });
   };
 
   const isDelivered = orderData?.status === 'entregado';
@@ -256,15 +259,12 @@ export default function OrderTracker() {
   }, [orderData]);
 
   return (
-    <div className="min-h-screen bg-cm-bg flex overflow-x-hidden">
-      <HouseMenuNav />
-
-      <div className="flex-1 md:pl-64 pt-16 md:pt-0 flex flex-col items-center px-6 py-12 text-cm-text">
-        <div className="w-full max-w-md space-y-8">
+    <div className="min-h-full w-full flex flex-col items-center px-6 py-12 text-cm-text">
+      <div className="w-full max-w-xl space-y-8">
 
           {/* Back */}
           <button
-            onClick={() => navigate(ROUTES.HOME)}
+            onClick={() => navigate(slugRoute(slug, ROUTES.HOME))}
             className="flex items-center gap-2 text-cm-muted hover:text-cm-accent transition-colors text-sm font-bold"
           >
             <ArrowLeft className="w-4 h-4" /> Volver al Menú
@@ -298,7 +298,8 @@ export default function OrderTracker() {
                           key={o.id}
                           onClick={() => {
                             const code = o.id.slice(-4).toUpperCase();
-                            navigate(rastreoRoute(code, urlBranch), { replace: true });
+                            const route = slug ? `/r/${slug}/rastreo?id=${code}&branch=${urlBranch}` : rastreoRoute(code, urlBranch);
+                            navigate(route, { replace: true });
                             performSearch(code, o.id);
                           }}
                           className="w-full flex items-center justify-between p-3 hover:bg-cm-accent/5 transition-colors text-left"
@@ -353,7 +354,7 @@ export default function OrderTracker() {
               </div>
               <button
                 type="submit"
-                className="btn-culinary w-full py-4 flex items-center justify-center gap-2"
+                className="w-full py-4 flex items-center justify-center gap-2 bg-cm-accent text-white font-black rounded-xl hover:bg-cm-accent-hover transition-colors"
               >
                 <Search className="w-5 h-5" /> BUSCAR PEDIDO
               </button>
@@ -436,9 +437,11 @@ export default function OrderTracker() {
                   {/* Current status */}
                   <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${isDelivered ? 'bg-green-300' : 'bg-yellow-300 animate-pulse'}`} />
+                      <span className={`w-2.5 h-2.5 rounded-full ${isDelivered ? 'bg-green-300' : orderData.status === 'pendiente_pago' ? 'bg-yellow-300' : 'bg-yellow-300 animate-pulse'}`} />
                       <span className="text-white font-black text-sm uppercase tracking-wide">
-                        {STATUS_STEPS.find(s => s.key === orderData.status)?.title ?? orderData.status}
+                        {orderData.status === 'pendiente_pago'
+                          ? 'PAGO PENDIENTE'
+                          : STATUS_STEPS.find(s => s.key === orderData.status)?.title ?? orderData.status}
                       </span>
                     </div>
                     {orderData.updatedAt && (
@@ -448,6 +451,23 @@ export default function OrderTracker() {
                     )}
                   </div>
                 </div>
+
+                {/* ── Pending payment banner ── */}
+                {orderData.status === 'pendiente_pago' && (
+                  <div className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-accent/30 border-l-4 border-cm-accent p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">💳</span>
+                      <div>
+                        <p className="font-black text-cm-text text-sm">Pago por verificar</p>
+                        <p className="text-xs text-cm-muted font-bold mt-1 leading-relaxed">
+                          Tu pago con Yape/Plin está pendiente de verificación. 
+                          El local confirmará el pago en breve y tu pedido pasará a la cocina.
+                          Te notificaremos cuando esté aprobado.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <OrderTimeline currentStatus={orderData.status} />
 
@@ -571,7 +591,7 @@ export default function OrderTracker() {
                     <p className="text-3xl">🎉</p>
                     <p className="font-black text-cm-success text-lg">¡Buen provecho!</p>
                     <button
-                      onClick={() => navigate(ROUTES.HOME)}
+                      onClick={() => navigate(slugRoute(slug, ROUTES.HOME))}
                       className="mt-2 px-6 py-2.5 bg-cm-accent text-white font-bold rounded-xl text-sm hover:bg-cm-accent/90 transition-colors"
                     >
                       Hacer otro pedido
@@ -582,7 +602,6 @@ export default function OrderTracker() {
             )}
           </AnimatePresence>
 
-        </div>
       </div>
     </div>
   );

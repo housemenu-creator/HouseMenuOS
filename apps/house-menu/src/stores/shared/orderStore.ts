@@ -25,6 +25,7 @@ interface OrderState {
   applyChange: (raw: Partial<Order> & { id: string }) => void;
   applyRemove: (orderId: string) => void;
   setInitialOrders: (initialOrders: Partial<Order>[]) => OrderMap;
+  setLoading: (loading: boolean) => void;
   reset: () => void;
 
   getOrder: (orderId: string) => Order | null;
@@ -111,6 +112,8 @@ const useOrderStore = create<OrderState>()((set, get) => ({
       return { orders, orderIndex, isLoading: Object.keys(orders).length === 0 };
     });
   },
+
+  setLoading: (loading: boolean) => set({ isLoading: loading }),
 
   setInitialOrders: (initialOrders) => {
     const orderMap: OrderMap = {};

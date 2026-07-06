@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { ShoppingCart, ArrowLeft, UtensilsCrossed, ChevronRight, ArrowUp } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, UtensilsCrossed, ChevronRight, ArrowUp, User, LogIn } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import { menuService } from '../lib/menuService';
 import { dailyMenuService } from '../lib/dailyMenuService';
@@ -11,10 +11,14 @@ import logo from '../assets/logo.jpg';
 
 import { useAppStore } from '@house/store';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES, rastreoRoute } from '../lib/routes';
+import { ROUTES, rastreoRoute, slugRoute, staffDashboardRoute } from '../lib/routes';
+import { useTenant } from '../context/TenantContext';
 
 import MenuCard from '../components/MenuCard';
 import { useBranch } from '../context/BranchContext';
+import { useAuth } from '../context/AuthContext';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
+import CustomerAuthModal from '../components/CustomerAuthModal';
 import CategorySidebar from '../customer/components/CategorySidebar';
 import SidebarCart from '../customer/components/SidebarCart';
 
@@ -25,6 +29,7 @@ import BentoDailyMenu from '../customer/components/BentoDailyMenu';
 import MarketingHighlights from '../customer/components/MarketingHighlights';
 import UrgencyBar from '../customer/components/UrgencyBar';
 import ProductSkeleton from '../customer/components/ProductSkeleton';
+import ProductSheet from '../customer/components/ProductSheet';
 import HeroBanner from '../customer/components/HeroBanner';
 import FlashOffer from '../customer/components/FlashOffer';
 
@@ -39,10 +44,16 @@ export default function CustomerView() {
   const navigate = useNavigate();
   const { branches, activeBranchId, setActiveBranchId } = useBranch();
   const { cart, addToCart: addStoreCart, updateCartItemQty } = useAppStore();
+  const { slug } = useTenant();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const { isAuthenticated: customerAuth, points: customerPoints } = useCustomerAuth();
+
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [cartLength, setCartLength] = useState(cart.length);
   const [shouldAnimateCart, setShouldAnimateCart] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [headerCompact, setHeaderCompact] = useState(false);
 
   useEffect(() => {
     if (cart.length > cartLength) {
@@ -54,11 +65,13 @@ export default function CustomerView() {
   }, [cart.length, cartLength]);
 
   useEffect(() => {
-    const handleScrollVisibility = () => {
-      setShowScrollTop(window.scrollY > 400);
+    const handleScroll = () => {
+      const y = window.scrollY;
+      setShowScrollTop(y > 400);
+      setHeaderCompact(y > 80);
     };
-    window.addEventListener('scroll', handleScrollVisibility);
-    return () => window.removeEventListener('scroll', handleScrollVisibility);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const [kioskEnabled, setKioskEnabled] = useState(false);
@@ -84,6 +97,7 @@ export default function CustomerView() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [lastOrderItems, setLastOrderItems] = useState([]);
+  const [lastPaymentMethod, setLastPaymentMethod] = useState('');
 
   const getLocalDateString = (date = new Date()) => {
     const year = date.getFullYear();
@@ -127,11 +141,18 @@ export default function CustomerView() {
 
   const isOutOfStockDetail = liveProduct?.trackStock && (liveProduct?.stock ?? 0) <= qtyInCart;
 
+  const isVisibleInCarta = (p) => {
+    if (p.available === false) return false;
+    if (p.status === 'draft') return false;
+    const ch = p.channels || {};
+    return ch.carta !== false;
+  };
+
   const categoriesList = useMemo(() => {
     if (!catalog.products) return ['todos'];
     const cats = new Set();
     Object.values(catalog.products).forEach(p => {
-      if (p.available !== false && p.category) cats.add(p.category);
+      if (isVisibleInCarta(p) && p.category) cats.add(p.category);
     });
     return ['todos', ...Array.from(cats)];
   }, [catalog.products]);
@@ -140,7 +161,7 @@ export default function CustomerView() {
     const images = {};
     if (catalog.products) {
       Object.values(catalog.products).forEach(p => {
-        if (p.available !== false && p.category && p.image && !images[p.category]) {
+        if (isVisibleInCarta(p) && p.category && p.image && !images[p.category]) {
           images[p.category] = p.image;
         }
       });
@@ -155,11 +176,11 @@ export default function CustomerView() {
     return images;
   }, [catalog.products, catalog.categories]);
 
-  // All products filtered only by search query (not category — scrollspy handles category nav)
+  // All products filtered by channel (carta) + search query
   const filteredProducts = useMemo(() => {
     if (!catalog.products) return [];
     return Object.entries(catalog.products).filter(([_, prod]) => {
-      if (prod.available === false) return false;
+      if (!isVisibleInCarta(prod)) return false;
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
       return prod.name?.toLowerCase().includes(q) ||
@@ -421,9 +442,12 @@ export default function CustomerView() {
           <div className="h-12 bg-cm-surface border border-cm-border rounded-xl animate-pulse" />
 
           {/* Categories Ribbon Shimmer */}
-          <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-8 bg-cm-muted/15 w-20 rounded-full shrink-0 animate-pulse" />
+              <div key={i} className="flex flex-col items-center gap-1.5 shrink-0">
+                <div className="w-14 h-14 bg-cm-muted/15 rounded-full animate-pulse" />
+                <div className="h-2 bg-cm-muted/10 w-12 rounded-full animate-pulse" />
+              </div>
             ))}
           </div>
 
@@ -454,38 +478,79 @@ export default function CustomerView() {
   return (
     <div className="transition-all duration-300 flex flex-col min-h-screen">
       <UrgencyBar />
-      <nav className="sticky top-0 z-40 bg-cm-bg/75 backdrop-blur-md border-b border-cm-border/60 px-6 py-3.5 flex justify-between items-center shadow-sm">
+
+      {/* ── Scroll-linked header ── */}
+      <nav
+        className={`sticky top-0 z-40 bg-cm-bg/75 backdrop-blur-md border-b border-cm-border/60 px-6 flex justify-between items-center shadow-sm transition-all duration-200 ${
+          headerCompact ? 'py-2.5' : 'py-3.5'
+        }`}
+      >
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(ROUTES.HOME)} className="p-1.5 hover:bg-cm-accent/10 rounded-full transition-colors text-cm-text shrink-0" title="Volver al inicio">
+          <button onClick={() => navigate(slugRoute(slug, ROUTES.HOME))} className="p-1.5 hover:bg-cm-accent/10 rounded-full transition-colors text-cm-text shrink-0" title="Volver al inicio">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 transition-all duration-200 ${headerCompact ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
             <img src={logo} alt="House Logo" className="w-7 h-7 rounded-lg object-cover border border-cm-border shadow-cm-sm" />
             <div className="text-[0.8rem] font-black tracking-widest text-cm-accent">HOUSE</div>
             <span className="text-[0.6rem] font-bold bg-cm-accent/10 text-cm-accent px-2 py-0.5 rounded-full uppercase tracking-wider">
               {branches.find(b => b.id === activeBranchId)?.name || 'Principal'}
             </span>
           </div>
+          {/* Compact: show only abbreviated name */}
+          {headerCompact && (
+            <span className="text-[0.7rem] font-black tracking-widest text-cm-accent">
+              {branches.find(b => b.id === activeBranchId)?.name || ''}
+            </span>
+          )}
         </div>
+
+        {/* Auth button — priority: staff > customer > guest */}
+        {isAuthenticated ? (
+          <button
+            onClick={() => navigate(staffDashboardRoute(authUser?.role || 'admin'))}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold text-cm-accent border border-cm-accent/20 hover:bg-cm-accent/10 transition-all"
+          >
+            <User className="w-3.5 h-3.5" />
+            {!headerCompact && <span>Dash</span>}
+          </button>
+        ) : customerAuth ? (
+          <button
+            onClick={() => navigate(ROUTES.MI_CUENTA)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold text-cm-accent border border-cm-accent/20 hover:bg-cm-accent/10 transition-all"
+            title="Mi Cuenta"
+          >
+            <User className="w-3.5 h-3.5" />
+            {!headerCompact && <span>{customerPoints} pts</span>}
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="flex items-center gap-1.5 px-2 py-2 rounded-full text-xs text-cm-text-secondary hover:text-cm-accent transition-all"
+            title="Crear Cuenta o Iniciar Sesión"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            {!headerCompact && <span className="hidden sm:inline text-[10px] font-semibold">Crear Cuenta</span>}
+          </button>
+        )}
 
         <button
           onClick={() => setIsCartOpen(true)}
           className="relative flex items-center gap-2 px-4 py-2 border border-cm-border hover:border-cm-accent/40 hover:bg-cm-accent/5 rounded-full transition-all text-xs font-black uppercase tracking-wider text-cm-text"
         >
           <ShoppingCart className="w-4 h-4" />
-          <span>Carrito</span>
+          {!headerCompact && <span>Carrito</span>}
           {cart.length > 0 && (
-            <span className="bg-cm-accent text-white text-[0.65rem] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-cm-sm animate-pulse">
+            <span className="bg-cm-accent text-white text-[0.65rem] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-cm-sm">
               {cart.length}
             </span>
           )}
         </button>
       </nav>
 
-      {/* New 3-Column Layout */}
-      <div className="flex min-h-screen bg-cm-bg">
-        {/* Left Sidebar - Categories (Desktop) */}
-        <aside className="hidden lg:block w-64 sticky top-0 h-screen shrink-0 border-r border-cm-border/40 overflow-y-auto">
+      {/* 3-Column Layout */}
+      <div className="flex flex-1 bg-cm-bg">
+        {/* Left Sidebar — Categories (Desktop) */}
+        <aside className="hidden lg:block w-64 sticky top-14 h-[calc(100vh-3.5rem)] shrink-0 border-r border-cm-border/40 overflow-y-auto">
           <div className="p-4">
             <h2 className="text-sm font-black uppercase tracking-widest text-cm-accent mb-4">Categorías</h2>
             <CategorySidebar 
@@ -496,13 +561,14 @@ export default function CustomerView() {
           </div>
         </aside>
 
-        {/* Main Content - Products */}
+        {/* Main Content */}
         <main className="flex-1 min-w-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24">
+          <div className="w-full px-4 sm:px-8 lg:px-12 pt-6 pb-24">
             <motion.div key="menu" className="space-y-8">
               {layoutConfig.cartaShowHero && (
                 <HeroBanner 
                   branchName={branches.find(b => b.id === activeBranchId)?.name}
+                  catalog={catalog}
                 />
               )}
               {layoutConfig.cartaShowDailyMenu && (
@@ -515,34 +581,21 @@ export default function CustomerView() {
               {layoutConfig.cartaShowFlashOffer && (
                 <FlashOffer />
               )}
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
-              <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} categoryImages={categoryImages} />
-              <ProductGrid products={filteredProducts} onSelectProduct={handleSelectProduct} onDirectAdd={(id, prod) => {
-                const isWizard = prod.isWizard || (prod.steps && prod.steps.length > 0);
-                if (isWizard) {
-                  handleSelectProduct(id, prod);
-                  return;
-                }
-                
-                // Buscar si ya existe en el carrito un item del mismo producto sin opciones
-                const existingItem = cart.find(item => item.productId === id && (!item.details || item.details.length === 0));
-                if (existingItem) {
-                  updateCartItemQty(existingItem.id, (existingItem.quantity || 1) + 1);
-                } else {
-                  const newItem = {
-                    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-                    productId: id,
-                    name: prod.name,
-                    details: [],
-                    price: (prod.base_price ?? prod.price ?? 0),
-                    unitPrice: (prod.base_price ?? prod.price ?? 0),
-                    quantity: 1,
-                    packaging: 0,
-                    deliveryDate: selectedDate,
-                  };
-                  addStoreCart(newItem);
-                }
-              }} searchQuery={searchQuery} />
+
+              {/* Search */}
+              <SearchBar value={searchQuery} onChange={setSearchQuery} results={filteredProducts} onSelectProduct={(id, prod) => {
+                handleSelectProduct(id, prod);
+                setSearchQuery('');
+              }} />
+
+              {/* Sticky category ribbon under header */}
+              <div className={`sticky z-30 bg-cm-bg transition-all duration-200 ${
+                headerCompact ? 'top-[50px] -mx-4 sm:-mx-6 px-4 sm:px-6 pt-3 pb-2 shadow-sm border-b border-cm-border/20' : 'top-14 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2'
+              }`}>
+                <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} categoryImages={categoryImages} />
+              </div>
+
+              <ProductGrid products={filteredProducts} onSelectProduct={handleSelectProduct} searchQuery={searchQuery} />
               {layoutConfig.cartaShowHighlights && (
                 <MarketingHighlights />
               )}
@@ -550,7 +603,7 @@ export default function CustomerView() {
           </div>
         </main>
 
-        {/* Right Sidebar - Cart (Desktop) */}
+        {/* Right Sidebar — Cart (Desktop) */}
         <aside className="hidden lg:block w-80 sticky top-0 h-screen shrink-0 border-l border-cm-border/40 bg-cm-surface/40 backdrop-blur-sm">
           <div className="p-4 h-full">
             <SidebarCart onCheckout={() => setIsCartOpen(true)} />
@@ -558,110 +611,55 @@ export default function CustomerView() {
         </aside>
       </div>
 
-      <AnimatePresence>
-        {view === 'wizard' && (
-          <>
-            {/* Backdrop Overlay - solid dark, no blur */}
-            <motion.div
-              key="wizard-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              onClick={() => setView('landing')}
-              className="fixed inset-0 z-[55] bg-black/80"
+      {/* ── Product Sheet (replaces centered modal) ── */}
+      <ProductSheet open={view === 'wizard'} onClose={() => setView('landing')} product={liveProduct}>
+        {liveProduct?.isWizard ? (
+          <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-3 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}>
+            <WizardFlow
+              product={flowProduct}
+              wizardSelections={wizardSelections}
+              onOptionToggle={handleWizardOptionToggle}
+              currentStepIndex={currentStepIndex}
+              onStepChange={setCurrentStepIndex}
+              onComplete={handleAddToCart}
+              isOutOfStock={isOutOfStockDetail}
+              qtyInCart={qtyInCart}
             />
-
-            {/* Centered Modal Container */}
-            <motion.div
-              key="wizard-overlay"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed inset-4 z-[60] flex flex-col bg-cm-bg rounded-2xl border border-cm-border shadow-cm-lg overflow-hidden sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg sm:h-auto sm:max-h-[85vh]"
-            >
-              {/* Clean Header */}
-              <div className="sticky top-0 bg-cm-bg border-b border-cm-border/40 px-6 py-3 flex items-center z-10 shrink-0">
-                <button onClick={() => setView('landing')} className="p-2 -ml-2 hover:bg-cm-accent/10 rounded-full transition-colors mr-3">
-                  <ArrowLeft className="w-5 h-5 text-cm-text" />
-                </button>
-                <h2 className="text-base font-bold text-cm-text truncate flex-1">{liveProduct?.name}</h2>
-                <span className="text-xs font-bold text-cm-accent bg-cm-accent/10 px-2.5 py-1 rounded-full border border-cm-accent/20 shrink-0">
-                  S/ {(liveProduct?.base_price ?? liveProduct?.price ?? 0).toFixed(2)}
-                </span>
-              </div>
-              
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto px-6 pt-4 pb-4 overscroll-contain">
-                <div className="max-w-2xl mx-auto w-full">
-                  {/* Product Hero - smaller */}
-                  {liveProduct?.image && (
-                    <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-cm-border/60 mx-auto mb-4">
-                      <img src={liveProduct.image} alt={liveProduct.name} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-
-                  <div className="text-center mb-4">
-                    <h2 className="text-lg font-bold text-cm-text">{liveProduct?.name}</h2>
-                    {liveProduct?.description && (
-                      <p className="text-xs text-cm-text-secondary mt-1 max-w-md mx-auto leading-relaxed">{liveProduct.description}</p>
-                    )}
-                  </div>
-
-                  {liveProduct?.isWizard ? (
-                    <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-3 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}>
-                      <WizardFlow
-                        product={flowProduct}
-                        wizardSelections={wizardSelections}
-                        onOptionToggle={handleWizardOptionToggle}
-                        currentStepIndex={currentStepIndex}
-                        onStepChange={setCurrentStepIndex}
-                        onComplete={handleAddToCart}
-                        isOutOfStock={isOutOfStockDetail}
-                        qtyInCart={qtyInCart}
-                      />
-                    </Suspense>
-                  ) : (
-                    <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-3 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}>
-                      <FlatProductFlow
-                        product={liveProduct}
-                        variationsList={variationsList}
-                        modifiersList={modifiersList}
-                        selectedVariation={selectedVariation}
-                        selectedModifiers={selectedModifiers}
-                        onSelectVariation={setSelectedVariation}
-                        onToggleModifier={handleToggleModifier}
-                        onAddToCart={handleAddToCart}
-                        isOutOfStock={isOutOfStockDetail}
-                        qtyInCart={qtyInCart}
-                      />
-                    </Suspense>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </>
+          </Suspense>
+        ) : (
+          <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-3 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}>
+            <FlatProductFlow
+              product={liveProduct}
+              variationsList={variationsList}
+              modifiersList={modifiersList}
+              selectedVariation={selectedVariation}
+              selectedModifiers={selectedModifiers}
+              onSelectVariation={setSelectedVariation}
+              onToggleModifier={handleToggleModifier}
+              onAddToCart={handleAddToCart}
+              isOutOfStock={isOutOfStockDetail}
+              qtyInCart={qtyInCart}
+            />
+          </Suspense>
         )}
-      </AnimatePresence>
+      </ProductSheet>
 
-          {/* Floating Cart FAB — visible only on mobile when cart has items and we're in landing view */}
-          <AnimatePresence>
-            {cart.length > 0 && view === 'landing' && (
-              <motion.button
-                key="cart-fab"
-                initial={{ y: 100, opacity: 0 }}
-                animate={
-                  shouldAnimateCart 
-                    ? { scale: [1, 1.08, 0.95, 1.02, 1], y: [0, -12, 2, -3, 0], opacity: 1 } 
-                    : { scale: 1, y: 0, opacity: 1 }
-                }
-                exit={{ y: 100, opacity: 0 }}
-                transition={shouldAnimateCart ? { duration: 0.5 } : { type: 'spring', stiffness: 400, damping: 30 }}
-                onClick={() => setIsCartOpen(true)}
-                className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cm-accent to-amber-500 text-white rounded-2xl shadow-cm-lg hover:-translate-y-0.5 hover:shadow-cm-xl transition-all border border-white/10"
-                style={{ maxWidth: 'calc(100vw - 3rem)', minWidth: '260px' }}
-              >
+      {/* Floating Cart FAB — mobile only */}
+      <AnimatePresence>
+        {cart.length > 0 && view === 'landing' && (
+          <motion.button
+            key="cart-fab"
+            initial={{ y: 100, opacity: 0 }}
+            animate={
+              shouldAnimateCart 
+                ? { scale: [1, 1.08, 0.95, 1.02, 1], y: [0, -12, 2, -3, 0], opacity: 1 } 
+                : { scale: 1, y: 0, opacity: 1 }
+            }
+            exit={{ y: 100, opacity: 0 }}
+            transition={shouldAnimateCart ? { duration: 0.5 } : { type: 'spring', stiffness: 400, damping: 30 }}
+            onClick={() => setIsCartOpen(true)}
+            className="lg:hidden fixed bottom-6 left-4 right-4 z-50 flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cm-accent to-amber-500 text-white rounded-2xl shadow-cm-lg hover:-translate-y-0.5 hover:shadow-cm-xl transition-all border border-white/10 max-w-lg mx-auto"
+          >
             <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center font-black text-xs shrink-0 relative">
               <span className="absolute inset-0 rounded-full bg-white/20 animate-ping" />
               <span className="relative z-10">{cart.length}</span>
@@ -684,13 +682,14 @@ export default function CustomerView() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-24 right-6 z-40 p-3 bg-cm-surface border-2 border-cm-border text-cm-accent rounded-xl shadow-cm-md hover:border-cm-accent transition-colors"
+            className="fixed bottom-28 right-6 z-40 p-3 bg-cm-surface border-2 border-cm-border text-cm-accent rounded-xl shadow-cm-md hover:border-cm-accent transition-colors"
           >
             <ArrowUp className="w-5 h-5" />
           </motion.button>
         )}
       </AnimatePresence>
 
+      <CustomerAuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} initialMode="register" />
 
       <Suspense fallback={null}>
         <CartDrawer
@@ -698,10 +697,11 @@ export default function CustomerView() {
           onClose={() => setIsCartOpen(false)}
           initialMesa={urlMesa}
           showMesa={false}
-          onOrderComplete={(id, cartSnapshot) => {
+          onOrderComplete={(id, cartSnapshot, paymentMethod) => {
             setOrderId(id);
             setLastOrderItems(cartSnapshot || []);
             setOrderComplete(true);
+            setLastPaymentMethod(paymentMethod);
             setIsCartOpen(false);
           }}
         />
@@ -715,10 +715,12 @@ export default function CustomerView() {
           branchId={activeBranchId}
           branchName={branches.find(b => b.id === activeBranchId)?.name}
           mesa={urlMesa}
+          paymentMethod={lastPaymentMethod}
           onTrackOrder={(id) => {
             setOrderComplete(false);
             setOrderId('');
-            navigate(rastreoRoute(id, activeBranchId));
+            const trackUrl = slug ? `/r/${slug}/rastreo?id=${id}&branch=${activeBranchId}` : rastreoRoute(id, activeBranchId);
+            navigate(trackUrl);
           }}
           onNewOrder={() => {
             setOrderComplete(false);

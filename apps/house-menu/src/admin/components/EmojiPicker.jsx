@@ -42,7 +42,7 @@ export default function EmojiPicker({ open, onSelect, onClose }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -8 }}
             transition={{ duration: 0.12 }}
-            className="absolute z-[61] top-full mt-1 right-0 bg-white rounded-xl border-2 border-cm-border shadow-xl p-3 w-[280px]"
+            className="absolute z-[61] top-full mt-1 right-0 bg-cm-surface rounded-xl border-2 border-cm-border shadow-xl p-3 w-[280px]"
           >
             {EMOJI_GROUPS.map((group) => (
               <div key={group.label} className="mb-2 last:mb-0">

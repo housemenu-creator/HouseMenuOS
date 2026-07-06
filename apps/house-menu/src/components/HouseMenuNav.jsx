@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import BranchSwitcher from './BranchSwitcher';
+import WorkspaceSwitcher from './WorkspaceSwitcher';
 import { useAuth } from '../context/AuthContext';
 import { ROUTES, STAFF_ROUTES } from '../lib/routes';
 import logo from '../assets/logo.jpg';
@@ -22,6 +23,8 @@ import {
   LayoutDashboard,
   Monitor,
   Home,
+  Tv,
+  Smartphone,
 } from 'lucide-react';
 
 const SECTIONS = [
@@ -126,14 +129,35 @@ const SECTIONS = [
   },
   {
     id: 'empleados',
-    path: null,
-    url: ROUTES.EMPLEADOS,
+    path: ROUTES.EMPLEADOS,
     label: 'Portal Empleados',
     sublabel: 'Fichado, Horarios, Tareas',
     icon: Monitor,
     color: 'text-sky-600',
     bg: 'bg-sky-500/10',
     activeBg: 'bg-sky-600',
+    hint: null,
+  },
+  {
+    id: 'monitor',
+    path: ROUTES.MONITOR,
+    label: 'Monitor TV',
+    sublabel: 'Pantalla de Cocina',
+    icon: Tv,
+    color: 'text-rose-500',
+    bg: 'bg-rose-500/10',
+    activeBg: 'bg-rose-500',
+    hint: null,
+  },
+  {
+    id: 'kiosko',
+    path: ROUTES.KIOSKO,
+    label: 'Kiosko',
+    sublabel: 'Auto-pedido',
+    icon: Smartphone,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-500/10',
+    activeBg: 'bg-emerald-500',
     hint: null,
   },
 ];
@@ -162,9 +186,9 @@ function HouseMenuNav() {
   return (
     <>
       {/* ── Desktop Sidebar ─────────────────────────────── */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-white border-r border-cm-border flex-col z-50 shadow-cm-md">
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-cm-surface border-r border-cm-border flex-col z-50 shadow-cm-md">
         {/* Brand — clickeable → Inicio */}
-        <div className="p-6 border-b border-cm-border">
+        <div className="p-6 border-b border-cm-border space-y-4">
           <button
             onClick={() => { navigate(ROUTES.HOME); setMobileOpen(false); }}
             className="flex items-center gap-3 w-full text-left hover:opacity-80 transition-opacity"
@@ -172,16 +196,17 @@ function HouseMenuNav() {
             <img src={logo} alt="House Logo" className="w-10 h-10 rounded-xl object-cover border border-cm-border shadow-cm-md" />
             <div>
               <p className="font-black text-cm-text text-base leading-tight">HOUSE</p>
-              <p className="text-[0.6rem] font-bold text-cm-muted tracking-widest uppercase">Menu System</p>
+              <p className="text-[0.6rem] font-bold text-cm-text-secondary tracking-widest uppercase">Menu System</p>
             </div>
           </button>
           
-          <BranchSwitcher variant="select" showLabel className="mt-4" />
+          <WorkspaceSwitcher />
+          <BranchSwitcher variant="select" showLabel className="mt-2" />
         </div>
 
         {/* Nav label */}
         <div className="px-6 pt-5 pb-2">
-          <p className="text-[0.6rem] font-bold text-cm-muted tracking-[0.2em] uppercase flex items-center gap-1.5">
+          <p className="text-[0.6rem] font-bold text-cm-text-secondary tracking-[0.2em] uppercase flex items-center gap-1.5">
             <LayoutGrid className="w-3 h-3" /> Módulos
           </p>
         </div>
@@ -199,7 +224,7 @@ function HouseMenuNav() {
                 className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all group border-2 ${
                   isActive
                     ? `${section.activeBg} text-white border-cm-border shadow-cm-md`
-                    : `bg-transparent text-cm-muted border-transparent hover:bg-cm-accent/5 hover:border-cm-border`
+                    : `bg-transparent text-cm-text-secondary border-transparent hover:bg-cm-accent/5 hover:border-cm-border`
                 }`}
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
@@ -212,7 +237,7 @@ function HouseMenuNav() {
                     {section.label}
                   </p>
                   {import.meta.env.DEV && (
-                    <p className={`text-[0.65rem] font-bold mt-0.5 ${isActive ? 'text-white/70' : 'text-cm-muted'}`}>
+                    <p className={`text-[0.65rem] font-bold mt-0.5 ${isActive ? 'text-white/70' : 'text-cm-text-secondary'}`}>
                       {section.sublabel}
                     </p>
                   )}
@@ -233,7 +258,7 @@ function HouseMenuNav() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-cm-text truncate">{user.name || user.email}</p>
-                  <p className="text-[0.55rem] font-bold text-cm-muted uppercase tracking-wider">{user.role}</p>
+                  <p className="text-[0.55rem] font-bold text-cm-text-secondary uppercase tracking-wider">{user.role}</p>
                 </div>
               </div>
               <button
@@ -245,12 +270,12 @@ function HouseMenuNav() {
             </div>
           ) : (
             <div className="bg-cm-accent/5 border border-cm-accent/20 rounded-xl p-3">
-              <p className="text-[0.65rem] font-bold text-cm-muted uppercase tracking-widest mb-1">Módulo Activo</p>
+              <p className="text-[0.65rem] font-bold text-cm-text-secondary uppercase tracking-widest mb-1">Módulo Activo</p>
               <p className="text-sm font-black text-cm-accent">{currentSection.label}</p>
             </div>
           )}
           {import.meta.env.DEV && currentSection.hint && (
-            <p className="text-[0.6rem] text-cm-muted/50 text-center font-bold">
+            <p className="text-[0.6rem] text-cm-text-secondary/50 text-center font-bold">
               {currentSection.hint}
             </p>
           )}
@@ -258,7 +283,7 @@ function HouseMenuNav() {
       </aside>
 
       {/* ── Mobile Hamburger ────────────────────────────── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-cm-border flex items-center justify-between px-4 py-3 shadow-sm">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-cm-surface border-b border-cm-border flex items-center justify-between px-4 py-3 shadow-sm">
         <div className="flex items-center gap-2">
           <img src={logo} alt="House Logo" className="w-8 h-8 rounded-lg object-cover border border-cm-border shadow-cm-md" />
           <span className="font-black text-cm-text text-sm">{currentSection.label}</span>
@@ -283,7 +308,7 @@ function HouseMenuNav() {
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="md:hidden fixed left-0 top-0 h-full w-72 bg-white border-r border-cm-border z-50 flex flex-col p-5 justify-between"
+              className="md:hidden fixed left-0 top-0 h-full w-72 bg-cm-surface border-r border-cm-border z-50 flex flex-col p-5 justify-between"
             >
               <div className="flex justify-between items-center mb-6">
                 <button
@@ -293,12 +318,15 @@ function HouseMenuNav() {
                   <img src={logo} alt="House Logo" className="w-8 h-8 rounded-lg object-cover border border-cm-border shadow-cm-md" />
                   <span className="font-black text-cm-text">House Menu</span>
                 </button>
-                <button onClick={() => setMobileOpen(false)} className="p-1.5 border-2 border-cm-border rounded-lg text-cm-muted">
+                <button onClick={() => setMobileOpen(false)} className="p-1.5 border-2 border-cm-border rounded-lg text-cm-text-secondary">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <BranchSwitcher variant="select" showLabel className="mb-6 px-1" />
+              <div className="space-y-3 mb-6 px-1">
+                <WorkspaceSwitcher />
+                <BranchSwitcher variant="select" showLabel className="mt-2" />
+              </div>
 
               <nav className="space-y-2">
                 {SECTIONS.map((section) => {
@@ -311,14 +339,14 @@ function HouseMenuNav() {
                       className={`w-full flex items-center gap-3 p-3 rounded-xl text-left border-2 transition-all ${
                         isActive
                           ? `${section.activeBg} text-white border-cm-border shadow-cm-md`
-                          : 'bg-transparent text-cm-muted border-transparent hover:bg-cm-accent/5'
+                          : 'bg-transparent text-cm-text-secondary border-transparent hover:bg-cm-accent/5'
                       }`}
                     >
                       <Icon className={`w-5 h-5 ${isActive ? 'text-white' : section.color}`} />
                       <div>
                         <p className={`text-sm font-bold ${isActive ? 'text-white' : 'text-cm-text'}`}>{section.label}</p>
                         {import.meta.env.DEV && (
-                          <p className={`text-[0.65rem] font-bold ${isActive ? 'text-white/70' : 'text-cm-muted'}`}>{section.sublabel}</p>
+                          <p className={`text-[0.65rem] font-bold ${isActive ? 'text-white/70' : 'text-cm-text-secondary'}`}>{section.sublabel}</p>
                         )}
                       </div>
                     </button>
@@ -336,7 +364,7 @@ function HouseMenuNav() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-cm-text truncate">{user.name || user.email}</p>
-                        <p className="text-[0.55rem] font-bold text-cm-muted uppercase tracking-wider">{user.role}</p>
+                        <p className="text-[0.55rem] font-bold text-cm-text-secondary uppercase tracking-wider">{user.role}</p>
                       </div>
                     </div>
                     <button onClick={logout} className="p-2 rounded-lg text-cm-error hover:bg-cm-error/10 transition-colors" title="Cerrar sesión">
@@ -344,7 +372,7 @@ function HouseMenuNav() {
                     </button>
                   </div>
                 ) : (
-                  <p className="text-[0.65rem] text-cm-muted text-center font-bold">Sesión no iniciada</p>
+                  <p className="text-[0.65rem] text-cm-text-secondary text-center font-bold">Sesión no iniciada</p>
                 )}
               </div>
             </motion.div>

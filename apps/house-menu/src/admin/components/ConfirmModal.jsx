@@ -32,7 +32,7 @@ export function PromptModal({ open, title, label, initialValue = '', placeholder
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.15 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl border border-cm-border w-[360px] overflow-hidden"
+            className="bg-cm-surface rounded-2xl shadow-2xl border border-cm-border w-[360px] overflow-hidden"
           >
             <div className="flex items-center justify-between p-4 border-b border-cm-border">
               <h3 className="text-sm font-black text-cm-text uppercase tracking-wider">{title}</h3>
@@ -84,7 +84,7 @@ export function ConfirmModal({ open, title, message, confirmLabel = 'Eliminar', 
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.15 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl border border-cm-border w-[360px] overflow-hidden"
+            className="bg-cm-surface rounded-2xl shadow-2xl border border-cm-border w-[360px] overflow-hidden"
           >
             <div className="flex items-center justify-between p-4 border-b border-cm-border">
               <h3 className="text-sm font-black text-cm-text uppercase tracking-wider">{title}</h3>

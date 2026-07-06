@@ -27,10 +27,12 @@ export function useAdminOrders(activeBranchId: string | null, user: { email?: st
       setAllOrders(data);
       setLoading(false);
 
-      // Notificar nuevos deliveries
+      // Notificar nuevos pedidos
       const prevIds = prevOrderIdsRef.current;
       for (const order of data) {
         if (!order.id || prevIds.has(order.id)) continue;
+
+        // Delivery notifications
         const isDelivery = (order.type || order.order_type || '').toLowerCase().includes('delivery');
         if (isDelivery && (order.status === 'pendiente' || order.status === 'listo')) {
           createNotification({
@@ -39,6 +41,19 @@ export function useAdminOrders(activeBranchId: string | null, user: { email?: st
             type: 'order_new',
             title: '¡Nuevo pedido delivery!',
             body: `${order.customerName || 'Cliente'} — ${order.location || 'sin dirección'} — S/ ${(order.financials?.total ?? order.total ?? 0).toFixed(2)}`,
+            orderId: order.id,
+            url: '/admin?tab=orders',
+          });
+        }
+
+        // Yape/Plin payment pending verification
+        if (order.payment_status === 'por_verificar') {
+          createNotification({
+            branchId: activeBranchId,
+            userId: user?.email,
+            type: 'order_new',
+            title: '💳 Pago por verificar',
+            body: `${order.customerName || 'Cliente'} — Yape/Plin S/ ${(order.financials?.total ?? order.total ?? 0).toFixed(2)} — toca para verificar`,
             orderId: order.id,
             url: '/admin?tab=orders',
           });

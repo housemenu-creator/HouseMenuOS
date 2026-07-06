@@ -105,13 +105,13 @@ export default function WizardEditorModal({ product, onClose, updateField }) {
                   <div className="shrink-0 flex items-center bg-cm-bg-alt rounded-lg p-1">
                     <button
                       onClick={() => handleStepChange(sIdx, 'type', 'single')}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${step.type === 'single' ? 'bg-white shadow text-cm-accent' : 'text-cm-muted'}`}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${step.type === 'single' ? 'bg-cm-surface shadow-cm-sm text-cm-accent' : 'text-cm-muted'}`}
                     >
                       Única (Radio)
                     </button>
                     <button
                       onClick={() => handleStepChange(sIdx, 'type', 'multiple')}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${step.type === 'multiple' ? 'bg-white shadow text-cm-accent' : 'text-cm-muted'}`}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${step.type === 'multiple' ? 'bg-cm-surface shadow-cm-sm text-cm-accent' : 'text-cm-muted'}`}
                     >
                       Múltiple (Check)
                     </button>

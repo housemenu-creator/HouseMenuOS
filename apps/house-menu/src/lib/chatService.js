@@ -1,14 +1,15 @@
-import { ref, push, set, onValue, query, limitToLast, serverTimestamp, update } from 'firebase/database';
+import { ref, push, set, onValue, query, limitToLast, update } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { chatPath, chatReadByPath } from './paths';
+import { chatPath, chatReadByPath, CHAT_CHANNELS } from './paths';
 
-export async function sendMessage(branchId, { text, sender, senderName }) {
+export async function sendMessage(branchId, channel = CHAT_CHANNELS.GENERAL, { text, sender, senderName }) {
   try {
-    const msgRef = push(ref(db, chatPath(branchId)));
+    const msgRef = push(ref(db, chatPath(branchId, channel)));
     await set(msgRef, {
       text,
       sender,
       senderName,
+      channel,
       timestamp: new Date().toISOString(),
       readBy: { [sender]: true },
     });
@@ -19,9 +20,9 @@ export async function sendMessage(branchId, { text, sender, senderName }) {
   }
 }
 
-export function subscribeMessages(branchId, callback) {
+export function subscribeMessages(branchId, channel = CHAT_CHANNELS.GENERAL, callback) {
   try {
-    const messagesRef = ref(db, chatPath(branchId));
+    const messagesRef = ref(db, chatPath(branchId, channel));
     const q = query(messagesRef, limitToLast(50));
     const unsub = onValue(q, (snapshot) => {
       const data = snapshot.val();
@@ -45,9 +46,9 @@ export function subscribeMessages(branchId, callback) {
   }
 }
 
-export async function markMessageRead(branchId, messageId, userId) {
+export async function markMessageRead(branchId, channel, messageId, userId) {
   try {
-    const msgRef = ref(db, chatReadByPath(branchId, messageId, userId));
+    const msgRef = ref(db, chatReadByPath(branchId, channel, messageId, userId));
     await set(msgRef, true);
     return { success: true };
   } catch (err) {

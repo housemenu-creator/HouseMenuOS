@@ -86,8 +86,8 @@ export default function RepartidorView() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-cm-bg">
-      <div className="max-w-lg mx-auto p-4 space-y-4">
+    <div className="flex-1 min-h-0 bg-cm-bg">
+      <div className="w-full px-6 py-4 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-sm font-black tracking-widest text-cm-text flex items-center gap-2 uppercase">

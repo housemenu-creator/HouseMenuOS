@@ -14,6 +14,7 @@ import AreaFormModal from '../../admin/components/AreaFormModal';
 import { Store } from 'lucide-react';
 import {
   subscribeEmployees, createEmployee, updateEmployee, deleteEmployee,
+  createUserForEmployee,
   getSchedule, saveSchedule,
   clockIn, clockOut, updateAttendance, subscribeTodayAttendance, getAttendanceHistory,
   getGoals, setGoal, deleteGoal, computeEmployeeKPI,
@@ -518,7 +519,15 @@ export default function EmployeesTab({ allOrders }) {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [editingBreak, setEditingBreak] = useState(null); // { empId, date } | null
   const [editBreakMinutes, setEditBreakMinutes] = useState(0);
+  const [toast, setToast] = useState(null);
   const userToPushIdRef = useRef({});
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // Subscribe employees
   useEffect(() => {
@@ -573,7 +582,11 @@ export default function EmployeesTab({ allOrders }) {
   }, [employees]);
 
   const handleCreate = async (data) => {
-    await createEmployee(activeBranchId, data);
+    const result = await createEmployee(activeBranchId, data);
+    if (result._userWarning) {
+      console.warn('EmployeesTab.createEmployee: user creation warning', result._userWarning);
+      setToast({ message: `✔ Empleado creado, pero ${result._userWarning}`, type: 'warning' });
+    }
   };
 
   const handleUpdate = async (data) => {
@@ -590,6 +603,22 @@ export default function EmployeesTab({ allOrders }) {
     }
   };
 
+  const handleRetryCreateUser = async (empId) => {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+    try {
+      const result = await createUserForEmployee(activeBranchId, empId);
+      if (result.success) {
+        setToast({ message: `✔ Usuario creado para ${emp.name}`, type: 'success' });
+      } else {
+        alert(result.error || 'Error al crear usuario');
+      }
+    } catch (err) {
+      console.error('handleRetryCreateUser error:', err);
+      alert('Error de conexión. Revisá que el email no esté duplicado e intentá de nuevo.');
+    }
+  };
+
   const handleDelete = async (empId) => {
     const emp = employees.find(e => e.id === empId);
     // No permitir eliminarse a sí mismo
@@ -597,8 +626,21 @@ export default function EmployeesTab({ allOrders }) {
       alert('No podés eliminar tu propio usuario.');
       return;
     }
-    if (!(await confirmDialog(`¿Eliminar a ${emp?.name || 'este empleado'}? Esta acción no se puede deshacer.`))) return;
-    await deleteEmployee(activeBranchId, empId);
+    // No permitir eliminar admin/superadmin sin ser superadmin
+    if (emp && (emp.role === 'admin' || emp.role === 'superadmin') && user?.role !== 'superadmin') {
+      alert(`No podés eliminar un empleado con rol ${emp.role}. Solo un superadmin puede hacerlo.`);
+      return;
+    }
+    // Si tiene usuario vinculado, avisar que también se eliminará
+    let extraMsg = '';
+    if (emp?.userId) {
+      extraMsg = '\n\n⚠️ También se eliminará su acceso al sistema (usuario y permisos).';
+    }
+    if (!(await confirmDialog(`¿Eliminar a ${emp?.name || 'este empleado'}? Esta acción no se puede deshacer.${extraMsg}`))) return;
+    const result = await deleteEmployee(activeBranchId, empId, user?.role);
+    if (!result.success) {
+      alert(result.error || 'Error al eliminar empleado');
+    }
   };
 
   const getEmpUserId = (empId) => {
@@ -634,6 +676,19 @@ export default function EmployeesTab({ allOrders }) {
 
   const renderEmployees = () => (
     <div>
+      {/* Toast notification */}
+      {toast && (
+        <div className={`mb-4 px-4 py-3 rounded-xl border text-sm font-semibold flex items-center gap-2 ${
+          toast.type === 'warning'
+            ? 'bg-cm-warning/10 border-cm-warning/30 text-cm-warning'
+            : toast.type === 'error'
+            ? 'bg-cm-error/10 border-cm-error/30 text-cm-error'
+            : 'bg-cm-success/10 border-cm-success/30 text-cm-success'
+        }`}>
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-auto p-0.5 hover:opacity-70 transition-opacity"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
       {/* Stats bar */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {EMPLOYEE_STATUS.map(st => {
@@ -701,7 +756,12 @@ export default function EmployeesTab({ allOrders }) {
                   {emp.userId ? (
                     <span className="flex items-center gap-0.5 text-cm-success text-[10px]" title="Tiene acceso al sistema (usuario vinculado)"><LogIn className="w-3 h-3" /></span>
                   ) : emp.email && ['admin','cajero','kitchen','dispatch','mozo','vendedor'].includes(emp.role) && (
-                    <span className="flex items-center gap-0.5 text-cm-warning text-[10px]" title="Sin acceso al sistema — crear usuario manualmente"><AlertTriangle className="w-3 h-3" /></span>
+                    <span className="flex items-center gap-0.5 text-cm-warning text-[10px]" title="Sin acceso al sistema — hacer clic para crear usuario">
+                      <button onClick={() => handleRetryCreateUser(emp.id)} className="flex items-center gap-0.5 hover:text-cm-accent transition-colors">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span className="underline decoration-dotted">Crear acceso</span>
+                      </button>
+                    </span>
                   )}
                   {emp.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{emp.email}</span>}
                   {emp.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{emp.phone}</span>}
@@ -735,9 +795,11 @@ export default function EmployeesTab({ allOrders }) {
                 <button onClick={() => setGoalsEmp(emp)} className="p-2 text-cm-text-tertiary hover:text-cm-warning hover:bg-cm-warning/10 rounded-lg transition-colors" title="Metas">
                   <Target className="w-4 h-4" />
                 </button>
-                <button onClick={() => handleDelete(emp.id)} className="p-2 text-cm-text-tertiary hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors" title="Eliminar">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {(emp.role === 'admin' || emp.role === 'superadmin') && user?.role !== 'superadmin' ? null : (
+                  <button onClick={() => handleDelete(emp.id)} className="p-2 text-cm-text-tertiary hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors" title="Eliminar">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           );

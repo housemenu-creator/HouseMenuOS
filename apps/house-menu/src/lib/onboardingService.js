@@ -4,6 +4,7 @@ import { getDefaultRoles } from './permissions';
 import { hashPin } from './crypto';
 import { nowISO } from './format';
 import { setTenantId } from './tenantService';
+import { generateSlug, isSlugAvailable } from './slugService';
 
 const STORAGE_KEY = 'house_tenant_id';
 
@@ -21,17 +22,21 @@ export async function isFirstRun() {
   }
 
   try {
-    const snap = await get(ref(db, 'tenants'));
-    const data = snap.val();
-    if (!data) return true;
-    const keys = Object.keys(data);
-    if (keys.length === 0) return true;
-    for (const tid of keys) {
-      const empSnap = await get(ref(db, `tenants/${tid}/employees`));
-      if (empSnap.val() && Object.keys(empSnap.val()).length > 0) {
+    // Fast path: public flag set by completeSetup
+    const flagSnap = await get(ref(db, '_public/has_tenants'));
+    if (flagSnap.exists() && flagSnap.val() === true) return false;
+
+    // Fallback: check if any branch config exists (publicly readable)
+    const configSnap = await get(ref(db, 'branches_config'));
+    if (configSnap.exists()) {
+      const keys = Object.keys(configSnap.val());
+      if (keys.length > 0) {
+        // Found existing branches — system is set up, backfill public flag
+        set(ref(db, '_public/has_tenants'), true).catch(() => {});
         return false;
       }
     }
+
     return true;
   } catch (err) {
     console.warn('onboardingService.isFirstRun error:', err);
@@ -60,6 +65,16 @@ export async function completeSetup({ anonUid, tenant, admin, branch }) {
 
     const tenantId = generateId('tnt');
     const branchId = generateId('brn');
+
+    let slug = generateSlug(tenant.name);
+    if (!slug) {
+      slug = tenantId;
+    }
+    const isAvailable = await isSlugAvailable(slug);
+    if (!isAvailable) {
+      const suffix = Math.random().toString(36).substring(2, 6);
+      slug = `${slug}-${suffix}`;
+    }
 
     const pinHash = await hashPin(admin.pin);
     const now = nowISO();
@@ -164,7 +179,27 @@ export async function completeSetup({ anonUid, tenant, admin, branch }) {
         description: tenant.description || '',
         createdAt: now,
         defaultBranch: branchId,
+        slug: slug,
       },
+      // Global indexes for multi-tenant mapping
+      [`global/slugs/${slug}`]: {
+        tenantId,
+        branchId,
+        createdAt: now,
+      },
+      [`global/users/${anonUid}/profile`]: {
+        name: admin.name,
+        email: admin.email,
+        updatedAt: now,
+      },
+      [`global/users/${anonUid}/memberships/${tenantId}`]: {
+        role: 'admin',
+        joinedAt: now,
+        active: true,
+      },
+      [`global/emails_to_uid/${admin.email.replace(/\./g, ',')}`]: anonUid,
+      // Public flag — allows unauthenticated Landing page to skip onboarding
+      ['_public/has_tenants']: true,
     };
 
     await update(ref(db), payload);
@@ -172,7 +207,7 @@ export async function completeSetup({ anonUid, tenant, admin, branch }) {
     // Persist tenant ID so the app reads from the right path on reload
     setTenantId(tenantId);
 
-    return { success: true, tenantId, branchId };
+    return { success: true, tenantId, branchId, slug };
   } catch (err) {
     console.error('onboardingService.completeSetup error:', err);
     return { success: false, error: err.message || 'Error al crear el restaurante' };

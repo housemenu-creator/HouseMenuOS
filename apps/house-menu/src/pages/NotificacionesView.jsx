@@ -12,9 +12,12 @@ import {
 } from '../lib/notificationService';
 import { playChime } from '../lib/notificationSound';
 import { useToast } from '../components/ToastContext';
+import NotificationPreferencesPanel from '../components/NotificationPreferencesPanel';
+import { groupNotifications, getGroupTitle } from '../lib/notificationGrouping';
+import useTabBadge from '../hooks/useTabBadge';
 import {
   Bell, CheckCheck, ArrowLeft, Loader2, Clock,
-  Filter, X, Inbox, ChevronDown, BellRing, Sparkles,
+  Filter, X, Inbox, ChevronDown, BellRing, Sparkles, Settings,
 } from 'lucide-react';
 
 const TYPE_OPTIONS = [
@@ -75,6 +78,7 @@ export default function NotificacionesView() {
   const [filterType, setFilterType] = useState('');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showNewBadge, setShowNewBadge] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(false);
   const prevCountRef = useRef(0);
 
   // ── Subscribe ──
@@ -110,13 +114,14 @@ export default function NotificacionesView() {
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
 
   const unreadCount = getUnreadCount(notifications);
+  useTabBadge(unreadCount);
   const activeLabel = TYPE_OPTIONS.find((t) => t.value === filterType)?.label || 'Todas';
   const total = notifications.length;
 
   // ── Handlers ──
   const handleMarkRead = useCallback(async (notif) => {
     if (!notif.read) {
-      await markAsRead(activeBranchId, user?.email, notif.id);
+      await markAsRead(activeBranchId, user?.email, notif.id, true); // trackClick
     }
     if (notif.url) {
       navigate(notif.url);
@@ -131,7 +136,7 @@ export default function NotificacionesView() {
   }, [activeBranchId, user?.email, notifications, showToast]);
 
   return (
-    <div className="min-h-screen bg-cm-bg">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-cm-bg">
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 bg-cm-surface/80 backdrop-blur-xl border-b border-cm-border">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
@@ -187,7 +192,7 @@ export default function NotificacionesView() {
               )}
             </AnimatePresence>
 
-            {unreadCount > 0 && (
+            {unreadCount > 0 && !showPrefs && (
               <button
                 onClick={handleMarkAllRead}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-cm-accent bg-cm-accent/10 rounded-lg hover:bg-cm-accent/20 transition-colors"
@@ -196,10 +201,25 @@ export default function NotificacionesView() {
                 <span className="hidden sm:inline">Leer todas</span>
               </button>
             )}
+
+            <button
+              onClick={() => setShowPrefs(!showPrefs)}
+              className={`p-2 rounded-lg transition-colors ${
+                showPrefs
+                  ? 'bg-cm-accent/15 text-cm-accent'
+                  : 'text-cm-muted hover:bg-cm-bg-alt hover:text-cm-text'
+              }`}
+              title="Preferencias de notificación"
+            >
+              <Settings className="w-4.5 h-4.5" />
+            </button>
           </div>
         </div>
       </header>
 
+      {showPrefs ? (
+        <NotificationPreferencesPanel onClose={() => setShowPrefs(false)} />
+      ) : (
       <div className="max-w-4xl mx-auto p-4 space-y-4 pb-24">
 
         {/* ── Stats bar ── */}
@@ -293,61 +313,78 @@ export default function NotificacionesView() {
           </div>
         ) : (
           <div className="space-y-5">
-            {Object.entries(grouped).map(([dateLabel, items]) => (
-              <div key={dateLabel}>
-                <div className="flex items-center gap-2 mb-3 px-1">
-                  <span className="text-[10px] font-black text-cm-muted uppercase tracking-widest">{dateLabel}</span>
-                  <div className="flex-1 h-px bg-cm-border/50" />
-                  <span className="text-[9px] font-bold text-cm-muted tabular-nums">{items.length}</span>
-                </div>
-                <div className="space-y-1">
-                  {items.map((notif) => (
-                    <motion.button
-                      key={notif.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      onClick={() => handleMarkRead(notif)}
-                      className={`w-full text-left flex items-start gap-4 p-4 rounded-xl border transition-all ${
-                        !notif.read
-                          ? 'bg-cm-accent/[0.03] border-cm-accent/15 hover:border-cm-accent/30 hover:bg-cm-accent/[0.05]'
-                          : 'bg-cm-surface border-cm-border hover:border-cm-muted/30 hover:bg-cm-bg-alt/30'
-                      }`}
-                    >
-                      {/* Icon */}
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
-                        !notif.read ? 'bg-cm-accent/10 ring-1 ring-cm-accent/20' : 'bg-cm-bg-alt border border-cm-border/50'
-                      }`}>
-                        {NOTIF_ICONS[notif.type] || '🔔'}
-                      </div>
+            {Object.entries(grouped).map(([dateLabel, items]) => {
+              // Sub-group by type within each date (3min window for stacking)
+              const subGroups = groupNotifications(items, 3 * 60 * 1000);
+              const totalItems = items.length;
+              return (
+                <div key={dateLabel}>
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <span className="text-[10px] font-black text-cm-muted uppercase tracking-widest">{dateLabel}</span>
+                    <div className="flex-1 h-px bg-cm-border/50" />
+                    <span className="text-[9px] font-bold text-cm-muted tabular-nums">{totalItems}</span>
+                  </div>
+                  <div className="space-y-1">
+                    {subGroups.map((group) => {
+                      const isUnread = group.items.some((n) => !n.read);
+                      const notif = group.latest;
+                      return (
+                        <motion.button
+                          key={group.items[0].id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={() => handleMarkRead(notif)}
+                          className={`w-full text-left flex items-start gap-4 p-4 rounded-xl border transition-all ${
+                            isUnread
+                              ? 'bg-cm-accent/[0.03] border-cm-accent/15 hover:border-cm-accent/30 hover:bg-cm-accent/[0.05]'
+                              : 'bg-cm-surface border-cm-border hover:border-cm-muted/30 hover:bg-cm-bg-alt/30'
+                          }`}
+                        >
+                          {/* Icon */}
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                            isUnread ? 'bg-cm-accent/10 ring-1 ring-cm-accent/20' : 'bg-cm-bg-alt border border-cm-border/50'
+                          }`}>
+                            {NOTIF_ICONS[group.type] || '🔔'}
+                          </div>
 
-                      {/* Content */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm ${!notif.read ? 'font-black text-cm-text' : 'font-semibold text-cm-text-secondary'}`}>
-                            {notif.title}
-                          </p>
-                          {!notif.read && (
-                            <span className="w-2 h-2 rounded-full bg-cm-accent shrink-0 mt-1.5 shadow-sm shadow-cm-accent/50" />
-                          )}
-                        </div>
-                        {notif.body && (
-                          <p className={`text-xs mt-0.5 line-clamp-2 ${!notif.read ? 'text-cm-text-secondary' : 'text-cm-muted'}`}>
-                            {notif.body}
-                          </p>
-                        )}
-                        <p className="text-[10px] text-cm-text-tertiary mt-1.5 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {timeAgo(notif._createdAt_client || notif.createdAt)}
-                        </p>
-                      </div>
-                    </motion.button>
-                  ))}
+                          {/* Content */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className={`text-sm ${isUnread ? 'font-black text-cm-text' : 'font-semibold text-cm-text-secondary'}`}>
+                                  {getGroupTitle(group)}
+                                </p>
+                                {group.count > 1 && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 mt-1 bg-cm-accent/10 rounded text-[9px] font-bold text-cm-accent">
+                                    {group.count}
+                                  </span>
+                                )}
+                              </div>
+                              {isUnread && (
+                                <span className="w-2 h-2 rounded-full bg-cm-accent shrink-0 mt-1.5 shadow-sm shadow-cm-accent/50" />
+                              )}
+                            </div>
+                            {notif.body && (
+                              <p className={`text-xs mt-0.5 line-clamp-2 ${isUnread ? 'text-cm-text-secondary' : 'text-cm-muted'}`}>
+                                {notif.body}
+                              </p>
+                            )}
+                            <p className="text-[10px] text-cm-text-tertiary mt-1.5 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {group.timeLabel}
+                            </p>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

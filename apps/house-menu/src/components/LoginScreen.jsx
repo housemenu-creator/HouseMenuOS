@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { LogIn, Loader2, AlertCircle, Mail } from 'lucide-react';
 import logo from '../assets/logo.jpg';
+import { useAuth } from '../context/AuthContext';
+import WorkspaceSelector from './WorkspaceSelector';
 
 export default function LoginScreen({
   title,
@@ -14,6 +16,11 @@ export default function LoginScreen({
   firebaseReady,
   devUsers,
 }) {
+  const { pendingWorkspaces } = useAuth();
+
+  if (pendingWorkspaces && pendingWorkspaces.length > 0) {
+    return <WorkspaceSelector />;
+  }
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
 
@@ -24,10 +31,10 @@ export default function LoginScreen({
   };
 
   return (
-    <div className="min-h-screen bg-cm-bg flex items-center justify-center p-4">
+    <div className="flex-1 min-h-0 bg-cm-bg flex items-center justify-center p-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border p-8 max-w-sm w-full text-center space-y-6 bg-white"
+        className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border p-8 max-w-sm w-full text-center space-y-6 bg-cm-surface"
       >
         <div className="flex flex-col items-center">
           <img src={logo} alt="House Logo" className="w-20 h-20 rounded-2xl object-cover border border-cm-border shadow-cm-md mx-auto" />
@@ -124,7 +131,7 @@ export default function LoginScreen({
         <button
           type="submit"
           disabled={isLoading || !email || !pin}
-          className="btn-culinary w-full flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 disabled:opacity-50 bg-cm-accent text-white font-black rounded-xl py-3 hover:bg-cm-accent-hover transition-colors"
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />

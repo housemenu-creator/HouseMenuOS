@@ -50,7 +50,7 @@ export default function AreaFormModal({ area, onSave, onClose }) {
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.15 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-2xl shadow-2xl border border-cm-border w-full max-w-lg overflow-hidden"
+          className="bg-cm-surface rounded-2xl shadow-2xl border border-cm-border w-full max-w-lg overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-cm-border">
@@ -145,7 +145,7 @@ export default function AreaFormModal({ area, onSave, onClose }) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl border border-cm-border w-[320px] p-4"
+            className="bg-cm-surface rounded-2xl shadow-2xl border border-cm-border w-[320px] p-4"
           >
             <p className="text-sm font-bold text-cm-text mb-4">¿Descartar cambios sin guardar?</p>
             <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ function ChecklistSection({ label, description, items, onChange, tallyClass = 't
             <div className="flex items-center gap-2">
               <input type="text" value={item.name} onChange={(e) => updateItem(i, 'name', e.target.value)}
                 placeholder="Nombre del item..."
-                className="flex-1 px-2 py-1.5 rounded-lg border-2 border-cm-border bg-white text-xs font-bold text-cm-text focus:border-cm-accent focus:outline-none transition-colors placeholder:text-cm-muted"
+                className="flex-1 px-2 py-1.5 rounded-lg border-2 border-cm-border bg-cm-surface text-xs font-bold text-cm-text focus:border-cm-accent focus:outline-none transition-colors placeholder:text-cm-muted"
               />
               {items.length > 1 && (
                 <button onClick={() => removeItem(i)}
@@ -200,7 +200,7 @@ function ChecklistSection({ label, description, items, onChange, tallyClass = 't
             </div>
             <input type="text" value={item.description} onChange={(e) => updateItem(i, 'description', e.target.value)}
               placeholder="Descripción opcional..."
-              className="w-full px-2 py-1 rounded-lg border border-cm-border bg-white text-[10px] font-medium text-cm-text-secondary focus:border-cm-accent focus:outline-none transition-colors placeholder:text-cm-muted"
+              className="w-full px-2 py-1 rounded-lg border border-cm-border bg-cm-surface text-[10px] font-medium text-cm-text-secondary focus:border-cm-accent focus:outline-none transition-colors placeholder:text-cm-muted"
             />
           </div>
         ))}

@@ -55,6 +55,19 @@ export async function unregisterFCMToken(branchId, userId) {
   await set(tokenRef, null);
 }
 
+export async function registerCustomerFCMToken(uid, token) {
+  if (!uid || !token) return;
+  const key = safePathKey(uid);
+  const deviceId = `web_${Date.now()}`;
+  const tokenRef = ref(db, `customers/${key}/fcmTokens/${deviceId}`);
+  await set(tokenRef, {
+    token,
+    platform: 'web',
+    updatedAt: new Date().toISOString(),
+  });
+  onDisconnect(tokenRef).remove();
+}
+
 export function onForegroundMessage(callback) {
   if (!messaging) return () => {};
   const unsubscribe = onMessage(messaging, (payload) => {

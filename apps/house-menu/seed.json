@@ -1,0 +1,39 @@
+{
+  "branches_config": {
+    "monteverde": {
+      "active": true,
+      "address": "",
+      "deliveryEnabled": false,
+      "deliveryFee": 5,
+      "freeThreshold": 0,
+      "name": "Monteverde",
+      "packagingItems": [
+        { "id": "bottle", "name": "Botella", "price": 0.50 },
+        { "id": "halfL", "name": "1/2 Litro", "price": 1.00 },
+        { "id": "liter", "name": "1 Litro", "price": 1.00 }
+      ],
+      "phone": "",
+      "schedule": "",
+      "tableCount": 0
+    }
+  },
+  "tenants": {
+    "default": {
+      "employees": {
+        "TnrRAY7KTPXDnTn7zpSFEnhMOVm2": {
+          "branches": { "monteverde": true },
+          "firebaseUid": "TnrRAY7KTPXDnTn7zpSFEnhMOVm2",
+          "homeBranch": "monteverde",
+          "profile": {
+            "active": true,
+            "createdAt": "2026-06-18T15:31:01.823Z",
+            "email": "housepys.contacto@gmail.com",
+            "name": "House Productos y Servicios",
+            "updatedAt": "2026-06-18T15:31:01.823Z"
+          },
+          "role": "superadmin"
+        }
+      }
+    }
+  }
+}

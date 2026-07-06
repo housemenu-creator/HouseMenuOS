@@ -9,14 +9,17 @@
  *
  * Subscribes to RTDB notifications and shows unread badge + dropdown.
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../lib/routes';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, CheckCheck, Loader2, Clock } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, Clock, Moon } from 'lucide-react';
 import { subscribeToNotifications, markAsRead, markAllAsRead, getUnreadCount, NOTIF_ICONS } from '../lib/notificationService';
 import { playChime } from '../lib/notificationSound';
 import { useCommStore } from '../comm/store/commStore';
+import { subscribeToDNDConfig, isDNDActive, toggleDND } from '../lib/notificationPreferences';
+import { groupNotifications, getGroupTitle } from '../lib/notificationGrouping';
+import useTabBadge from '../hooks/useTabBadge';
 
 function timeAgo(dateVal) {
   if (!dateVal) return '';
@@ -36,6 +39,7 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dndConfig, setDNDConfig] = useState(null);
   const prevCountRef = useRef(0);
   const dropdownRef = useRef(null);
 
@@ -48,6 +52,12 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
       setLoading(false);
     });
     return unsub;
+  }, [branchId, userId]);
+
+  // Subscribe to DND config
+  useEffect(() => {
+    if (!branchId || !userId) return;
+    return subscribeToDNDConfig(branchId, userId, setDNDConfig);
   }, [branchId, userId]);
 
   // Play chime on new notification
@@ -73,9 +83,12 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
 
   const unreadCount = getUnreadCount(notifications);
 
+  // Tab badge with unread count
+  useTabBadge(unreadCount);
+
   const handleMarkRead = useCallback(async (notif) => {
     if (notif.read) return;
-    await markAsRead(branchId, userId, notif.id);
+    await markAsRead(branchId, userId, notif.id, true); // trackClick = true
     if (notif.type === 'comm_message') {
       useCommStore.getState().setPanelOpen(true);
     } else if (notif.url) {
@@ -89,6 +102,22 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
     await markAllAsRead(branchId, userId, unreadIds);
   }, [branchId, userId, notifications]);
 
+  // Group notifications for display
+  const groups = useMemo(() => {
+    const sliced = notifications.slice(0, 20);
+    const grouped = groupNotifications(sliced);
+    // Sort: unread groups first, then by timestamp
+    return grouped.sort((a, b) => {
+      const aUnread = a.items.some((n) => !n.read) ? 0 : 1;
+      const bUnread = b.items.some((n) => !n.read) ? 0 : 1;
+      if (aUnread !== bUnread) return aUnread - bUnread;
+      const aTs = a.latest._createdAt_client || a.latest.createdAt || 0;
+      const bTs = b.latest._createdAt_client || b.latest.createdAt || 0;
+      return bTs - aTs; // newest first
+    });
+  }, [notifications]);
+
+  // Flatten groups for mark-all-read (still marks individual notes)
   const recent = notifications.slice(0, 20);
 
   return (
@@ -131,6 +160,22 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
               )}
             </div>
 
+            {/* DND status bar */}
+            {dndConfig && isDNDActive(dndConfig).quiet && (
+              <div className="flex items-center justify-between px-4 py-2 bg-cm-accent/[0.05] border-b border-cm-accent/10">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-cm-accent">
+                  <Moon className="w-3 h-3" />
+                  No molestar activo
+                </span>
+                <button
+                  onClick={() => toggleDND(branchId, userId, false)}
+                  className="text-[9px] font-bold text-cm-muted hover:text-cm-text transition-colors"
+                >
+                  Desactivar
+                </button>
+              </div>
+            )}
+
             {/* List */}
             <div className="max-h-80 overflow-y-auto">
               {loading ? (
@@ -145,34 +190,55 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
                 </div>
               ) : (
                 <div className="divide-y divide-cm-border/50">
-                  {recent.map((notif) => (
-                    <button
-                      key={notif.id}
-                      onClick={() => handleMarkRead(notif)}
-                      className={`w-full text-left px-4 py-3 hover:bg-cm-bg-alt transition-colors flex items-start gap-3 ${
-                        !notif.read ? 'bg-cm-accent/[0.03]' : ''
-                      }`}
-                    >
-                      <span className="text-lg shrink-0 mt-0.5">
-                        {NOTIF_ICONS[notif.type] || '🔔'}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-xs ${!notif.read ? 'font-black text-cm-text' : 'font-medium text-cm-text-secondary'}`}>
-                          {notif.title}
-                        </p>
-                        {notif.body && (
-                          <p className="text-[11px] text-cm-muted mt-0.5 line-clamp-2">{notif.body}</p>
+                  {groups.map((group) => {
+                    // Use the latest item in the group as the representative
+                    const notif = group.latest;
+                    const isUnread = group.items.some((n) => !n.read);
+                    return (
+                      <button
+                        key={group.items[0].id}
+                        onClick={() => {
+                          // Mark all items in group as read (track click on the latest)
+                          group.items.forEach((n, idx) => {
+                            if (!n.read) markAsRead(branchId, userId, n.id, idx === group.items.length - 1);
+                          });
+                          if (notif.type === 'comm_message') {
+                            useCommStore.getState().setPanelOpen(true);
+                          } else if (notif.url) {
+                            onNavigate(notif.url);
+                          }
+                          setOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 hover:bg-cm-bg-alt transition-colors flex items-start gap-3 ${
+                          isUnread ? 'bg-cm-accent/[0.03]' : ''
+                        }`}
+                      >
+                        <span className="text-lg shrink-0 mt-0.5">
+                          {NOTIF_ICONS[notif.type] || '🔔'}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs ${isUnread ? 'font-black text-cm-text' : 'font-medium text-cm-text-secondary'}`}>
+                            {getGroupTitle(group)}
+                          </p>
+                          {group.count > 1 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-cm-accent/10 rounded text-[9px] font-bold text-cm-accent mt-1">
+                              {group.count}
+                            </span>
+                          )}
+                          {notif.body && (
+                            <p className="text-[11px] text-cm-muted mt-0.5 line-clamp-1">{notif.body}</p>
+                          )}
+                          <p className="text-[9px] text-cm-text-tertiary mt-1 flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" />
+                            {group.timeLabel}
+                          </p>
+                        </div>
+                        {isUnread && (
+                          <span className="w-2 h-2 rounded-full bg-cm-accent shrink-0 mt-2" />
                         )}
-                        <p className="text-[9px] text-cm-text-tertiary mt-1 flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" />
-                          {timeAgo(notif._createdAt_client || notif.createdAt)}
-                        </p>
-                      </div>
-                      {!notif.read && (
-                        <span className="w-2 h-2 rounded-full bg-cm-accent shrink-0 mt-2" />
-                      )}
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 

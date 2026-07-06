@@ -125,7 +125,7 @@ export default function MarketingHighlights() {
               "{displayTestimonials[current]?.text}"
             </p>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cm-accent/40 to-orange-500/20 border border-cm-accent/30 flex items-center justify-center font-black text-cm-accent text-sm">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cm-accent/40 to-cm-warning/20 border border-cm-accent/30 flex items-center justify-center font-black text-cm-accent text-sm">
                 {displayTestimonials[current]?.author?.charAt(0)}
               </div>
               <div>
@@ -190,7 +190,7 @@ export default function MarketingHighlights() {
       </motion.div>
 
       {/* 3. Iron Guarantee */}
-      <motion.div variants={itemVariants} className="bg-gradient-to-r from-amber-950/20 via-orange-950/10 to-amber-950/20 border-2 border-cm-accent/40 rounded-3xl p-5 relative overflow-hidden shadow-cm-lg">
+      <motion.div variants={itemVariants} className="bg-gradient-to-r from-cm-warning/10 via-cm-accent/5 to-cm-warning/10 border-2 border-cm-accent/40 rounded-3xl p-5 relative overflow-hidden shadow-cm-lg">
         <div className="absolute top-0 right-0 w-32 h-32 bg-cm-accent/10 rounded-full blur-[60px] pointer-events-none" />
         <div className="flex gap-4 items-start relative z-10">
           <div className="p-3 rounded-2xl bg-cm-accent text-white shadow-lg shadow-cm-accent/20 shrink-0">

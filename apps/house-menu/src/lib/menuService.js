@@ -70,7 +70,13 @@ export const menuService = {
       description: "Descripción del plato...",
       image: "",
       isWizard: false,
-      steps: []
+      steps: [],
+      // ── Multicanal ──
+      channels: { carta: true, kiosko: true, landing: false, delivery: true },
+      tags: [],
+      sortOrder: 0,
+      status: "published",
+      schedule: { enabled: false, start: "12:00", end: "22:00" },
     };
     await set(newProductRef, newProduct);
     return newProductRef.key;

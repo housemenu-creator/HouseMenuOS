@@ -8,7 +8,7 @@ function SkeletonBar({ className = '' }) {
 
 export function CardSkeleton() {
   return (
-    <div className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border bg-white p-4 space-y-3">
+    <div className="bg-cm-surface rounded-xl shadow-cm-sm border border-cm-border bg-cm-surface p-4 space-y-3">
       <SkeletonBar className="h-4 w-3/4" />
       <SkeletonBar className="h-3 w-1/2" />
       <SkeletonBar className="h-3 w-2/3" />
@@ -27,7 +27,7 @@ export function KDSSkeleton() {
         <div key={col} className="flex-1 min-w-[280px] space-y-3">
           <SkeletonBar className="h-6 w-24 mb-4" />
           {[1, 2].map((card) => (
-            <div key={card} className="bg-white/5 rounded-xl p-4 space-y-2 border border-white/10">
+            <div key={card} className="bg-cm-surface/50 rounded-xl p-4 space-y-2 border border-cm-border/20 shadow-cm-sm">
               <SkeletonBar className="h-4 w-3/4" />
               <SkeletonBar className="h-3 w-1/2" />
               <SkeletonBar className="h-3 w-2/3" />

@@ -57,26 +57,23 @@ export const branchService = {
       const newBranchRef = push(branchesRef);
       const branchId = newBranchRef.key;
       const tableCount = branchData.tableCount ?? 0;
-      await set(newBranchRef, {
-        name: branchData.name || 'Nueva Sucursal',
-        address: branchData.address || '',
-        phone: branchData.phone || '',
-        coordinates: {
-          lat: branchData.coordinates?.lat ?? null,
-          lng: branchData.coordinates?.lng ?? null,
-        },
-        schedule: branchData.schedule || '',
+      // Guarda TODO lo que viene del form, con defaults solo para campos críticos
+      const { id, ...cleanData } = branchData; // eliminar id por si acaso
+      const payload = {
+        ...cleanData,
         active: true,
         tableCount,
-        deliveryEnabled: branchData.deliveryEnabled ?? false,
-        deliveryFee: branchData.deliveryFee ?? 5,
-        freeThreshold: branchData.freeThreshold ?? 0,
-        packagingItems: branchData.packagingItems || [
-          { id: 'bottle', name: 'Botella', icon: '🍾', price: 0.50 },
-          { id: 'halfL', name: '1/2 Litro', icon: '📦', price: 1.00 },
-          { id: 'liter', name: '1 Litro', icon: '📦', price: 1.00 },
-        ],
-      });
+        coordinates: {
+          lat: cleanData.coordinates?.lat ?? null,
+          lng: cleanData.coordinates?.lng ?? null,
+        },
+        packagingItems: cleanData.packagingItems?.length > 0
+          ? cleanData.packagingItems
+          : [{ id: 'bottle', name: 'Botella', icon: '🍾', price: 0.50 },
+             { id: 'halfL', name: '1/2 Litro', icon: '📦', price: 1.00 },
+             { id: 'liter', name: '1 Litro', icon: '📦', price: 1.00 }],
+      };
+      await set(newBranchRef, payload);
       // Auto-generate tables array for the Mozo module
       if (tableCount > 0) {
         const tablesRef = ref(db, `branches/${branchId}/tables`);
@@ -84,7 +81,7 @@ export const branchService = {
       }
       return { success: true, branchId };
     } catch (error) {
-      console.error('branchService.createBranch error:', error);
+      console.error('[createBranch] ERROR:', error.code, error.message, error);
       return { success: false, branchId: null };
     }
   },
@@ -104,7 +101,25 @@ export const branchService = {
   },
 
   /**
-   * Elimina una sucursal de la configuración.
+   * Cambia el estado activo/inactivo de una sucursal.
+   * Es la acción principal — reemplaza al borrado directo.
+   */
+  async setBranchActive(branchId, isActive) {
+    try {
+      const branchRef = ref(db, branchesConfigByIdPath(branchId));
+      await update(branchRef, { active: isActive });
+      return { success: true };
+    } catch (error) {
+      console.error('branchService.setBranchActive error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Elimina UNA SUCURSAL de forma PERMANENTE.
+   * Solo borra branches_config/{branchId}.
+   * Los datos operativos (branches/{branchId}/...) quedan huérfanos.
+   * No debería usarse — preferir setBranchActive.
    */
   async deleteBranch(branchId) {
     try {
@@ -113,7 +128,7 @@ export const branchService = {
       return { success: true };
     } catch (error) {
       console.error('branchService.deleteBranch error:', error);
-      return { success: false };
+      return { success: false, error: error.message };
     }
   },
 

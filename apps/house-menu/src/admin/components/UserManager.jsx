@@ -162,7 +162,7 @@ function UserFormModal({ user, roles, onSave, onClose }) {
 }
 
 export default function UserManager() {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState({});
   const [editingUser, setEditingUser] = useState(null);
@@ -176,7 +176,17 @@ export default function UserManager() {
   }, []);
 
   const handleDelete = async (userId) => {
-    await deleteUser(userId);
+    const target = users.find(u => u.id === userId);
+    // Protección UI: no eliminar admin/superadmin si no sos superadmin
+    if (target && (target.role === 'admin' || target.role === 'superadmin') && user?.role !== 'superadmin') {
+      alert(`No podés eliminar un usuario con rol ${target.role}. Solo un superadmin puede hacerlo.`);
+      setConfirmDelete(null);
+      return;
+    }
+    const result = await deleteUser(userId, user?.email, user?.role);
+    if (!result.success) {
+      alert(result.error || 'Error al eliminar usuario');
+    }
     setConfirmDelete(null);
   };
 
@@ -239,10 +249,12 @@ export default function UserManager() {
                               className="p-2 rounded-lg bg-cm-info/10 text-cm-info hover:bg-cm-info/20 transition-colors" title="Editar">
                               <Pencil className="w-4 h-4" />
                             </button>
+                          {((u.role === 'admin' || u.role === 'superadmin') && user?.role !== 'superadmin') ? null : (
                             <button onClick={() => setConfirmDelete(u)}
                               className="p-2 rounded-lg bg-cm-error/10 text-cm-error hover:bg-cm-error/20 transition-colors" title="Eliminar">
                               <Trash2 className="w-4 h-4" />
                             </button>
+                          )}
                           </>
                         )}
                       </div>

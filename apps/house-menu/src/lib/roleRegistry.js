@@ -39,7 +39,7 @@ export const ROLE_REGISTRY = {
     permissions: { ...allPermissions(), 'system:audit': true, 'system:manage': true },
     loginScreen: { title: 'Admin Hub', subtitle: 'Gestión del Sistema · House', icon: Settings },
     defaultUser: { email: 'super@house.local', name: 'Super Admin', pin: 'super' },
-    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'roles', 'audit', 'reservations'],
+    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'roles', 'audit', 'reservations', 'branding'],
   },
   admin: {
     name: 'Administrador',
@@ -47,7 +47,7 @@ export const ROLE_REGISTRY = {
     permissions: allPermissions(),
     loginScreen: { title: 'Admin Hub', subtitle: 'Gestión y Analítica · House', icon: Settings },
     defaultUser: { email: 'admin@house.local', name: 'Admin', pin: 'admin' },
-    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'reservations'],
+    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'reservations', 'branding'],
   },
   cajero: {
     name: 'Cajero',

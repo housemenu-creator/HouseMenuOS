@@ -8,20 +8,20 @@ function ReceiptContent({ orderId, cartItems, branchName, mesa }) {
   const subtotal = cartItems.reduce((s, i) => s + (i.price || 0), 0);
   const date = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   return (
-    <div id="receipt-content" className="bg-white text-black p-6 text-xs leading-relaxed font-sans" style={{ width: '320px' }}>
+    <div id="receipt-content" className="bg-cm-surface text-black p-6 text-xs leading-relaxed font-sans" style={{ width: '320px' }}>
       {/* Header */}
-      <div className="text-center border-b-2 border-dashed border-gray-300 pb-4 mb-4">
+      <div className="text-center border-b-2 border-dashed border-cm-border pb-4 mb-4">
         <p className="text-sm font-bold tracking-wider">{branchName || 'House Portal'}</p>
-        <p className="text-[10px] text-gray-500 mt-1">COMPROBANTE DE PEDIDO</p>
-        <p className="text-[10px] text-gray-500">#{orderId?.slice(-8).toUpperCase()}</p>
-        <p className="text-[10px] text-gray-400">{date}</p>
-        {mesa && <p className="text-[10px] text-gray-500 mt-1">Mesa: {mesa}</p>}
+        <p className="text-[10px] text-cm-muted mt-1">COMPROBANTE DE PEDIDO</p>
+        <p className="text-[10px] text-cm-muted">#{orderId?.slice(-8).toUpperCase()}</p>
+        <p className="text-[10px] text-cm-text-secondary">{date}</p>
+        {mesa && <p className="text-[10px] text-cm-muted mt-1">Mesa: {mesa}</p>}
       </div>
 
       {/* Items */}
       <table className="w-full mb-4">
         <thead>
-          <tr className="border-b border-gray-200 text-[9px] text-gray-500 uppercase tracking-wider">
+          <tr className="border-b border-cm-border text-[9px] text-cm-muted uppercase tracking-wider">
             <th className="text-left pb-1">Item</th>
             <th className="text-right pb-1">Precio</th>
           </tr>
@@ -32,7 +32,7 @@ function ReceiptContent({ orderId, cartItems, branchName, mesa }) {
               <td className="py-1">
                 <span className="font-semibold">{item.name}</span>
                 {item.details?.length > 0 && (
-                  <div className="text-[9px] text-gray-400">{item.details.join(', ')}</div>
+                  <div className="text-[9px] text-cm-text-secondary">{item.details.join(', ')}</div>
                 )}
               </td>
               <td className="text-right py-1">{formatCurrency(item.price)}</td>
@@ -42,13 +42,13 @@ function ReceiptContent({ orderId, cartItems, branchName, mesa }) {
       </table>
 
       {/* Total */}
-      <div className="border-t-2 border-dashed border-gray-300 pt-3 flex justify-between text-sm font-bold">
+      <div className="border-t-2 border-dashed border-cm-border pt-3 flex justify-between text-sm font-bold">
         <span>TOTAL</span>
         <span>{formatCurrency(subtotal)}</span>
       </div>
 
       {/* Footer */}
-      <div className="text-center mt-6 text-[9px] text-gray-400 border-t border-dashed border-gray-300 pt-4">
+      <div className="text-center mt-6 text-[9px] text-cm-text-secondary border-t border-dashed border-cm-border pt-4">
         <p>Gracias por tu pedido</p>
         <p className="mt-1">Rastrea tu pedido con el código: {orderId?.slice(-4).toUpperCase()}</p>
       </div>
@@ -56,7 +56,7 @@ function ReceiptContent({ orderId, cartItems, branchName, mesa }) {
   );
 }
 
-export default function OrderConfirmation({ open, orderId, cartItems, branchId, branchName, mesa, onTrackOrder, onNewOrder }) {
+export default function OrderConfirmation({ open, orderId, cartItems, branchId, branchName, mesa, paymentMethod, onTrackOrder, onNewOrder }) {
   const printingRef = useRef(false);
 
   const handleDownloadPDF = useCallback(async () => {
@@ -101,7 +101,11 @@ export default function OrderConfirmation({ open, orderId, cartItems, branchId, 
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <p className="text-white/70 text-xs font-bold tracking-[0.25em] uppercase mb-1">Pedido confirmado</p>
               <h1 className="text-4xl text-white">¡LISTO!</h1>
-              <p className="text-white/80 text-sm mt-2">Tu pedido está en camino a la cocina 🍳</p>
+              <p className="text-white/80 text-sm mt-2">
+                {paymentMethod === 'yape_plin'
+                  ? 'Estamos esperando la confirmación de tu pago 💳'
+                  : 'Tu pedido está en camino a la cocina 🍳'}
+              </p>
             </motion.div>
           </div>
 

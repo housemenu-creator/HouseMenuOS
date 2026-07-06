@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { marketingService } from '../../lib/marketingService';
 import { flashOfferService } from '../../lib/flashOfferService';
+import { createPromotion, updatePromotion, deletePromotion, getAllPromotions } from '../../lib/customerPromoService';
 import { useToast } from '../../components/ToastContext';
 import { ref, set, update, onValue, get } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
@@ -119,6 +120,7 @@ const SECTIONS = [
   { key: 'campaigns', label: 'Campañas', icon: Megaphone },
   { key: 'banners', label: 'Banners', icon: Image },
   { key: 'promos', label: 'Promos', icon: Tag },
+  { key: 'customer_promos', label: 'Promos Clientes', icon: BadgePercent },
   { key: 'testimonials', label: 'Testimonios', icon: MessageSquare },
   { key: 'flash_offers', label: 'Flash Offers', icon: Zap },
   { key: 'kitchen_hours', label: 'Horarios', icon: Clock },
@@ -201,6 +203,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
   const [campaigns, setCampaigns] = useState([]);
   const [banners, setBanners] = useState([]);
   const [promos, setPromos] = useState([]);
+  const [customerPromos, setCustomerPromos] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [flashOffers, setFlashOffers] = useState([]);
   const [kitchenHours, setKitchenHours] = useState([
@@ -320,6 +323,9 @@ export default function MarketingTab({ activeBranchId, branches }) {
         }
       }
     );
+
+    // Customer promos (global, no branch-specific)
+    getAllPromotions().then(setCustomerPromos).catch(() => {});
 
     setLoading(false);
 
@@ -493,6 +499,20 @@ export default function MarketingTab({ activeBranchId, branches }) {
         const items = form.items
           ? form.items.split('\n').map((s) => s.trim()).filter(Boolean).map((name) => ({ name }))
           : [];
+        // Enrich items with product data from catalog
+        const productIds = form.productIds || [];
+        const enrichedItems = items.map((item) => {
+          // Try to match by name first
+          const match = catalogProducts.find(p => p.name === item.name);
+          return match ? { ...item, productId: match.id } : item;
+        });
+        // Add any selected products not already in items
+        productIds.forEach((pid) => {
+          if (!enrichedItems.some(i => i.productId === pid)) {
+            const p = catalogProducts.find(cp => cp.id === pid);
+            if (p) enrichedItems.push({ name: p.name, productId: p.id });
+          }
+        });
         const offerData = {
           title: form.title,
           subtitle: form.subtitle,
@@ -502,7 +522,8 @@ export default function MarketingTab({ activeBranchId, branches }) {
           discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
           startTime: form.startTime ? new Date(form.startTime).getTime() : Date.now(),
           endTime: form.endTime ? new Date(form.endTime).getTime() : Date.now() + 60 * 60 * 1000,
-          items,
+          items: enrichedItems,
+          productIds,
           isActive: true,
         };
         if (editing?.id) {
@@ -510,6 +531,26 @@ export default function MarketingTab({ activeBranchId, branches }) {
         } else {
           await flashOfferService.createFlashOffer(activeBranchId, offerData);
         }
+      } else if (section === 'customer_promos') {
+        const promoData = {
+          title: form.title,
+          description: form.description,
+          type: form.type || 'bonus_points',
+          value: Number(form.value) || 0,
+          targetSegment: form.targetSegment || 'all',
+          startsAt: form.startsAt || '',
+          endsAt: form.endsAt || '',
+          terms: form.terms || '',
+          imageUrl: form.imageUrl || '',
+          branchIds: selectedBranchIds,
+          productIds: form.productIds || [],
+        };
+        if (editing?.id) {
+          await updatePromotion(editing.id, promoData);
+        } else {
+          await createPromotion(promoData);
+        }
+        await getAllPromotions().then(setCustomerPromos);
       }
 
       showToast(editing ? 'Actualizado' : 'Creado');
@@ -530,6 +571,13 @@ export default function MarketingTab({ activeBranchId, branches }) {
         showToast('Oferta flash eliminada');
       } else {
         const branchIds = item.branchIds?.length > 0 ? item.branchIds : [activeBranchId];
+        if (section === 'customer_promos') {
+          await deletePromotion(id);
+          await getAllPromotions().then(setCustomerPromos);
+          showToast('Promoción eliminada');
+          setActionLoading(null);
+          return;
+        }
         const deleteMap = {
           campaigns: marketingService.deleteCampaign,
           banners: marketingService.deleteBanner,
@@ -554,6 +602,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
       else if (section === 'banners') await marketingService.updateBanner(activeBranchId, item.id, { isActive: next });
       else if (section === 'promos') await marketingService.updatePromo(activeBranchId, item.id, { isActive: next });
       else if (section === 'testimonials') await marketingService.updateTestimonial(activeBranchId, item.id, { isActive: next });
+      else if (section === 'customer_promos') await updatePromotion(item.id, { active: next });
     } catch (err) {
       showToast('Error al cambiar estado', 'error');
     }
@@ -634,6 +683,27 @@ export default function MarketingTab({ activeBranchId, branches }) {
                     <Field label="Subtítulo Hero" value={form.creatives.heroSubtitle} onChange={(v) => setForm((p) => ({ ...p, creatives: { ...p.creatives, heroSubtitle: v } }))} />
                     <Field label="CTA Texto" value={form.creatives.ctaText} onChange={(v) => setForm((p) => ({ ...p, creatives: { ...p.creatives, ctaText: v } }))} />
                     <Field label="CTA Link" value={form.creatives.ctaLink} onChange={(v) => setForm((p) => ({ ...p, creatives: { ...p.creatives, ctaLink: v } }))} />
+                    <div>
+                      <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Productos destacados (opcional)</label>
+                      <div className="max-h-32 overflow-y-auto border border-cm-border rounded-lg divide-y divide-cm-border">
+                        {catalogProducts.length === 0 ? (
+                          <p className="text-xs text-cm-text-tertiary p-3">No hay productos en el catálogo</p>
+                        ) : catalogProducts.map((p) => {
+                          const ids = form.creatives.featuredProductIds || [];
+                          const selected = ids.includes(p.id);
+                          return (
+                            <label key={p.id} className={`flex items-center gap-3 px-3 py-1.5 cursor-pointer transition-colors text-sm ${selected ? 'bg-cm-accent/5' : 'hover:bg-cm-bg'}`}>
+                              <input type="checkbox" checked={selected} onChange={() => {
+                                const newIds = selected ? ids.filter(id => id !== p.id) : [...ids, p.id];
+                                setForm((prev) => ({ ...prev, creatives: { ...prev.creatives, featuredProductIds: newIds } }));
+                              }} className="rounded border-cm-border text-cm-accent focus:ring-cm-accent" />
+                              <span className="flex-1 font-semibold text-cm-text">{p.name}</span>
+                              <span className="text-xs font-bold text-cm-muted">S/ {Number(p.price || 0).toFixed(2)}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </>
                 )}
 
@@ -701,14 +771,87 @@ export default function MarketingTab({ activeBranchId, branches }) {
                       <Field label="Fin" type="datetime-local" value={form.endTime} onChange={(v) => updateForm('endTime', v)} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Items incluidos (uno por línea)</label>
+                      <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Productos incluidos</label>
+                      <div className="max-h-40 overflow-y-auto border border-cm-border rounded-lg divide-y divide-cm-border">
+                        {catalogProducts.length === 0 ? (
+                          <p className="text-xs text-cm-text-tertiary p-3">No hay productos en el catálogo</p>
+                        ) : catalogProducts.map((p) => {
+                          const selected = (form.productIds || []).includes(p.id);
+                          return (
+                            <label key={p.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors text-sm ${selected ? 'bg-cm-accent/5' : 'hover:bg-cm-bg'}`}>
+                              <input type="checkbox" checked={selected} onChange={() => {
+                                const ids = form.productIds || [];
+                                updateForm('productIds', selected ? ids.filter(id => id !== p.id) : [...ids, p.id]);
+                              }} className="rounded border-cm-border text-cm-accent focus:ring-cm-accent" />
+                              <span className="flex-1 font-semibold text-cm-text">{p.name}</span>
+                              <span className="text-xs font-bold text-cm-muted">S/ {Number(p.price || 0).toFixed(2)}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Descripción de items (opcional, uno por línea)</label>
                       <textarea
                         value={form.items}
                         onChange={(e) => updateForm('items', e.target.value)}
                         className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors resize-none"
-                        rows={4}
+                        rows={3}
                         placeholder={"Lomo Saltado de Lomo Fino\nChicha Morada Clásica\nSuspiro a la Limeña"}
                       />
+                    </div>
+                  </>
+                )}
+
+                {section === 'customer_promos' && (
+                  <>
+                    <Field label="Título" value={form.title} onChange={(v) => updateForm('title', v)} placeholder="🥳 Bonus de Bienvenida" />
+                    <Field label="Descripción" value={form.description} onChange={(v) => updateForm('description', v)} placeholder="Ganá 200 pts extra en tu primer pedido" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <SelectField label="Tipo" value={form.type} onChange={(v) => updateForm('type', v)}
+                        options={[
+                          { value: 'bonus_points', label: 'Puntos extra' },
+                          { value: 'discount_percent', label: '% Descuento' },
+                          { value: 'free_item', label: 'Item gratis' },
+                        ]} />
+                      <Field label="Valor" type="number" value={form.value} onChange={(v) => updateForm('value', v)}
+                        placeholder={form.type === 'bonus_points' ? '200' : form.type === 'discount_percent' ? '15' : '1'} />
+                    </div>
+                    <SelectField label="Segmento" value={form.targetSegment} onChange={(v) => updateForm('targetSegment', v)}
+                      options={[
+                        { value: 'all', label: 'Todos los clientes' },
+                        { value: 'tier:bronze', label: 'Tier Bronce' },
+                        { value: 'tier:silver', label: 'Tier Plata' },
+                        { value: 'tier:gold', label: 'Tier Oro' },
+                        { value: 'tier:platinum', label: 'Tier Platino' },
+                        { value: 'new_customers', label: 'Clientes nuevos' },
+                      ]} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Inicio" type="datetime-local" value={form.startsAt} onChange={(v) => updateForm('startsAt', v)} />
+                      <Field label="Fin" type="datetime-local" value={form.endsAt} onChange={(v) => updateForm('endsAt', v)} />
+                    </div>
+                    <Field label="Términos (opcional)" value={form.terms} onChange={(v) => updateForm('terms', v)} placeholder="Válido por 1 pedido por cliente" />
+                    <Field label="URL de imagen (opcional)" value={form.imageUrl} onChange={(v) => updateForm('imageUrl', v)} placeholder="https://..." />
+                    {branches?.length > 1 && <BranchPicker branches={branches} selected={selectedBranchIds} onChange={setSelectedBranchIds} />}
+                    <div>
+                      <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Productos aplicables (opcional — vacío = todos)</label>
+                      <div className="max-h-32 overflow-y-auto border border-cm-border rounded-lg divide-y divide-cm-border">
+                        {catalogProducts.length === 0 ? (
+                          <p className="text-xs text-cm-text-tertiary p-3">No hay productos en el catálogo</p>
+                        ) : catalogProducts.map((p) => {
+                          const ids = form.productIds || [];
+                          const selected = ids.includes(p.id);
+                          return (
+                            <label key={p.id} className={`flex items-center gap-3 px-3 py-1.5 cursor-pointer transition-colors text-sm ${selected ? 'bg-cm-accent/5' : 'hover:bg-cm-bg'}`}>
+                              <input type="checkbox" checked={selected} onChange={() => {
+                                updateForm('productIds', selected ? ids.filter(id => id !== p.id) : [...ids, p.id]);
+                              }} className="rounded border-cm-border text-cm-accent focus:ring-cm-accent" />
+                              <span className="flex-1 font-semibold text-cm-text">{p.name}</span>
+                              <span className="text-xs font-bold text-cm-muted">S/ {Number(p.price || 0).toFixed(2)}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
                   </>
                 )}
@@ -979,6 +1122,93 @@ export default function MarketingTab({ activeBranchId, branches }) {
     </SectionHeader>
   );
 
+  const renderCustomerPromos = () => (
+    <SectionHeader label="Promos para Clientes" count={customerPromos.length} onCreate={() => openCreate('customer_promos')}>
+      <div className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-cm-border bg-cm-bg-alt">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-cm-text-secondary uppercase tracking-wider">Título</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-cm-text-secondary uppercase tracking-wider">Segmento</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-cm-text-secondary uppercase tracking-wider">Tipo</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-cm-text-secondary uppercase tracking-wider">Valor</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-cm-text-secondary uppercase tracking-wider">Vigencia</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-cm-text-secondary uppercase tracking-wider">Estado</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-cm-text-secondary uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-cm-border">
+              {customerPromos.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-cm-text-secondary">Sin promos de clientes aún</td></tr>
+              ) : customerPromos.map((p) => {
+                const expired = p.endsAt && p.endsAt < Date.now();
+                const notStarted = p.startsAt && p.startsAt > Date.now();
+                return (
+                  <tr key={p.id} className="hover:bg-cm-accent/5 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-cm-text">{p.title}</p>
+                      <p className="text-xs text-cm-text-secondary truncate max-w-[200px]">{p.description}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cm-accent/10 text-cm-accent">
+                        {p.targetSegment === 'all' ? 'Todos' : p.targetSegment === 'new_customers' ? 'Nuevos' : p.targetSegment?.replace('tier:', '')?.charAt(0).toUpperCase() + p.targetSegment?.slice(6)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-cm-text-secondary">
+                      {p.type === 'bonus_points' ? 'Puntos' : p.type === 'discount_percent' ? '% Desc' : p.type === 'free_item' ? 'Free' : p.type}
+                    </td>
+                    <td className="px-4 py-3 text-center text-sm font-semibold text-cm-text">
+                      {p.type === 'bonus_points' ? `+${p.value} pts` : p.type === 'discount_percent' ? `${p.value}%` : p.value}
+                    </td>
+                    <td className="px-4 py-3 text-center text-xs text-cm-text-secondary">
+                      {notStarted ? 'Próximo' : expired ? 'Expirado' : p.endsAt ? new Date(p.endsAt).toLocaleDateString() : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {expired ? (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cm-error/10 text-cm-error">Expirado</span>
+                      ) : notStarted ? (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cm-warning/10 text-cm-warning">Programado</span>
+                      ) : (
+                        <button onClick={() => handleToggleActive('customer_promos', p)}
+                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.active ? 'bg-cm-success/10 text-cm-success' : 'bg-cm-error/10 text-cm-error'}`}>
+                          {p.active ? 'Activo' : 'Inactivo'}
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => {
+                          setEditing(p);
+                          setForm({
+                            title: p.title || '',
+                            description: p.description || '',
+                            type: p.type || 'bonus_points',
+                            value: p.value || '',
+                            targetSegment: p.targetSegment || 'all',
+                            startsAt: formatDate(p.startsAt),
+                            endsAt: formatDate(p.endsAt),
+                            terms: p.terms || '',
+                            imageUrl: p.imageUrl || '',
+                          });
+                          setShowModal(true);
+                        }} className="p-1.5 rounded-lg hover:bg-cm-accent/10 text-cm-text-secondary transition-colors"><Edit3 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => handleDelete('customer_promos', p)} disabled={actionLoading === p.id}
+                          className="p-1.5 rounded-lg hover:bg-cm-error/10 text-cm-text-secondary transition-colors disabled:opacity-50">
+                          {actionLoading === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </SectionHeader>
+  );
+
   const renderDashboard = () => {
     const totalViews = campaigns.reduce((s, c) => s + (c.analytics?.views || 0), 0);
     const totalConversions = campaigns.reduce((s, c) => s + (c.analytics?.conversions || 0), 0);
@@ -1235,7 +1465,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
           onClick={onChange}
           className={`w-10 h-6 rounded-full p-0.5 transition-colors relative shrink-0 ${isChecked ? 'bg-cm-accent' : 'bg-cm-border'}`}
         >
-          <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isChecked ? 'translate-x-4' : 'translate-x-0'}`} />
+          <div className={`w-5 h-5 rounded-full bg-cm-surface shadow-sm transition-transform ${isChecked ? 'translate-x-4' : 'translate-x-0'}`} />
         </button>
       </div>
     );
@@ -1792,6 +2022,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
       case 'promos': return renderPromos();
       case 'testimonials': return renderTestimonials();
       case 'flash_offers': return renderFlashOffers();
+      case 'customer_promos': return renderCustomerPromos();
       case 'kitchen_hours': return renderKitchenHours();
       case 'layout_config': return renderLayoutConfig();
       case 'stats': return renderStats();

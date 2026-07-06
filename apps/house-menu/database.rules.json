@@ -1,10 +1,33 @@
 {
   "rules": {
+    "global": {
+      "users": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      },
+      "emails_to_uid": {
+        ".read": "auth != null",
+        "$email": {
+          ".write": "auth != null"
+        }
+      },
+      "slugs": {
+        ".read": true,
+        "$slug": {
+          ".write": "auth != null"
+        }
+      }
+    },
     "tenants": {
       ".read": "auth != null",
       "$tenantId": {
         ".read": "auth != null",
         ".write": "auth != null",
+        "config": {
+          ".read": true
+        },
         "sessions": {
           "$token": {
             ".read": "auth.uid === root.child('tenants').child($tenantId).child('sessions').child($token).child('userId').val()",
@@ -66,6 +89,14 @@
           ".read": true,
           ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'vendedor')"
         },
+        "flash_offers": {
+          ".read": true,
+          ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')"
+        },
+        "flash_offers_active": {
+          ".read": true,
+          ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')"
+        },
         "config": {
           ".read": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')",
           ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')"
@@ -75,30 +106,20 @@
           ".write": "auth != null && root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'cajero'"
         },
         "_role_cache": {
-          ".read": false,
-          ".write": false,
+          ".read": "auth != null",
           "$uid": {
-            ".read": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')",
             ".write": "auth.uid === $uid || (auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin'))"
           }
         },
         "orders": {
           ".read": "auth != null",
+          ".write": true,
           "$orderId": {
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['status', 'createdAt'])",
-            "status": {
-              ".validate": "newData.isString() && newData.val().matches(/^(programado|recibido|preparando|listo|en_camino|entregado|cancelado)$/)"
-            },
-            "canceledBy": { ".validate": "newData.isString()" },
-            "paidBy": { ".validate": "newData.isString()" },
-            "createdBy": { ".validate": "newData.isString()" },
-            "updatedBy": { ".validate": "newData.isString()" },
-            "editedBy": { ".validate": "newData.isString()" },
-            "notedBy": { ".validate": "newData.isString()" }
+            ".validate": "newData.hasChildren(['status', 'createdAt'])"
           }
         },
         "orders_by_session": {
+          ".read": "auth != null",
           "$sessionId": {
             ".read": "auth != null",
             ".write": "auth != null"
@@ -107,8 +128,17 @@
         "chat": {
           ".read": "auth != null",
           ".write": "auth != null",
-          "$msgId": {
-            ".validate": "newData.hasChildren(['text', 'sender', 'timestamp'])"
+          "$channel": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            "$msgId": {
+              ".validate": "newData.hasChildren(['text', 'sender', 'timestamp'])",
+              "readBy": {
+                "$userId": {
+                  ".write": "auth != null"
+                }
+              }
+            }
           }
         },
         "attendance": {
@@ -133,8 +163,9 @@
         },
         "delivery": {
           "drivers": {
+            ".read": "auth != null",
             "$driverId": {
-              ".write": "$driverId === auth.uid"
+              ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin' || (data.exists() && data.child('userId').val() === auth.uid))"
             }
           }
         }
@@ -148,14 +179,35 @@
       }
     },
     "branches_config": {
-      ".read": "auth != null",
+      ".read": true,
       "$branchId": {
-        ".write": "auth != null"
+        ".read": true,
+        ".write": "auth != null",
+        "fiscal": {
+          ".read": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')",
+          ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')"
+        }
       }
     },
     "customers": {
       ".read": "auth != null",
       "$customerId": {
+        // Legacy push-key records can be written by any auth user.
+        // UID-based records are owned by that user.
+        // Points mutations use transactions relaying on the rules-auth check.
+        ".write": "auth != null && ($customerId === auth.uid || $customerId.length > 20)",
+        "fcmTokens": {
+          "$deviceId": {
+            ".write": "auth != null && $customerId === auth.uid"
+          }
+        }
+      }
+    },
+    "promotions": {
+      ".read": true,
+      ".write": "false",
+      "$promoId": {
+        ".read": true,
         ".write": "auth != null"
       }
     },
@@ -170,6 +222,15 @@
       ".write": "auth != null",
       "$taskId": {
         ".validate": "newData.hasChildren(['instruccion', 'activa'])"
+      }
+    },
+    "_public": {
+      ".read": true,
+      "has_tenants": {
+        ".write": true
+      },
+      "flagged": {
+        ".write": "auth != null"
       }
     },
     "audit": {

@@ -1,16 +1,19 @@
 import React, { memo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Check, Square, CheckSquare, User, Hash, ArrowRight, Printer, Circle, CheckCircle, Zap } from 'lucide-react';
+import { Clock, Check, Square, CheckSquare, User, Hash, ArrowRight, Printer, Circle, CheckCircle, Zap, XCircle, Plus, ChevronDown, ChevronUp, StickyNote } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import PriorityBadge from './PriorityBadge';
 import TimerBadge from './TimerBadge';
 import AllergenAlert from './AllergenAlert';
 import PacingBadge from './PacingBadge';
+import KDSNoteBadge from './KDSNoteBadge';
+import OrderNoteModal from '../../comm/components/OrderNoteModal';
 import { PRIORITY, STATION_THRESHOLDS } from '../kdsTypes';
 import useTimerStore from '../store/timerStore';
 import { printTicket } from '../../lib/printTicket';
 import { ordersService } from '../../lib/ordersService';
 import { useBranch } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_ACCENT = {
   recibido: {
@@ -139,6 +142,7 @@ function KDSTicket({
   order,
   onDragStart,
   onUpdateStatus,
+  onCancel,
   onItemToggle,
   isHistory = false,
   selected = false,
@@ -150,13 +154,16 @@ function KDSTicket({
   activeStation = 'all',
 }) {
   const { activeBranchId } = useBranch();
+  const { user } = useAuth();
   const branchId = propBranchId || activeBranchId;
-  
+
   // Nos suscribimos SOLAMENTE al nivel de alerta (safe/warning/critical)
   // Esto previene que se re-renderice la tarjeta completa cada segundo
   const alertLevel = useTimerStore((s) => s.alertLevels?.[order.id] || 'safe');
-  
+
   const [doneItems, setDoneItems] = useState(new Set());
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [showNotePreview, setShowNotePreview] = useState(false);
   const baseAccent = STATUS_ACCENT[order.status] || STATUS_ACCENT.recibido;
   const alertOver = ALERT_OVERRIDE[alertLevel];
   const accent = { ...baseAccent, ...alertOver };
@@ -185,6 +192,11 @@ function KDSTicket({
   const togglePriority = async () => {
     const nextPriority = order.priority === PRIORITY.RUSH ? PRIORITY.NORMAL : PRIORITY.RUSH;
     await ordersService.updateOrderPriority(branchId, order.id, nextPriority);
+  };
+
+  const handleSaveNote = async (orderId, text) => {
+    await ordersService.addOrderNote(branchId, orderId, text, user?.email, user?.displayName);
+    // Note: order object will refresh via RTDB subscription — no local state update needed
   };
 
   return (
@@ -236,6 +248,10 @@ function KDSTicket({
                   #{(order.id || '').slice(-6).toUpperCase()}
                 </span>
                 <PriorityBadge priority={order.priority || PRIORITY.NORMAL} />
+                <KDSNoteBadge
+                  count={order.notes?.length || 0}
+                  onClick={() => setShowNotePreview(v => !v)}
+                />
                 {!isHistory && !isBulkMode && (
                   <button onClick={(e) => { e.stopPropagation(); togglePriority(); }}
                     className={`p-0.5 rounded transition-colors ${order.priority === PRIORITY.RUSH ? 'text-cm-error hover:text-cm-error/60' : 'text-cm-muted/30 hover:text-cm-muted/60'}`}
@@ -270,6 +286,30 @@ function KDSTicket({
                 <p className={cn(fStyles.details, 'text-cm-warning font-semibold mt-2 bg-cm-warning/10 border border-cm-warning/20 rounded-lg px-2.5 py-1.5 leading-tight')}>
                   📝 {order.observaciones}
                 </p>
+              )}
+
+              {/* Order notes preview — toggled by KDSNoteBadge */}
+              {showNotePreview && (
+                <div className="mt-2 space-y-1.5">
+                  {(order.notes || []).slice(0, 3).map((note, ni) => (
+                    <div key={ni} className="text-[10px] text-cm-text-secondary bg-cm-surface/60 rounded-lg px-2.5 py-1.5 border border-cm-border/30 leading-relaxed">
+                      <span className="font-semibold text-cm-warning">{note.createdByName}: </span>
+                      {note.text}
+                    </div>
+                  ))}
+                  {(!order.notes || order.notes.length === 0) && (
+                    <p className="text-[10px] text-cm-text-tertiary italic">Sin notas</p>
+                  )}
+                  {!isHistory && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setNoteModalOpen(true); }}
+                      className="w-full flex items-center justify-center gap-1 py-1 text-[10px] font-bold text-cm-warning hover:bg-cm-warning/10 rounded transition-all"
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                      Agregar nota
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
@@ -371,6 +411,23 @@ function KDSTicket({
           )}
         </motion.button>
       )}
+
+      {!isHistory && onCancel && order.status !== 'cancelado' && order.status !== 'listo' && order.status !== 'entregado' && (
+        <button
+          onClick={() => onCancel(order)}
+          className="w-full py-2 text-[9px] font-bold text-cm-error/60 hover:text-cm-error hover:bg-cm-error/5 transition-all flex items-center justify-center gap-1.5 border-t border-cm-border/30"
+        >
+          <XCircle className="w-3 h-3" />
+          RECHAZAR PEDIDO
+        </button>
+      )}
+
+      <OrderNoteModal
+        order={order}
+        isOpen={noteModalOpen}
+        onClose={() => setNoteModalOpen(false)}
+        onSave={handleSaveNote}
+      />
     </motion.div>
   );
 }

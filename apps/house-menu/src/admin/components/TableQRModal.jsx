@@ -33,7 +33,7 @@ function QRCard({ tableNumber, baseUrl, branchId }) {
   };
 
   return (
-    <div className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-cm-border shadow-cm-sm">
+    <div className="bg-cm-surface rounded-xl p-4 flex flex-col items-center gap-2 border border-cm-border shadow-cm-sm">
       <div className="flex items-center gap-1.5">
         <Hash className="w-4 h-4 text-cm-accent" />
         <span className="text-sm font-black text-cm-text">Mesa {tableNumber}</span>

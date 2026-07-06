@@ -32,25 +32,29 @@ export function BranchProvider({ children }) {
     }
   }, [setBranches, setBranchError]);
 
-  const foundBranch = branches.find(b => b.id === activeBranchId);
-  const activeBranch = foundBranch || branches[0] || null;
+  // branches activas = las que tienen active !== false (por defecto true)
+  const isActive = (b) => b.active !== false;
+  const activeBranches = branches.filter(isActive);
+  const foundBranch = activeBranches.find(b => b.id === activeBranchId);
+  const activeBranch = foundBranch || activeBranches[0] || null;
 
   useEffect(() => {
-    if (branches.length > 0 && !foundBranch) {
-      const fallback = branches[0].id;
+    if (activeBranches.length > 0 && !foundBranch) {
+      const fallback = activeBranches[0].id;
       console.warn(
-        `BranchContext: activeBranchId "${activeBranchId}" no encontrado en sucursales disponibles, ` +
+        `BranchContext: activeBranchId "${activeBranchId}" no encontrado o inactivo, ` +
         `re-asignando a "${fallback}"`
       );
       setActiveBranchId(fallback);
     }
-  }, [branches, activeBranchId, foundBranch, setActiveBranchId]);
+  }, [activeBranches, activeBranchId, foundBranch, setActiveBranchId]);
 
   const value = {
-    branches,
+    branches,           // todas (activas e inactivas) — para admin
+    activeBranches,     // solo activas — para la UI pública
     activeBranchId,
     setActiveBranchId,
-    activeBranch,
+    activeBranch,       // siempre activa o null
     isLoading: branchLoading && branches.length === 0,
     error: branchError || subError,
   };

@@ -130,25 +130,21 @@ export default function AdminSidebar({ activeTab, onTabChange, availableTabs, ac
                         onTabChange(key);
                         onClose(); // cerrar sidebar en mobile al hacer click
                       }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 group ${
-                        isActive
-                          ? 'bg-cm-accent text-white shadow-sm'
-                          : 'text-cm-muted hover:bg-cm-accent/8 hover:text-cm-text'
-                      }`}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 group ${isActive ? 'sidebar-nav-active bg-cm-accent' : 'text-cm-muted hover:bg-cm-accent/8 hover:text-cm-text'}`}
+                      style={isActive ? { backgroundColor: 'var(--cm-accent)', color: 'white' } : undefined}
                     >
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-cm-muted group-hover:text-cm-accent'}`} />
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-cm-muted group-hover:text-cm-accent'}`} style={isActive ? { color: 'white' } : undefined} />
                       <span className={`flex-1 text-xs font-semibold truncate ${isActive ? 'text-white' : ''}`}>
                         {label}
                       </span>
                       {badgeCount > 0 && (
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
-                          isActive ? 'bg-white/20 text-white' : 'bg-cm-accent text-white'
-                        }`}>
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${isActive ? 'bg-white/20' : 'bg-cm-accent text-white'}`}
+                          style={isActive ? { backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' } : undefined}>
                           {badgeCount > 99 ? '99+' : badgeCount}
                         </span>
                       )}
                       {isActive && (
-                        <ChevronRight className="w-3 h-3 text-white/60 shrink-0" />
+                        <ChevronRight className="w-3 h-3 shrink-0" style={{ color: 'rgba(255,255,255,0.6)' }} />
                       )}
                     </button>
                   );

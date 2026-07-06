@@ -23,7 +23,7 @@ export default function UrgencyBar() {
     : `S/ ${promo.value} OFF`;
 
   return (
-    <div className="bg-gradient-to-r from-cm-accent via-orange-500 to-amber-500 text-white px-4 py-2.5 relative overflow-hidden shadow-cm-md z-50">
+    <div className="bg-gradient-to-r from-cm-accent to-cm-warning text-white px-4 py-2.5 relative overflow-hidden shadow-cm-md z-50">
       <motion.div
         animate={{ x: ['-100%', '200%'] }}
         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
@@ -44,7 +44,7 @@ export default function UrgencyBar() {
           >
             <span className="font-black tracking-widest">{promo.code}</span>
             {copied ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-cm-success" />
             ) : (
               <Copy className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
             )}

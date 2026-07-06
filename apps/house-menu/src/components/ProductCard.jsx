@@ -2,121 +2,137 @@ import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 
-function ProductCard({ productId, product, onSelect, onDirectAdd }) {
+function ProductCard({ productId, product, onSelect }) {
   const isOutOfStock = !product.available || (product.trackStock && (product.stock ?? 0) <= 0);
   const priceDisplay = (product.base_price ?? product.price ?? 0).toFixed(2);
+  const isWizard = product.isWizard || (product.steps && product.steps.length > 0);
 
-  // Smart detection of gourmet tags
-  const isVegan = product.vegan || product.isVegan || product.tags?.includes('vegano') ||
-    product.description?.toLowerCase().includes('vegano') || product.name?.toLowerCase().includes('vegano');
-  const isSpicy = product.spicy || product.isSpicy || product.tags?.includes('picante') ||
-    product.description?.toLowerCase().includes('picante') || product.description?.toLowerCase().includes('ají') ||
-    product.name?.toLowerCase().includes('picante');
-  const isGlutenFree = product.glutenFree || product.isGlutenFree || product.tags?.includes('sin_gluten') ||
-    product.description?.toLowerCase().includes('sin gluten') || product.description?.toLowerCase().includes('sin tacc');
+  // Dietary tags
+  const isVegan = product.vegan || product.isVegan || product.tags?.includes('vegano');
+  const isSpicy = product.spicy || product.isSpicy || product.tags?.includes('picante');
+  const isGlutenFree = product.glutenFree || product.isGlutenFree || product.tags?.includes('sin_gluten');
   const isRecommended = product.recommended || product.isRecommended || product.tags?.includes('recomendado') || product.featured;
-  const isNew = product.isNew || product.tags?.includes('nuevo') || product.name?.toLowerCase().includes('nuevo');
+  const isNew = product.isNew || product.tags?.includes('nuevo');
   const promoDiscount = product.promoDiscount;
 
-  const isWizard = product.isWizard || (product.steps && product.steps.length > 0);
+  const handleOpen = () => {
+    if (!isOutOfStock) onSelect(productId, product);
+  };
 
   return (
     <motion.div
-      whileHover={isOutOfStock ? {} : { scale: 1.02, y: -4 }}
-      whileTap={isOutOfStock ? {} : { scale: 0.98 }}
-      className={`bg-cm-surface/65 backdrop-blur-md rounded-2xl shadow-cm-sm border border-cm-border overflow-hidden group cursor-pointer hover:border-cm-accent/40 hover:shadow-cm-md transition-all ${
-        isOutOfStock ? 'opacity-50 pointer-events-none select-none' : ''
-      } ${isRecommended ? 'ring-1 ring-yellow-500/30' : ''}`}
-      onClick={() => !isOutOfStock && onSelect(productId, product)}
+      whileTap={isOutOfStock ? {} : { scale: 0.985 }}
+      onClick={handleOpen}
+      className={`relative flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all select-none
+        ${isOutOfStock ? 'opacity-50 pointer-events-none' : 'hover:bg-cm-surface/60'}
+        ${isRecommended ? 'bg-gradient-to-r from-yellow-500/[0.04] to-transparent' : ''}
+      `}
     >
-      {/* Image Section */}
-      <div className="relative w-full aspect-[4/3] overflow-hidden">
+      {/* Separator line (every card except first) */}
+      <div className="absolute top-0 left-[88px] right-4 h-px bg-cm-border/30" />
+
+      {/* Image — 80×80 rounded */}
+      <div className="relative shrink-0 w-20 h-20">
         {product.image ? (
           <img
             src={product.image}
             alt={product.name}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'grayscale' : ''}`}
+            className={`w-full h-full object-cover rounded-[14px] border border-cm-border/40 ${isOutOfStock ? 'grayscale' : ''}`}
+            loading="lazy"
           />
         ) : (
-          <div className="w-full h-full bg-cm-bg-alt flex items-center justify-center">
-            <span className="text-xs font-black text-cm-muted uppercase tracking-widest">Sin imagen</span>
+          <div className="w-full h-full rounded-[14px] bg-cm-surface/80 border border-cm-border/40 flex items-center justify-center">
+            <span className="text-[8px] font-black text-cm-muted uppercase tracking-widest text-center leading-tight px-1">
+              Sin img
+            </span>
           </div>
         )}
 
-        {/* Badges overlay */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        {/* Badges */}
+        <div className="absolute -top-1.5 -left-1.5 flex flex-col gap-0.5">
           {isNew && (
-            <span className="text-[8px] font-black px-2 py-1 bg-blue-500 text-white rounded-full uppercase tracking-wider shadow-sm">✨ Nuevo</span>
+            <span className="text-[7px] font-black px-1.5 py-0.5 bg-blue-500 text-white rounded-full uppercase tracking-wider shadow-sm leading-none">
+              Nuevo
+            </span>
           )}
           {promoDiscount && (
-            <span className="text-[8px] font-black px-2 py-1 bg-red-500 text-white rounded-full uppercase tracking-wider shadow-sm animate-pulse">-{promoDiscount}%</span>
+            <span className="text-[7px] font-black px-1.5 py-0.5 bg-red-500 text-white rounded-full uppercase tracking-wider shadow-sm leading-none animate-pulse">
+              -{promoDiscount}%
+            </span>
           )}
         </div>
 
-        {/* Quick Add Button - Only for simple products (not wizard) */}
-        {!isOutOfStock && onDirectAdd && !isWizard && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDirectAdd(productId, product); }}
-            className="absolute bottom-2 right-2 w-8 h-8 bg-cm-accent text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-            title="Añadir al carrito"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+        {/* Out of stock overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 rounded-[14px] bg-black/40 flex items-center justify-center">
+            <span className="text-[8px] font-black text-white uppercase tracking-wider bg-black/60 px-2 py-0.5 rounded-full">
+              Agotado
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Content Section */}
-      <div className="p-4">
-        <h3 className="text-sm font-black text-cm-text group-hover:text-cm-accent transition-colors leading-tight mb-1 truncate line-clamp-2">
-          {product.name}
-        </h3>
+      {/* Info */}
+      <div className="flex-1 min-w-0 pr-1">
+        <div className="flex items-start gap-2">
+          <h3 className="text-sm font-bold text-cm-text leading-tight truncate">
+            {product.name}
+          </h3>
+          {isRecommended && (
+            <span className="text-[10px] shrink-0 mt-0.5">👑</span>
+          )}
+        </div>
 
         {product.description && (
-          <p className={`text-xs text-cm-muted line-clamp-2 leading-relaxed ${isWizard ? 'mb-1' : 'mb-2'}`}>{product.description}</p>
+          <p className="text-xs text-cm-text-secondary/70 leading-tight mt-0.5 line-clamp-1">
+            {product.description}
+          </p>
         )}
 
-        {/* Wizard indicator */}
-        {isWizard && (
-          <div className="text-[10px] font-bold text-cm-accent/80 bg-cm-accent/8 border border-cm-accent/20 rounded-full px-2.5 py-1 mb-2 text-center">
-            Personalizable
-          </div>
-        )}
-
-        {/* Dietary Badges */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {isVegan && (
-            <span className="text-[8px] font-black px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20">🌱 Vegano</span>
-          )}
-          {isSpicy && (
-            <span className="text-[8px] font-black px-1.5 py-0.5 bg-orange-500/10 text-orange-600 rounded-full border border-orange-500/20">🌶️ Picante</span>
-          )}
-          {isGlutenFree && (
-            <span className="text-[8px] font-black px-1.5 py-0.5 bg-sky-500/10 text-sky-600 rounded-full border border-sky-500/20">🌾 Sin Gluten</span>
-          )}
-          {isRecommended && (
-            <span className="text-[8px] font-black px-1.5 py-0.5 bg-yellow-500/10 text-yellow-600 rounded-full border border-yellow-500/20">👑 Top</span>
-          )}
-        </div>
-
-        {/* Price & Action */}
-        <div className="flex items-center justify-between pt-2 border-t border-cm-border/30">
-          <div className="flex flex-col">
-            <span className="text-lg font-black text-cm-accent tracking-tight">
-              S/ {priceDisplay}
-            </span>
-            {isWizard && (
-              <span className="text-[9px] text-cm-text-tertiary">desde</span>
+        {/* Dietary badges */}
+        {(isVegan || isSpicy || isGlutenFree) && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {isVegan && (
+              <span className="text-[7px] font-black px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20 leading-none">
+                🌱 Vegano
+              </span>
+            )}
+            {isSpicy && (
+              <span className="text-[7px] font-black px-1.5 py-0.5 bg-orange-500/10 text-orange-600 rounded-full border border-orange-500/20 leading-none">
+                🌶️ Picante
+              </span>
+            )}
+            {isGlutenFree && (
+              <span className="text-[7px] font-black px-1.5 py-0.5 bg-sky-500/10 text-sky-600 rounded-full border border-sky-500/20 leading-none">
+                🌾 Sin Gluten
+              </span>
             )}
           </div>
-          {isWizard ? (
-            <span className="text-[10px] font-bold text-cm-accent bg-cm-accent/10 border border-cm-accent/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              Personalizar →
-            </span>
-          ) : (
-            <span className="text-[10px] font-bold text-cm-text-secondary bg-cm-bg px-2 py-1 rounded-full">Ver detalles →</span>
+        )}
+
+        {/* Price */}
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-base font-black text-cm-accent tracking-tight">
+            S/ {priceDisplay}
+          </span>
+          {isWizard && (
+            <span className="text-[8px] font-bold text-cm-text-tertiary">desde</span>
           )}
         </div>
       </div>
+
+      {/* + Button */}
+      {!isOutOfStock && (
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={(e) => { e.stopPropagation(); handleOpen(); }}
+          className="shrink-0 w-9 h-9 rounded-full bg-cm-accent/10 border border-cm-accent/25 flex items-center justify-center text-cm-accent hover:bg-cm-accent/20 transition-colors"
+          aria-label="Personalizar producto"
+        >
+          <Plus className="w-4 h-4" />
+        </motion.button>
+      )}
     </motion.div>
   );
 }

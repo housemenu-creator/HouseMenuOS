@@ -9,11 +9,11 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
   const hasSelection = isSingleMode && !!selections[stepData.id];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* Step header */}
-      <div className="space-y-1">
-        <h2 className="text-xl font-bold text-cm-text">{stepData.title}</h2>
-        <p className="text-xs text-cm-text-secondary">
+      <div className="space-y-0.5">
+        <h2 className="text-base sm:text-xl font-bold text-cm-text">{stepData.title}</h2>
+        <p className="text-[10px] sm:text-xs text-cm-text-secondary">
           {stepData.type === 'multiple'
             ? 'Elegí las opciones que prefieras'
             : 'Elegí una opción'}
@@ -21,7 +21,7 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
       </div>
 
       {/* Options grid - responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
         {stepData.options.map((option) => {
           const isOut = option.trackStock === true && (option.stock ?? 0) <= 0;
           const lowStock = option.trackStock === true && (option.stock ?? 0) > 0 && (option.stock ?? 0) <= 5;
@@ -41,7 +41,7 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
               whileTap={isOut ? {} : { scale: 0.97 }}
               transition={{ duration: 0.15 }}
               className={cn(
-                'relative rounded-xl border-2 p-4 flex flex-col items-center gap-3 text-center transition-colors cursor-pointer',
+                'relative rounded-xl border-2 p-3 sm:p-4 flex flex-col items-center gap-2 sm:gap-3 text-center transition-colors cursor-pointer',
                 isOut && 'opacity-40 cursor-not-allowed',
                 isSelected && !isOut
                   ? 'border-cm-accent bg-cm-accent/10'
@@ -50,21 +50,21 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
             >
               {/* Image or icon */}
               <div className={cn(
-                'w-16 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center',
+                'w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center',
                 isSelected && !isOut ? 'bg-cm-accent/20' : 'bg-cm-bg-alt',
               )}>
                 {option.image ? (
                   <img src={option.image} alt={option.name} className="w-full h-full object-cover" loading="lazy" />
                 ) : (
-                  <ImageIcon className="w-8 h-8 text-cm-text-secondary/50" />
+                  <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 text-cm-text-secondary/50" />
                 )}
               </div>
 
               {/* Text */}
-              <div className="space-y-1 w-full">
-                <p className="text-sm font-bold text-cm-text leading-tight">{option.name}</p>
+              <div className="space-y-0.5 w-full">
+                <p className="text-xs sm:text-sm font-bold text-cm-text leading-tight">{option.name}</p>
                 {option.description && (
-                  <p className="text-[10px] text-cm-text-secondary line-clamp-2 leading-snug">{option.description}</p>
+                  <p className="text-[9px] sm:text-[10px] text-cm-text-secondary line-clamp-2 leading-snug">{option.description}</p>
                 )}
               </div>
 
@@ -77,7 +77,7 @@ export default function WizardStep({ stepData, selections, onOptionToggle }) {
                     <AlertTriangle className="w-3 h-3" /> {option.stock} uds
                   </span>
                 ) : option.price > 0 ? (
-                  <span className="text-xs font-bold text-cm-accent">+ S/ {option.price.toFixed(2)}</span>
+                  <span className="text-[10px] sm:text-xs font-bold text-cm-accent">+ S/ {option.price.toFixed(2)}</span>
                 ) : (
                   <span className="text-[9px] font-bold text-cm-text-secondary uppercase tracking-wider">Incluido</span>
                 )}

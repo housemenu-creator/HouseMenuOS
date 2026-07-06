@@ -23,6 +23,7 @@ import { inferStationFromItem, inferOrderStation } from '../kds/utils/stationInf
 import { useOrderStore, useEnrichedOrders, useIsKDSLoading } from '../kds/store/orderStore';
 import { useAuth } from '../context/AuthContext';
 
+import CancelOrderModal from '../kds/components/CancelOrderModal';
 import NewOrderFlash from '../kds/components/NewOrderFlash';
 import BulkConfirmModal from '../kds/components/BulkConfirmModal';
 import HistoryPanel from '../kds/components/HistoryPanel';
@@ -108,6 +109,7 @@ export default function KitchenView() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [cancelOrder, setCancelOrder] = useState(null);
   const [historyDateFilter, setHistoryDateFilter] = useState('today');
   const STATIONS_WITH_SOUND = KITCHEN_STATIONS.filter((s) => s !== 'all');
   const defaultSoundMap = Object.fromEntries(STATIONS_WITH_SOUND.map((s) => [s, true]));
@@ -314,6 +316,12 @@ export default function KitchenView() {
     if (result.success) pushUndo(orderId, order.status, 'entregado');
   }, [activeBranchId, pushUndo]);
 
+  const handleCancel = useCallback(async (orderId, reason) => {
+    const result = await ordersService.updateOrderStatus(activeBranchId, orderId, 'cancelado', user?.email, reason);
+    if (result.success) pushUndo(orderId, 'cancelado', 'cancelado');
+    setCancelOrder(null);
+  }, [activeBranchId, pushUndo, user?.email]);
+
   const [bulkConfirm, setBulkConfirm] = useState(null);
 
   const handleBulkAction = useCallback((targetStatus) => {
@@ -468,7 +476,7 @@ export default function KitchenView() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden bg-cm-bg select-none">
+    <div className="flex-1 min-h-0 flex flex-col bg-cm-bg select-none">
 
       <NewOrderFlash show={newOrderFlash} message={flashMessage} />
 
@@ -646,6 +654,7 @@ export default function KitchenView() {
                           <KDSTicket
                             order={order}
                             onUpdateStatus={handleUpdateStatus}
+                            onCancel={() => setCancelOrder(order)}
                             selected={selectedIds.has(order.id)}
                             onToggleSelect={toggleSelect}
                             isBulkMode={isBulkMode}
@@ -670,6 +679,7 @@ export default function KitchenView() {
                           <KDSTicket
                             order={order}
                             onUpdateStatus={handleUpdateStatus}
+                            onCancel={() => setCancelOrder(order)}
                             selected={selectedIds.has(order.id)}
                             onToggleSelect={toggleSelect}
                             isBulkMode={isBulkMode}
@@ -694,6 +704,7 @@ export default function KitchenView() {
                           <KDSTicket
                             order={order}
                             onUpdateStatus={handleUpdateStatus}
+                            onCancel={() => setCancelOrder(order)}
                             selected={selectedIds.has(order.id)}
                             onToggleSelect={toggleSelect}
                             isBulkMode={isBulkMode}
@@ -749,6 +760,13 @@ export default function KitchenView() {
         history={history}
         onUndo={() => handleUndo(activeBranchId)}
         canUndo={canUndo}
+      />
+
+      <CancelOrderModal
+        order={cancelOrder}
+        isOpen={cancelOrder !== null}
+        onClose={() => setCancelOrder(null)}
+        onConfirm={handleCancel}
       />
     </div>
   );

@@ -21,6 +21,7 @@ export const ROUTES = {
   MONITOR: '/monitor',
   NOTIFICACIONES: '/staff/notificaciones',
   EMPLEADOS: '/staff/empleados',
+  MI_CUENTA: '/mi-cuenta',
 } as const;
 
 // ── Staff ──
@@ -32,6 +33,7 @@ export const STAFF_ROUTES = {
   DELIVERY: '/staff/delivery',
   VENDEDOR: '/staff/vendedor',
   CAJA: '/staff/caja',
+  EMPLEADOS: '/staff/empleados',
 } as const;
 
 // ── Helpers ──
@@ -55,6 +57,18 @@ export const staffRouteForRole = (role: string): string => {
     cajero: STAFF_ROUTES.CAJA,
     repartidor: STAFF_ROUTES.DELIVERY,
     admin: ROUTES.ADMIN,
+    superadmin: ROUTES.ADMIN,
   };
   return map[role] || STAFF_ROUTES.MOZO;
+};
+
+/**
+ * Mapea una ruta pública al formato con slug `/r/:slug/path`.
+ * Si no hay slug, retorna la ruta original sin cambios.
+ */
+export const slugRoute = (slug: string | null, path: string): string => {
+  if (!slug) return path;
+  if (path.startsWith('/r/')) return path;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return cleanPath ? `/r/${slug}/${cleanPath}` : `/r/${slug}`;
 };

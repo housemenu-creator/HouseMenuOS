@@ -4,14 +4,20 @@
  */
 import OpenAI from 'openai';
 
-const nvidiaClient = new OpenAI({
-  apiKey: process.env.NVIDIA_API_KEY,
-  baseURL: 'https://integrate.api.nvidia.com/v1',
-});
+function getNvidiaClient(): OpenAI | null {
+  if (!process.env.NVIDIA_API_KEY) return null;
+  return new OpenAI({
+    apiKey: process.env.NVIDIA_API_KEY,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+  });
+}
 
-const openaiClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY) return null;
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 // NVIDIA embedding models to try
 const NVIDIA_EMBED_MODELS = [
@@ -26,10 +32,11 @@ const NVIDIA_EMBED_MODELS = [
  */
 export async function createEmbedding(text: string): Promise<number[]> {
   // Try NVIDIA first
-  if (process.env.NVIDIA_API_KEY) {
+  const nvidia = getNvidiaClient();
+  if (nvidia) {
     for (const model of NVIDIA_EMBED_MODELS) {
       try {
-        const response = await nvidiaClient.embeddings.create({
+        const response = await nvidia.embeddings.create({
           model,
           input: text,
           encoding_format: 'float',
@@ -47,8 +54,9 @@ export async function createEmbedding(text: string): Promise<number[]> {
   }
 
   // Fallback to OpenAI
-  if (process.env.OPENAI_API_KEY) {
-    const response = await openaiClient.embeddings.create({
+  const openai = getOpenAIClient();
+  if (openai) {
+    const response = await openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: text,
     });

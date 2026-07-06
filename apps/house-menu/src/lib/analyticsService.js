@@ -159,6 +159,64 @@ export function kitchenTimes(orders) {
   return { avg: Math.round(avg * 10) / 10, min: Math.round(Math.min(...times) * 10) / 10 || 0, max: Math.round(Math.max(...times) * 10) / 10 || 0, samples: times.length };
 }
 
+/** Agrupa órdenes por hora del día (para gráfico de horas pico) */
+export function ordersByHour(orders) {
+  const hours = {};
+  for (let h = 0; h < 24; h++) hours[h] = { hour: `${h}:00`, count: 0, revenue: 0 };
+  for (const o of orders) {
+    const d = new Date(o.createdAt);
+    const h = d.getHours();
+    if (hours[h]) {
+      hours[h].count++;
+      hours[h].revenue += o.financials?.total || 0;
+    }
+  }
+  return Object.values(hours);
+}
+
+/** Genera CSV de órdenes filtradas */
+export function ordersToCSV(orders) {
+  const header = 'ID,Fecha,Hora,Cliente,Email,Telefono,Total,Estado,Pago,Metodo,Delivery,Mesa,Items';
+  const rows = orders.map(o => {
+    const d = o.createdAt ? new Date(o.createdAt) : new Date();
+    const items = (o.items || []).map(i => `${i.name || ''} x${i.quantity || 1}`).join('; ');
+    return [
+      `#${(o.id || '').slice(-8)}`,
+      d.toLocaleDateString('es-PE'),
+      d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
+      `"${(o.customerName || '').replace(/"/g, '""')}"`,
+      (o.customerEmail || ''),
+      (o.customerPhone || ''),
+      (o.financials?.total ?? o.total ?? 0).toFixed(2),
+      o.status || '',
+      o.payment_status || '',
+      o.payment_method || '',
+      o.type || '',
+      o.mesa || '',
+      `"${items.replace(/"/g, '""')}"`,
+    ].join(',');
+  });
+  return [header, ...rows].join('\n');
+}
+
+/** Genera CSV de productos vendidos */
+export function productsToCSV(orders) {
+  const productMap = {};
+  for (const o of orders) {
+    for (const item of (o.items || [])) {
+      const name = item.name || 'Sin nombre';
+      if (!productMap[name]) productMap[name] = { name, qty: 0, revenue: 0 };
+      productMap[name].qty += Number(item.quantity || 1);
+      productMap[name].revenue += Number(item.price || 0) * Number(item.quantity || 1);
+    }
+  }
+  const header = 'Producto,Cantidad,Ingreso';
+  const rows = Object.values(productMap)
+    .sort((a, b) => b.qty - a.qty)
+    .map(p => `"${p.name.replace(/"/g, '""')}",${p.qty},${p.revenue.toFixed(2)}`);
+  return [header, ...rows].join('\n');
+}
+
 /** Prepara data para el reporte diario */
 export function dailyReport(orders) {
   const today = todayOrders(orders);

@@ -93,17 +93,17 @@ export default function MozoView() {
   );
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-cm-bg">
-      <div className="max-w-5xl mx-auto p-4 space-y-4">
+    <div className="flex-1 min-h-0 bg-cm-bg">
+      <div className="w-full px-6 py-4 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-sm font-black tracking-widest text-cm-text flex items-center gap-2 uppercase">
-              <ClipboardList className="w-4 h-4 text-teal-500" /> Mozo
+              <ClipboardList className="w-4 h-4 text-cm-accent" /> Mozo
             </h1>
             <p className="text-xs text-cm-muted font-semibold mt-0.5">{activeCount} pedidos activos</p>
           </div>
           <button onClick={() => setShowNewOrder(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-black shadow-cm-sm transition-all hover:scale-[1.01] active:scale-[0.99]">
+            className="flex items-center gap-1.5 px-4 py-2 bg-cm-accent hover:bg-cm-accent-hover text-white rounded-xl text-xs font-black shadow-cm-sm transition-all hover:scale-[1.01] active:scale-[0.99]">
             <Plus className="w-3.5 h-3.5" /> Nuevo Pedido
           </button>
         </div>
@@ -113,13 +113,13 @@ export default function MozoView() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-text-tertiary" />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por cliente o mesa..."
-              className="w-full pl-9 pr-4 py-2 bg-cm-surface border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-teal-500" />
+              className="w-full pl-9 pr-4 py-2 bg-cm-surface border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent" />
           </div>
           <div className="flex gap-1 self-end sm:self-auto">
             {(['activos', 'entregados', 'todos']).map((f) => (
                <button key={f} onClick={() => setFilter(f)}
                  className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
-                   filter === f ? 'bg-teal-500 text-white' : 'bg-cm-surface border border-cm-border text-cm-text-secondary hover:bg-cm-accent/5'
+                   filter === f ? 'bg-cm-accent text-white' : 'bg-cm-surface border border-cm-border text-cm-text-secondary hover:bg-cm-accent/5'
                  }`}>
                  {f === 'activos' ? 'Activos' : f === 'entregados' ? 'Entregados' : 'Todos'}
                </button>

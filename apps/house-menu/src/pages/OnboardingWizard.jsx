@@ -86,6 +86,18 @@ export default function OnboardingWizard() {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setAnonReady(true);
+        
+        // If the user is already signed in with a real account, they are creating an additional workspace
+        if (user.isAnonymous === false) {
+          setFirstRun(true);
+          setForm(f => ({
+            ...f,
+            adminName: user.displayName || f.adminName,
+            adminEmail: user.email || f.adminEmail,
+          }));
+          return;
+        }
+
         const first = await isFirstRun();
         setFirstRun(first);
         // If NOT first run, redirect home
@@ -149,7 +161,7 @@ export default function OnboardingWizard() {
   // ── Loading state ──
   if (firstRun === null || !anonReady) {
     return (
-      <div className="min-h-screen bg-cm-bg flex items-center justify-center">
+      <div className="flex-1 min-h-0 bg-cm-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-cm-accent border-t-transparent rounded-full animate-spin" />
           <p className="text-sm font-bold text-cm-muted tracking-widest uppercase">Preparando...</p>
@@ -161,7 +173,7 @@ export default function OnboardingWizard() {
   // ── Success state ──
   if (done) {
     return (
-      <div className="min-h-screen bg-cm-bg flex items-center justify-center p-4">
+      <div className="flex-1 min-h-0 bg-cm-bg flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center space-y-6">
           <motion.div
             initial={{ scale: 0 }}
@@ -191,7 +203,7 @@ export default function OnboardingWizard() {
 
   // ── Wizard ──
   return (
-    <div className="min-h-screen bg-cm-bg flex items-start justify-center px-4 py-12 md:py-24">
+    <div className="flex-1 min-h-0 bg-cm-bg flex items-start justify-center px-4 py-12 md:py-24">
       <div className="w-full max-w-lg space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">

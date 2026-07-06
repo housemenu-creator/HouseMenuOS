@@ -4,7 +4,7 @@ import {
   X, Trash2, ShoppingCart, MapPin, Clock, CheckCircle, AlertTriangle,
   Navigation, User, Phone, Utensils, Coffee, Smartphone, Banknote,
   CreditCard, FileText, ChevronLeft, Package, ChevronDown, ChevronUp,
-  ArrowRight, Tag, Heart, Copy, Image, Clock4,
+  ArrowRight, Tag, Heart, Copy, Image, Clock4, Star,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@house/store';
 import { ordersService } from '../lib/ordersService';
@@ -13,7 +13,8 @@ import { geoService } from '../lib/geoService';
 import { storageService } from '../lib/storageService';
 import { useBranch } from '../context/BranchContext';
 import { useMarketing } from '../context/MarketingContext';
-import { findOrCreateCustomer, addCustomerPoints } from '../lib/customerService';
+import { findOrCreateCustomer, redeemPoints } from '../lib/customerService';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { isEmail, isPhone, isTime, isRequired } from '@house/validation';
 import { marketingService } from '../lib/marketingService';
 import { getSessionId } from '@house/db';
@@ -106,7 +107,7 @@ function DiscountSection({ discountCode, setDiscountCode, discountSuccess, appli
 
 function PackagingSelector({ packagingItems, packaging, setPackaging, getPackagingQty }) {
   return (
-    <div className="border-2 border-cm-border rounded-2xl overflow-hidden bg-cm-surface/30 shadow-cm-sm">
+    <div className="border-2 border-cm-border rounded-2xl overflow-hidden bg-white/30 shadow-cm-sm">
       <button onClick={() => {}} className="w-full p-4 flex items-center justify-between text-cm-text cursor-default" type="button">
         <span className="text-xs font-bold flex items-center gap-2"><Package className="w-4 h-4 text-cm-accent" /> Empaques y descartables</span>
       </button>
@@ -172,7 +173,7 @@ function PaymentSelector({ paymentMethod, setPaymentMethod }) {
           return (
             <button key={method.key} type="button" onClick={() => setPaymentMethod(method.key)}
               className={`py-3 px-1 rounded-xl text-[0.65rem] font-bold border transition-all flex flex-col items-center gap-1.5 ${
-                isActive ? 'bg-cm-accent border-cm-accent text-white' : 'bg-cm-surface/50 border-cm-border text-cm-text-secondary hover:text-cm-text hover:bg-cm-surface'
+                isActive ? 'bg-cm-accent border-cm-accent text-white' : 'bg-white/50 border-cm-border text-cm-text-secondary hover:text-cm-text hover:bg-cm-surface'
               }`}>
               <Icon className="w-5 h-5" />
               <span>{method.label}</span>
@@ -219,8 +220,8 @@ function StepYapePlin({
           </div>
         </div>
 
-        <div className={`p-5 rounded-2xl border-2 text-center space-y-4 shadow-cm-md bg-cm-surface/30 ${selectedWallet === 'yape' ? 'border-purple-500/30' : 'border-cyan-500/30'}`}>
-          <div className="w-40 h-40 mx-auto bg-white p-2.5 rounded-xl border border-cm-border shadow-inner flex items-center justify-center relative group">
+        <div className={`p-5 rounded-2xl border-2 text-center space-y-4 shadow-cm-md bg-white/30 ${selectedWallet === 'yape' ? 'border-purple-500/30' : 'border-cyan-500/30'}`}>
+          <div className="w-40 h-40 mx-auto bg-cm-surface p-2.5 rounded-xl border border-cm-border shadow-inner flex items-center justify-center relative group">
             {showRealQr ? (
               <img src={yapeQrUrl} alt="QR Yape" className="w-full h-full object-contain" />
             ) : (
@@ -265,7 +266,7 @@ function StepYapePlin({
 
         <div className="space-y-2">
           <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase block">2. Comprobante <span className="text-cm-error">(Obligatorio)</span></label>
-          <div className={`relative border-2 border-dashed rounded-2xl p-5 transition-colors bg-cm-surface/20 flex flex-col items-center justify-center text-center cursor-pointer ${!voucherUploaded && !isUploading ? 'border-cm-error/50 hover:border-cm-error' : 'border-cm-border hover:border-cm-accent'}`}>
+          <div className={`relative border-2 border-dashed rounded-2xl p-5 transition-colors bg-white/20 flex flex-col items-center justify-center text-center cursor-pointer ${!voucherUploaded && !isUploading ? 'border-cm-error/50 hover:border-cm-error' : 'border-cm-border hover:border-cm-accent'}`}>
             <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
             {isUploading ? (
               <div className="space-y-2 py-2 flex flex-col items-center">
@@ -320,22 +321,133 @@ function StepYapePlin({
   );
 }
 
+/* ───────── Subcomponente: Canje de Puntos ───────── */
+
+function PointsSection({ customerAuth, pointsBalance, usePoints, setUsePoints, pointsToRedeem, setPointsToRedeem, maxPointsRedeemable, pointsDiscountAmount, POINTS_RATE }) {
+  if (!customerAuth || pointsBalance <= 0) {
+    return (
+      <div className="bg-white/30 border border-cm-border/60 rounded-2xl p-4">
+        <div className="flex items-center gap-2 text-xs text-cm-text-secondary">
+          <Star className="w-4 h-4 text-cm-muted" />
+          <span>Iniciá sesión en <strong>Mi Cuenta</strong> para acumular puntos y canjear descuentos.</span>
+        </div>
+      </div>
+    );
+  }
+
+  const maxIncrement = Math.max(10, Math.floor(maxPointsRedeemable / 10) * 10);
+  const increments = [];
+  for (let i = 0; i <= maxIncrement; i += 10) {
+    increments.push(i);
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-amber-500/5 to-amber-500/[0.02] border border-amber-500/20 rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Star className="w-4 h-4 text-amber-400" />
+          <h3 className="text-xs font-black text-cm-text uppercase tracking-wider">Puntos HOUSE</h3>
+        </div>
+        <div className="text-right">
+          <span className="text-lg font-black text-amber-400">{pointsBalance}</span>
+          <span className="text-[0.6rem] font-bold text-cm-text-secondary ml-1 uppercase tracking-wider">pts</span>
+        </div>
+      </div>
+
+      {pointsDiscountAmount > 0 && (
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-cm-text-secondary">Descuento aplicado</span>
+          <span className="font-bold text-amber-400">- S/ {pointsDiscountAmount.toFixed(2)}</span>
+        </div>
+      )}
+
+      {maxPointsRedeemable >= 10 && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={usePoints}
+              onChange={(e) => {
+                setUsePoints(e.target.checked);
+                if (!e.target.checked) setPointsToRedeem(0);
+                if (e.target.checked && pointsToRedeem === 0) {
+                  setPointsToRedeem(Math.min(100, maxPointsRedeemable));
+                }
+              }}
+              className="w-4 h-4 rounded border-cm-border text-amber-500 focus:ring-amber-500/30"
+            />
+            <span className="text-xs font-bold text-cm-text">Usar puntos para pagar</span>
+          </label>
+
+          {usePoints && (
+            <div className="space-y-2 pl-6">
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={10}
+                  max={Math.max(10, maxPointsRedeemable)}
+                  step={10}
+                  value={Math.min(pointsToRedeem, maxPointsRedeemable)}
+                  onChange={(e) => setPointsToRedeem(Number(e.target.value))}
+                  className="flex-1 h-2 rounded-full appearance-none bg-amber-500/20 accent-amber-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer"
+                />
+                <span className="text-xs font-bold text-amber-400 min-w-[4rem] text-right tabular-nums">
+                  {Math.min(pointsToRedeem, maxPointsRedeemable)} pts
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-cm-text-secondary">
+                <span>10 pts = S/ {(10 / POINTS_RATE).toFixed(2)}</span>
+                <span>Máx: {maxPointsRedeemable} pts (S/ {(maxPointsRedeemable / POINTS_RATE).toFixed(2)})</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {maxPointsRedeemable < 10 && pointsBalance > 0 && (
+        <p className="text-[10px] text-cm-text-secondary">
+          Necesitás al menos S/ {(10 / POINTS_RATE / 0.5).toFixed(2)} de pedido para canjear puntos.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ───────── Componente Principal ───────── */
 
 export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMesa = null, showMesa = true }) {
   const { cart, removeFromCart, clearCart } = useAppStore();
   const { activeBranchId, activeBranch } = useBranch();
   const { validatePromoCode, addLoyaltyPoints, trackPixel } = useMarketing();
+  const { isAuthenticated: customerAuth, uid: customerUid, customerProfile: customerAuthProfile } = useCustomerAuth();
 
   const [step, setStep] = useState(1);
   const [zones, setZones] = useState([]);
-  const [customerName, setCustomerName] = useState(() => localStorage.getItem('cm_customer_name') || '');
-  const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem('cm_customer_phone') || '');
-  const [customerEmail, setCustomerEmail] = useState(() => localStorage.getItem('cm_customer_email') || '');
+  const [customerName, setCustomerName] = useState(() => {
+    const saved = localStorage.getItem('cm_customer_name');
+    return saved || '';
+  });
+  const [customerPhone, setCustomerPhone] = useState(() => {
+    const saved = localStorage.getItem('cm_customer_phone');
+    return saved || '';
+  });
+  const [customerEmail, setCustomerEmail] = useState(() => {
+    const saved = localStorage.getItem('cm_customer_email');
+    return saved || '';
+  });
+
+  // ── Auto-fill from customer auth profile ──
+  useEffect(() => {
+    if (customerAuth && customerAuthProfile) {
+      setCustomerName(prev => prev || customerAuthProfile.name || '');
+      setCustomerEmail(prev => prev || customerAuthProfile.email || '');
+      setCustomerPhone(prev => prev || customerAuthProfile.phone || '');
+    }
+  }, [customerAuth, customerAuthProfile]);
   const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [orderType, setOrderType] = useState(showMesa ? 'mesa' : 'llevar');
+  const [orderType, setOrderType] = useState(initialMesa ? 'mesa' : (showMesa ? 'mesa' : 'llevar'));
   const [paymentMethod, setPaymentMethod] = useState('yape_plin');
   const [observaciones, setObservaciones] = useState('');
   const [mesa, setMesa] = useState(initialMesa);
@@ -368,6 +480,11 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [discountError, setDiscountError] = useState('');
   const [discountSuccess, setDiscountSuccess] = useState(false);
+  // ── Points redemption ──
+  const [usePoints, setUsePoints] = useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const POINTS_RATE = 10; // S/1 per 10 points
+  const pointsBalance = customerAuth && customerAuthProfile?.points ? customerAuthProfile.points : 0;
   const [operationNumber, setOperationNumber] = useState('');
   const [selectedWallet, setSelectedWallet] = useState('yape');
   const [voucherUploaded, setVoucherUploaded] = useState(false);
@@ -528,13 +645,15 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
 
   const subtotal = cart.reduce((acc, item) => acc + item.price, 0);
   const discountAmount = subtotal * appliedDiscount;
-  const subtotalWithDiscount = subtotal - discountAmount;
+  const maxPointsRedeemable = Math.min(pointsBalance, Math.floor((subtotal - discountAmount) * POINTS_RATE * 0.5));
+  const pointsDiscountAmount = usePoints && pointsToRedeem > 0 ? pointsToRedeem / POINTS_RATE : 0;
+  const subtotalWithDiscount = subtotal - discountAmount - pointsDiscountAmount;
   const totalPackaging = packagingItems.reduce((sum, item) => sum + getPackagingQty(item.id) * item.price, 0);
 
   const yapeNumber = activeBranch?.yapePhone || activeBranch?.phone || '999 888 777';
   const yapeName = activeBranch?.yapeName || activeBranch?.name || 'HOUSE MENU';
   const yapeQrUrl = activeBranch?.yapeQrUrl || '';
-  const plinNumber = activeBranch?.plinPhone || activeBranch?.phone || '999 888 777';
+  const plinNumber = activeBranch?.plinNumber || activeBranch?.phone || '999 888 777';
   const plinName = activeBranch?.plinName || activeBranch?.name || 'HOUSE MENU';
 
   const selectedZone = zones.find(z => z.id === selectedZoneId);
@@ -584,7 +703,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
     if (!customerName?.trim()) return;
     if (orderType === 'mesa' && !mesa && !location.trim()) return;
     if (orderType !== 'mesa' && !location.trim()) return;
-    if (orderType === 'delivery' && !customerPhone.trim()) return;
+    if (!customerPhone.trim()) return;
 
     // ── Format validations ──
     if (validateForm()) return;
@@ -615,6 +734,8 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
         modifiers_total: 0,
         packaging_total: totalPackaging,
         discount_total: discountAmount,
+        points_redeemed: usePoints ? pointsToRedeem : 0,
+        points_discount: Number(pointsDiscountAmount.toFixed(2)),
         tip_total: Number(tipAmount.toFixed(2)),
         deliveryFee: Number(effectiveDeliveryFee.toFixed(2)),
         total: Number(total.toFixed(2)),
@@ -639,27 +760,30 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
     }
     setIsSubmitting(false);
     if (result.success) {
-      // CRM post-order (opcional — puede fallar para usuarios anónimos sin permisos RTDB)
+      // CRM post-order — atomic points + stats
       try {
+        const pointsEarned = Math.floor(total / 10);
         const customer = await findOrCreateCustomer({
+          uid: customerUid || undefined,
           email: customerEmail.trim(),
           phone: customerPhone.trim(),
           name: customerName.trim(),
           branchId: activeBranchId,
           orderTotal: total,
+          pointsEarned,
         });
-        const pointsEarned = Math.floor(total / 10);
-        if (customer?.id) {
-          await addCustomerPoints(customer.id, pointsEarned);
+        // Deduct redeemed points if any
+        if (usePoints && pointsToRedeem > 0 && customer?.id) {
+          await redeemPoints(customer.id, pointsToRedeem);
         }
       } catch (crmErr) {
-        console.warn("CRM post-order skipped (anonymous user or permissions):", crmErr);
+        console.warn("CRM post-order skipped:", crmErr);
       }
       trackPixel('Purchase', { value: total, currency: 'PEN' });
 
       // Save snapshot BEFORE clearing cart (OrderConfirmation needs the items)
       const cartSnapshot = [...cart];
-      onOrderComplete(result.orderId, cartSnapshot);
+      onOrderComplete(result.orderId, cartSnapshot, paymentMethod);
       clearCart(); setLocation(''); setObservaciones(''); setMesa(initialMesa || null); setDeliveryFeeOverride(null);
       setPackaging({}); setSelectedZoneId(null); setSubmitError(''); setStep(1);
       setOperationNumber(''); setVoucherUploaded(false); setVoucherUrl(''); setFileName(''); removeDiscount(); setTipPercentage(0);
@@ -815,8 +939,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                           <input type="text" placeholder="Tu Nombre (Ej. Juan Pérez)" maxLength={100} value={customerName} onChange={e => setCustomerName(e.target.value)}
                             className="w-full bg-cm-bg-alt border border-cm-border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
                         </div>
-                        {orderType === 'delivery' && (
-                          <div className="relative">
+                        <div className="relative">
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-text-tertiary pointer-events-none" />
                             <input type="tel" placeholder="Teléfono (Ej. 999 888 777)" maxLength={15} value={customerPhone}
                               onChange={e => { setCustomerPhone(e.target.value); if (phoneError) setPhoneError(''); }}
@@ -824,7 +947,6 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                               className={`w-full bg-cm-bg-alt border rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none text-cm-text placeholder:text-cm-text-tertiary ${phoneError ? 'border-cm-error' : 'border-cm-border focus:border-cm-accent'}`} />
                             {phoneError && <p className="text-[0.65rem] font-bold text-cm-error mt-1.5 ml-1">{phoneError}</p>}
                           </div>
-                        )}
                         <div className="relative">
                             <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-text-tertiary pointer-events-none" />
                             <input type="email" placeholder="Email (opcional — para historial y puntos)" maxLength={100} value={customerEmail}
@@ -841,7 +963,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                                 <div className="grid grid-cols-5 gap-2 mb-2">
                                   {Array.from({ length: activeBranch.tableCount }, (_, i) => i + 1).map(n => (
                                     <button key={n} type="button" onClick={() => { setMesa(n); setLocation(''); }}
-                                      className={`py-3 rounded-xl text-sm font-bold border transition-all ${mesa === n ? 'bg-cm-accent border-cm-accent text-white' : 'bg-cm-surface/50 border-cm-border text-cm-text-secondary hover:bg-cm-surface'}`}>
+                                      className={`py-3 rounded-xl text-sm font-bold border transition-all ${mesa === n ? 'bg-cm-accent border-cm-accent text-white' : 'bg-white/50 border-cm-border text-cm-text-secondary hover:bg-cm-surface'}`}>
                                       {n}
                                     </button>
                                   ))}
@@ -895,7 +1017,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                         )}
                       </div>
                       {orderType === 'delivery' && activeBranch?.deliveryEnabled && (
-                        <div className="space-y-4 p-4 bg-cm-surface/30 rounded-2xl border border-cm-border">
+                        <div className="space-y-4 p-4 bg-white/30 rounded-2xl border border-cm-border">
                           {isGeocoding && <p className="text-xs text-cm-accent font-bold flex items-center gap-1"><Navigation className="w-3 h-3 animate-spin" /> Calculando distancia...</p>}
                           {distanceKm != null && (
                             <div className="flex justify-between items-center bg-cm-bg-alt rounded-xl px-3 py-2 border border-cm-border">
@@ -911,7 +1033,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                               <div className="grid grid-cols-2 gap-2">
                                 {zones.filter(z => z.active !== false).sort((a, b) => (a.priority || 0) - (b.priority || 0)).map(z => (
                                   <button key={z.id} type="button" onClick={() => { setSelectedZoneId(z.id); setDeliveryFeeOverride(null); }}
-                                    className={`flex flex-col items-center py-2 px-1 rounded-xl text-xs font-bold border transition-all ${selectedZoneId === z.id ? 'bg-cm-accent/20 border-cm-accent text-cm-accent' : 'bg-cm-surface/50 border-cm-border text-cm-text-secondary hover:bg-cm-surface'}`}>
+                                    className={`flex flex-col items-center py-2 px-1 rounded-xl text-xs font-bold border transition-all ${selectedZoneId === z.id ? 'bg-cm-accent/20 border-cm-accent text-cm-accent' : 'bg-white/50 border-cm-border text-cm-text-secondary hover:bg-cm-surface'}`}>
                                     <span>{z.name}</span>
                                     {z.estimatedMinutes && <span className="text-[0.6rem] font-medium opacity-70 mt-0.5">~{z.estimatedMinutes} min</span>}
                                   </button>
@@ -939,6 +1061,18 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                           </div>
                         </div>
                       )}
+                      {/* ── Puntos HOUSE ── */}
+                      <PointsSection
+                        customerAuth={customerAuth}
+                        pointsBalance={pointsBalance}
+                        usePoints={usePoints}
+                        setUsePoints={setUsePoints}
+                        pointsToRedeem={pointsToRedeem}
+                        setPointsToRedeem={setPointsToRedeem}
+                        maxPointsRedeemable={maxPointsRedeemable}
+                        pointsDiscountAmount={pointsDiscountAmount}
+                        POINTS_RATE={POINTS_RATE}
+                      />
                       <PaymentSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
                       {orderType !== 'mesa' && (
                         <div className="bg-cm-success/10 border border-cm-success/20 rounded-2xl p-4 flex items-start gap-3">
@@ -963,11 +1097,12 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
                           <span>S/ {subtotalWithDiscount.toFixed(2)}</span>
                         </div>
                         {discountAmount > 0 && <div className="flex justify-between text-xs font-bold text-cm-success"><span>Descuento</span><span>- S/ {discountAmount.toFixed(2)}</span></div>}
+                        {pointsDiscountAmount > 0 && <div className="flex justify-between text-xs font-bold text-amber-400"><span>Puntos canjeados</span><span>- S/ {pointsDiscountAmount.toFixed(2)}</span></div>}
                         {totalPackaging > 0 && <div className="flex justify-between text-xs text-cm-text-secondary"><span>Empaques</span><span>S/ {totalPackaging.toFixed(2)}</span></div>}
                         {effectiveDeliveryFee > 0 && <div className="flex justify-between text-xs text-cm-text-secondary"><span>Delivery</span><span>S/ {effectiveDeliveryFee.toFixed(2)}</span></div>}
                         {tipAmount > 0 && <div className="flex justify-between text-xs text-cm-accent"><span>Propina ({tipPercentage}%)</span><span>S/ {tipAmount.toFixed(2)}</span></div>}
                       </div>
-                      <button disabled={!customerName?.trim() || (orderType === 'mesa' ? !mesa && !location.trim() : !location.trim()) || (orderType === 'delivery' && !customerPhone.trim()) || isSubmitting}
+                      <button disabled={!customerName?.trim() || (orderType === 'mesa' ? !mesa && !location.trim() : !location.trim()) || !customerPhone.trim() || isSubmitting}
                         className="w-full rounded-xl border-2 border-cm-border bg-cm-accent disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={() => {
                           if (validateForm()) return; // no pasar si hay errores de formato

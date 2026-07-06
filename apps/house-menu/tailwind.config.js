@@ -34,7 +34,7 @@ export default {
 
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        sans: "var(--cm-font)",
       },
       boxShadow: {
         'cm-sm': 'var(--cm-shadow-sm)',
@@ -46,6 +46,19 @@ export default {
         'cm-lg': 'var(--cm-radius-lg)',
         'cm-xl': 'var(--cm-radius-xl)',
         'cm-full': 'var(--cm-radius-full)',
+      },
+      animation: {
+        'pulse-overdue': 'pulse-overdue 2s ease-in-out infinite',
+      },
+      keyframes: {
+        'pulse-overdue': {
+          '0%, 100%': {
+            boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.4)',
+          },
+          '50%': {
+            boxShadow: '0 0 0 8px rgba(239, 68, 68, 0)',
+          },
+        },
       },
     },
   },

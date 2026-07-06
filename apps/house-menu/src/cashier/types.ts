@@ -60,6 +60,7 @@ export interface Order {
   payment_status: PaymentStatus;
   payment_method?: PaymentMethod;
   financials?: { total: number; [key: string]: unknown };
+  total?: number;
   totalAfterDiscount?: number;
   discount?: { type: string; value: number };
   items?: OrderItem[];
@@ -103,6 +104,7 @@ export type ModalName =
   | 'cancelOrder'
   | 'transferTable'
   | 'receipt'
+  | 'newOrder'
   | null;
 
 export interface ModalStackItem {
@@ -115,3 +117,83 @@ export type DiscountType = 'none' | 'percentage' | 'fixed';
 export type SessionAction = 'closed' | 'opening' | 'open' | 'closing';
 
 export type DisplayMode = 'total' | 'payment' | 'idle' | 'closed';
+
+// ── Catalog Browsing ──
+
+export interface CatalogProduct {
+  id: string;
+  name: string;
+  category: string;
+  base_price: number;
+  price?: number;
+  available: boolean;
+  description?: string;
+  image?: string;
+  isWizard?: boolean;
+  trackStock?: boolean;
+  stock?: number;
+  tags?: string[];
+  variations?: Record<string, { name: string; adjustPrice: number }>;
+  modifiers?: Record<string, { name: string; price: number }>;
+  steps?: Record<string, {
+    id: string;
+    title: string;
+    type: 'single' | 'multiple' | 'auto';
+    options: Record<string, { id: string; name: string; price?: number }>;
+  }>;
+}
+
+export interface CatalogState {
+  products: CatalogProduct[];
+  categories: string[];
+  grouped: Record<string, CatalogProduct[]>;
+  loading: boolean;
+  error: string | null;
+  isEmpty: boolean;
+  variations: Record<string, unknown>;
+  modifiers: Record<string, unknown>;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  filteredProducts: CatalogProduct[];
+  retry: () => void;
+}
+
+// ── Order Builder ──
+
+export interface CartItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  notes?: string;
+  selectedVariation?: { name: string; adjustPrice: number };
+  selectedModifiers?: Array<{ name: string; price: number }>;
+}
+
+export interface OrderBuilderState {
+  items: CartItem[];
+  customerName: string;
+  mesa: string;
+  notes: string;
+  itemCount: number;
+  total: number;
+  isEmpty: boolean;
+}
+
+export interface OrderPayload {
+  customerName: string;
+  mesa: string;
+  items: Array<{
+    productId: string;
+    name: string;
+    quantity: number;
+    price: number;
+    subtotal: number;
+  }>;
+  total: number;
+  notes: Array<{ text: string; createdBy: string; createdAt: string }>;
+  source: string;
+  sessionId: string;
+  payment_status: 'pendiente';
+}

@@ -4,13 +4,38 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: var(--cm-bg);
-  color: var(--cm-text);
-  font-family: var(--cm-font);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background var(--cm-transition-base), color var(--cm-transition-base);
+/* ── Mobile Viewport Fixes (iOS Safari, Android Chrome) ────────────────────── */
+@layer base {
+  html {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    height: 100dvh;
+    overflow: hidden;
+    background-color: var(--cm-bg);
+    color: var(--cm-text);
+    font-family: var(--cm-font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background var(--cm-transition-base), color var(--cm-transition-base);
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Fix Tailwind h-screen / min-h-screen to use dvh on mobile */
+  .h-screen,
+  .min-h-screen,
+  .h-\[100vh\],
+  .min-h-\[100vh\] {
+    height: 100dvh !important;
+  }
 }
 
 button,
@@ -112,8 +137,13 @@ select:-webkit-autofill {
   color: var(--cm-text);
   box-shadow: var(--cm-shadow-sm);
 }
-[data-theme="dark"] .segmented button.active {
-  background: var(--cm-surface);
+[data-theme="dark"] .sidebar-nav-active {
+  background-color: var(--cm-accent) !important;
+  color: white !important;
+}
+[data-theme="dark"] .sidebar-nav-active svg,
+[data-theme="dark"] .sidebar-nav-active span {
+  color: white !important;
 }
 
 /* iOS-style toggle */
@@ -182,3 +212,78 @@ select:-webkit-autofill {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* ── Premium UI Extensions ── */
+.card-premium {
+  background-color: var(--cm-surface);
+  border: 1px solid var(--cm-border);
+  box-shadow: var(--cm-shadow-sm);
+  border-radius: var(--cm-radius-xl);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+}
+.card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cm-shadow-md);
+  border-color: var(--cm-border-hover);
+}
+
+.kpi-card-premium {
+  position: relative;
+  overflow: hidden;
+  background: var(--cm-surface);
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius-xl);
+  box-shadow: var(--cm-shadow-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.kpi-card-premium::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: transparent;
+  transition: opacity 0.2s;
+}
+.kpi-card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cm-shadow-md);
+  border-color: var(--cm-border-hover);
+}
+
+/* Color variations for KPI cards top strip */
+.kpi-card-emerald::before { background: var(--cm-success); }
+.kpi-card-blue::before { background: var(--cm-info); }
+.kpi-card-violet::before { background: var(--cm-accent); }
+.kpi-card-warning::before { background: var(--cm-warning); }
+.kpi-card-neutral::before { background: var(--cm-text-secondary); }
+
+/* Glows for dark mode */
+[data-theme="dark"] .kpi-card-premium:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.02);
+}
+[data-theme="dark"] .kpi-card-emerald:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(5, 150, 105, 0.1);
+}
+[data-theme="dark"] .kpi-card-blue:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(37, 99, 235, 0.1);
+}
+[data-theme="dark"] .kpi-card-violet:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(138, 90, 0, 0.1);
+}
+
+/* Order list status borders */
+.order-status-left-border {
+  border-left-width: 4px;
+  border-left-style: solid;
+}
+
+/* Modal styling improvements */
+.modal-header-strip {
+  height: 6px;
+  width: 100%;
+}
+.modal-header-strip-success { background: linear-gradient(90deg, var(--cm-success), #10B981); }
+.modal-header-strip-error { background: linear-gradient(90deg, var(--cm-error), #EF4444); }
+.modal-header-strip-accent { background: linear-gradient(90deg, var(--cm-accent), var(--cm-accent-hover)); }
+.modal-header-strip-info { background: linear-gradient(90deg, var(--cm-info), #3B82F6); }
+

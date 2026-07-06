@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   TrendingUp, ShoppingCart, Users, Clock, DollarSign, ArrowUpDown,
-  ChefHat, Bike, Medal, AlertTriangle
+  ChefHat, Bike, Medal, AlertTriangle, Download, FileText, BarChart3
 } from 'lucide-react';
 import KpiCard from '../charts/KpiCard';
 import BarChartWidget from '../charts/BarChartWidget';
@@ -11,6 +11,7 @@ import {
   groupOrdersByPeriod, filterOrdersByDate, todayOrders, ordersOnDate,
   computeKpis, topProducts, bottomProducts, salesByPaymentMethod,
   salesByCategory, staffProductivity, kitchenTimes, dailyReport,
+  ordersByHour, ordersToCSV, productsToCSV,
 } from '../../lib/analyticsService';
 
 const PERIODS = [
@@ -23,6 +24,15 @@ const PERIODS = [
 
 function fmtCurrency(n) {
   return `S/ ${Number(n).toFixed(2)}`;
+}
+
+function downloadCSV(content, filename) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
 export default function AnalyticsTab({ allOrders }) {
@@ -86,6 +96,19 @@ export default function AnalyticsTab({ allOrders }) {
   const staff = useMemo(() => staffProductivity(filtered), [filtered]);
   const kitchen = useMemo(() => kitchenTimes(filtered), [filtered]);
   const report = useMemo(() => dailyReport(filtered), [filtered]);
+  const peakHours = useMemo(() => ordersByHour(filtered), [filtered]);
+
+  const handleExportOrders = useCallback(() => {
+    downloadCSV(ordersToCSV(filtered), `ordenes-${period}-${Date.now()}.csv`);
+  }, [filtered, period]);
+
+  const handleExportProducts = useCallback(() => {
+    downloadCSV(productsToCSV(filtered), `productos-${period}-${Date.now()}.csv`);
+  }, [filtered, period]);
+
+  const handlePrintReport = useCallback(() => {
+    window.print();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -94,19 +117,36 @@ export default function AnalyticsTab({ allOrders }) {
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-cm-accent" />
           <h2 className="text-lg font-bold text-cm-text">Analytics</h2>
+          <span className="text-xs text-cm-text-secondary ml-1">{filtered.length} pedidos</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {PERIODS.map(p => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                period === p.key ? 'bg-cm-accent text-white' : 'text-cm-text-secondary hover:bg-cm-accent/10'
-              }`}
-            >
-              {p.label}
+          <div className="flex items-center gap-1 bg-cm-surface border border-cm-border rounded-lg px-1 py-1">
+            {PERIODS.map(p => (
+              <button
+                key={p.key}
+                onClick={() => setPeriod(p.key)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  period === p.key ? 'bg-cm-accent text-white' : 'text-cm-text-secondary hover:bg-cm-accent/10'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={handleExportOrders} title="Exportar órdenes CSV"
+              className="p-2 rounded-lg text-cm-text-secondary hover:text-cm-accent hover:bg-cm-accent/10 transition-colors">
+              <FileText className="w-4 h-4" />
             </button>
-          ))}
+            <button onClick={handleExportProducts} title="Exportar productos CSV"
+              className="p-2 rounded-lg text-cm-text-secondary hover:text-cm-accent hover:bg-cm-accent/10 transition-colors">
+              <Download className="w-4 h-4" />
+            </button>
+            <button onClick={handlePrintReport} title="Imprimir reporte"
+              className="p-2 rounded-lg text-cm-text-secondary hover:text-cm-accent hover:bg-cm-accent/10 transition-colors">
+              <BarChart3 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -173,6 +213,40 @@ export default function AnalyticsTab({ allOrders }) {
           nameKey="name"
           height={300}
         />
+      </div>
+
+      {/* Peak hours */}
+      <div className="bg-cm-surface border border-cm-border rounded-xl p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="w-4 h-4 text-cm-accent" />
+          <h3 className="text-sm font-semibold text-cm-text">Horas pico</h3>
+        </div>
+        <BarChartWidget
+          data={peakHours}
+          dataKeys={[
+            { dataKey: 'count', name: 'Pedidos', color: '#2563EB' },
+          ]}
+          xKey="hour"
+          height={200}
+        />
+        <div className="mt-3 grid grid-cols-3 gap-3 text-center text-xs">
+          <div>
+            <div className="text-lg font-bold text-cm-accent">
+              {peakHours.reduce((a, b) => b.count > (a.count || 0) ? b : a, { count: 0 }).hour}
+            </div>
+            <div className="text-cm-text-secondary text-[0.6rem] uppercase tracking-wider">Hora pico</div>
+          </div>
+          <div>
+            <div className="text-lg font-bold text-cm-text">{peakHours.reduce((s, h) => s + h.count, 0)}</div>
+            <div className="text-cm-text-secondary text-[0.6rem] uppercase tracking-wider">Total pedidos</div>
+          </div>
+          <div>
+            <div className="text-lg font-bold text-cm-text">
+              {(() => { const max = peakHours.reduce((a, b) => b.count > a.count ? b : a, { count: 0 }); return max.revenue ? fmtCurrency(max.revenue) : '—' })()}
+            </div>
+            <div className="text-cm-text-secondary text-[0.6rem] uppercase tracking-wider">Pico ingresos</div>
+          </div>
+        </div>
       </div>
 
       {/* Products row */}

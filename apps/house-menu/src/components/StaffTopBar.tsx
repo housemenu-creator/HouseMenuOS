@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, LayoutGroup } from 'framer-motion';
 import BranchSwitcher from './BranchSwitcher';
+import WorkspaceSwitcher from './WorkspaceSwitcher';
 import { useAuth } from '../context/AuthContext';
 import { ChefHat, ClipboardList, Truck, Bike, TrendingUp, LogOut, LayoutDashboard, Users } from 'lucide-react';
 import { ROUTES, STAFF_ROUTES } from '../lib/routes';
@@ -35,7 +36,7 @@ export default function StaffTopBar({ slot }: Props) {
   const { user, logout } = useAuth();
 
   const availableLinks = ROLE_LINKS.filter(
-    (link) => user?.role === 'admin' || link.roles.includes(user?.role || '')
+    (link) => user?.role === 'admin' || user?.role === 'superadmin' || link.roles.includes(user?.role || '')
   );
 
   const isActive = (path: string) =>
@@ -91,6 +92,7 @@ export default function StaffTopBar({ slot }: Props) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <WorkspaceSwitcher />
           <BranchSwitcher variant="minimal" />
           <span className="hidden sm:inline text-xs text-cm-muted font-semibold px-2">
             {user?.name || user?.email}

@@ -122,7 +122,7 @@ export default function ChatWindow({ sender: propSender, senderName: propSenderN
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-36 right-6 z-50 w-80 sm:w-96 h-[32rem] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-cm-border flex flex-col overflow-hidden"
+            className="fixed bottom-36 right-6 z-50 w-80 sm:w-96 h-[32rem] bg-cm-surface rounded-2xl shadow-2xl border border-cm-border flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-cm-accent text-white shrink-0">
@@ -140,7 +140,7 @@ export default function ChatWindow({ sender: propSender, senderName: propSenderN
 
             {/* Channel tabs */}
             {availableChannels.length > 1 && (
-              <div className="flex gap-1 px-3 pt-2 pb-1.5 bg-white dark:bg-gray-900 border-b border-cm-border shrink-0">
+              <div className="flex gap-1 px-3 pt-2 pb-1.5 bg-cm-surface border-b border-cm-border shrink-0">
                 {availableChannels.map((ch) => {
                   const chMeta = CHANNEL_LABELS[ch] || { label: ch, short: ch };
                   return (
@@ -150,7 +150,7 @@ export default function ChatWindow({ sender: propSender, senderName: propSenderN
                       className={`text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all ${
                         activeChannel === ch
                           ? 'bg-cm-accent text-white shadow-sm'
-                          : 'bg-gray-100 dark:bg-gray-800 text-cm-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700'
+                          : 'bg-cm-bg-alt text-cm-text-secondary hover:bg-cm-bg'
                       }`}
                     >
                       {chMeta.label}
@@ -207,7 +207,7 @@ export default function ChatWindow({ sender: propSender, senderName: propSenderN
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={`Mensaje en ${channelLabel.label}...`}
-                className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm outline-none text-cm-text placeholder:text-cm-muted/50"
+                className="flex-1 bg-cm-bg-alt rounded-xl px-3 py-2.5 text-sm outline-none text-cm-text placeholder:text-cm-muted/50"
               />
               <button
                 type="submit"

@@ -95,12 +95,12 @@ const MOTIVATIONAL: Record<string, string> = {
 // Cada entrada lista las secciones del dashboard que aplican a ese rol.
 // Las secciones no listadas se omiten del render.
 const VISIBLE_SECTIONS: Record<string, string[]> = {
-  mozo:     ['welcome', 'announcement', 'attendance', 'modules', 'pipeline', 'kpi', 'quick'],
-  kitchen:  ['welcome', 'announcement', 'attendance', 'modules', 'pipeline', 'kpi', 'quick'],
-  dispatch: ['welcome', 'announcement', 'attendance', 'modules', 'pipeline', 'kpi', 'quick'],
-  delivery: ['welcome', 'announcement', 'attendance', 'modules', 'kpi', 'quick'],
-  vendedor: ['welcome', 'announcement', 'attendance', 'modules', 'kpi', 'quick'],
-  cajero:   ['welcome', 'announcement', 'attendance', 'modules', 'kpi', 'quick'],
+  mozo:     ['welcome', 'announcement', 'attendance', 'quick', 'modules', 'pipeline', 'kpi'],
+  kitchen:  ['welcome', 'announcement', 'attendance', 'quick', 'modules', 'pipeline', 'kpi'],
+  dispatch: ['welcome', 'announcement', 'attendance', 'quick', 'modules', 'pipeline', 'kpi'],
+  delivery: ['welcome', 'announcement', 'attendance', 'quick', 'modules', 'kpi'],
+  vendedor: ['welcome', 'announcement', 'attendance', 'quick', 'modules', 'kpi'],
+  cajero:   ['welcome', 'announcement', 'attendance', 'quick', 'modules', 'kpi'],
 };
 
 // ── Componente Principal ──────────────────────────────────────────────────────
@@ -174,8 +174,8 @@ export default function WorkerDashboard() {
   const visible = VISIBLE_SECTIONS[userRole] || VISIBLE_SECTIONS.mozo;
 
   return (
-    <div className="min-h-screen bg-cm-bg pb-16">
-      <div className="max-w-4xl mx-auto px-4 pt-5 space-y-5">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-cm-bg pb-6">
+      <div className="w-full px-6 pt-5 space-y-5">
 
         {visible.includes('welcome') && (
           <WelcomeHeader
@@ -196,6 +196,10 @@ export default function WorkerDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <AttendanceCard currentTime={currentTime} />
           </div>
+        )}
+
+        {visible.includes('quick') && (
+          <QuickAccess userRole={userRole} />
         )}
 
         {visible.includes('modules') && userRoles.filter(r => r in ROLE_CONFIG).length > 0 && (
@@ -247,10 +251,6 @@ export default function WorkerDashboard() {
             kpis={kpis}
             currentTime={currentTime}
           />
-        )}
-
-        {visible.includes('quick') && (
-          <QuickAccess userRole={userRole} />
         )}
 
       </div>

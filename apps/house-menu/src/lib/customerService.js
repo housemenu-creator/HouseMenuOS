@@ -4,27 +4,136 @@ import { nowISO } from './format';
 
 const CUSTOMERS_PATH = 'customers';
 
+const REFERRAL_CODE_KEY = 'cm_pending_ref_code';
+
+/** Matching server-side tier thresholds */
+function computeTier(totalSpent) {
+  const spent = totalSpent || 0;
+  if (spent >= 5000) return 'platinum';
+  if (spent >= 2000) return 'gold';
+  if (spent >= 500) return 'silver';
+  return 'bronze';
+}
+
+/** Genera un código de referido único desde un id */
+export function generateReferralCode(id) {
+  if (!id) return '';
+  const short = id.slice(0, 6).toUpperCase();
+  return `HOUSE-${short}`;
+}
+
+/** Lee código de referido pendiente desde localStorage */
+export function getPendingReferralCode() {
+  try {
+    return localStorage.getItem(REFERRAL_CODE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+/** Guarda código de referido pendiente en localStorage */
+export function setPendingReferralCode(code) {
+  if (!code) { clearPendingReferralCode(); return; }
+  try { localStorage.setItem(REFERRAL_CODE_KEY, code); } catch {}
+}
+
+/** Limpia código de referido pendiente */
+export function clearPendingReferralCode() {
+  try { localStorage.removeItem(REFERRAL_CODE_KEY); } catch {}
+}
+
+/** Captura código de referido desde la URL (?ref=CODE) y lo guarda en localStorage */
+export function captureReferralFromURL() {
+  if (typeof window === 'undefined') return;
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref) setPendingReferralCode(ref.toUpperCase());
+}
+
 /**
  * Encuentra un cliente por email, phone, o crea uno nuevo.
- * La búsqueda prioriza email > phone.
+ * La búsqueda prioriza uid > email > phone.
+ * @param {Object} opts
+ * @param {string} [opts.uid] - Firebase Auth UID (registered customer)
+ * @param {string} [opts.email]
+ * @param {string} [opts.phone]
+ * @param {string} [opts.name]
+ * @param {string} [opts.branchId]
+ * @param {number} [opts.orderTotal]
+ * @param {number} [opts.pointsEarned]
+ * @param {string} [opts.referredBy] - Código de referido de quien invitó
  */
-export async function findOrCreateCustomer({ email, phone, name, branchId, orderTotal }) {
-  // 1. Buscar por email
+export async function findOrCreateCustomer({ uid, email, phone, name, branchId, orderTotal, pointsEarned, referredBy }) {
+  // 0. If uid is provided, use it directly (registered customer)
+  if (uid) {
+    const snap = await get(ref(db, `${CUSTOMERS_PATH}/${uid}`));
+    const existing = snap.val();
+    if (existing) {
+      const newOrderCount = (existing.orderCount || 0) + 1;
+      const newTotalSpent = (existing.totalSpent || 0) + (orderTotal || 0);
+      const updates = {
+        lastOrderAt: nowISO(),
+        orderCount: newOrderCount,
+        totalSpent: newTotalSpent,
+        avgTicket: newOrderCount > 0 ? newTotalSpent / newOrderCount : 0,
+        tier: computeTier(newTotalSpent),
+        referralCode: existing.referralCode || generateReferralCode(uid),
+        ...(pointsEarned ? {
+          points: (existing.points || 0) + pointsEarned,
+          lifetimePoints: (existing.lifetimePoints || 0) + pointsEarned,
+        } : {}),
+      };
+      await update(ref(db, `${CUSTOMERS_PATH}/${uid}`), updates);
+      return { id: uid, ...existing, ...updates };
+    }
+    // Create new with uid
+    const referralCode = generateReferralCode(uid);
+    const customer = {
+      name: name || '',
+      phone: phone || '',
+      email: email || '',
+      createdAt: nowISO(),
+      lastOrderAt: nowISO(),
+      orderCount: 1,
+      totalSpent: orderTotal || 0,
+      avgTicket: orderTotal || 0,
+      tier: computeTier(orderTotal || 0),
+      referralCode,
+      referredBy: referredBy || null,
+      referralsCount: 0,
+      referralBonusEarned: 0,
+      points: pointsEarned || 0,
+      lifetimePoints: pointsEarned || 0,
+      redeemedPoints: 0,
+      preferences: { push: true, email: true, promos: true },
+    };
+    await set(ref(db, `${CUSTOMERS_PATH}/${uid}`), customer);
+    await set(ref(db, `referralCodes/${referralCode}`), { uid, createdAt: Date.now() });
+    return { id: uid, ...customer };
+  }
+
+  // 1. Buscar por email (legacy push-key customers)
   if (email) {
     const snap = await get(ref(db, `${CUSTOMERS_PATH}`));
     const all = snap.val();
     if (all) {
       for (const [id, c] of Object.entries(all)) {
         if (c.email && c.email.toLowerCase() === email.toLowerCase()) {
-          // Actualizar datos
-          await update(ref(db, `${CUSTOMERS_PATH}/${id}`), {
+          const newOrderCount = (c.orderCount || 0) + 1;
+          const newTotalSpent = (c.totalSpent || 0) + (orderTotal || 0);
+          const updates = {
             name: name || c.name,
             phone: phone || c.phone,
             lastOrderAt: nowISO(),
-            orderCount: (c.orderCount || 0) + 1,
-            totalSpent: (c.totalSpent || 0) + (orderTotal || 0),
-          });
-          return { id, ...c, name: name || c.name, phone: phone || c.phone };
+            orderCount: newOrderCount,
+            totalSpent: newTotalSpent,
+            avgTicket: newOrderCount > 0 ? newTotalSpent / newOrderCount : 0,
+            tier: computeTier(newTotalSpent),
+            referralCode: c.referralCode || generateReferralCode(id),
+            ...(pointsEarned ? { points: (c.points || 0) + pointsEarned, lifetimePoints: (c.lifetimePoints || 0) + pointsEarned } : {}),
+          };
+          await update(ref(db, `${CUSTOMERS_PATH}/${id}`), updates);
+          return { id, ...c, ...updates };
         }
       }
     }
@@ -37,23 +146,31 @@ export async function findOrCreateCustomer({ email, phone, name, branchId, order
     if (all) {
       for (const [id, c] of Object.entries(all)) {
         if (c.phone === phone) {
-          // When matching by phone, don't overwrite existing customer's email
           const mergedEmail = c.email ? c.email : email;
-          await update(ref(db, `${CUSTOMERS_PATH}/${id}`), {
+          const newOrderCount = (c.orderCount || 0) + 1;
+          const newTotalSpent = (c.totalSpent || 0) + (orderTotal || 0);
+          const updates = {
             name: name || c.name,
             email: mergedEmail,
             lastOrderAt: nowISO(),
-            orderCount: (c.orderCount || 0) + 1,
-            totalSpent: (c.totalSpent || 0) + (orderTotal || 0),
-          });
-          return { id, ...c, name: name || c.name, email: mergedEmail };
+            orderCount: newOrderCount,
+            totalSpent: newTotalSpent,
+            avgTicket: newOrderCount > 0 ? newTotalSpent / newOrderCount : 0,
+            tier: computeTier(newTotalSpent),
+            referralCode: c.referralCode || generateReferralCode(id),
+            ...(pointsEarned ? { points: (c.points || 0) + pointsEarned, lifetimePoints: (c.lifetimePoints || 0) + pointsEarned } : {}),
+          };
+          await update(ref(db, `${CUSTOMERS_PATH}/${id}`), updates);
+          return { id, ...c, ...updates };
         }
       }
     }
   }
 
-  // 3. Crear nuevo
+  // 3. Crear nuevo (push-key, anonymous customer)
   const newRef = push(ref(db, CUSTOMERS_PATH));
+  const newId = newRef.key;
+  const referralCode = generateReferralCode(newId);
   const customer = {
     name: name || '',
     phone: phone || '',
@@ -62,10 +179,18 @@ export async function findOrCreateCustomer({ email, phone, name, branchId, order
     lastOrderAt: nowISO(),
     orderCount: 1,
     totalSpent: orderTotal || 0,
-    points: 0,
+    avgTicket: orderTotal || 0,
+    tier: computeTier(orderTotal || 0),
+    referralCode,
+    referredBy: referredBy || null,
+    referralsCount: 0,
+    referralBonusEarned: 0,
+    points: pointsEarned || 0,
+    lifetimePoints: pointsEarned || 0,
+    redeemedPoints: 0,
   };
   await set(newRef, customer);
-  return { id: newRef.key, ...customer };
+  return { id: newId, ...customer };
 }
 
 /** Agrega puntos a un cliente (falla silenciosamente si no hay permisos) */

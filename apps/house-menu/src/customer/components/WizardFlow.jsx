@@ -40,71 +40,74 @@ export default function WizardFlow({
   };
 
   return (
-    <div className="space-y-6 pb-28" data-theme="dark">
-      {/* Stock banner */}
-      {product?.trackStock && (
-        <div className={`
-          p-3 rounded-xl border text-center text-xs font-bold
-          ${(product.stock ?? 0) > 0
-            ? 'bg-cm-success/10 border-cm-success/20 text-cm-success'
-            : 'bg-cm-error/10 border-cm-error/20 text-cm-error'
-          }
-        `}>
-          {(product.stock ?? 0) > 0
-            ? `Stock disponible: ${product.stock} unidades`
-            : 'Sin stock disponible'}
-        </div>
-      )}
+    <div className="flex flex-col h-full" data-theme="dark">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain space-y-4 pb-4">
+        {/* Stock banner */}
+        {product?.trackStock && (
+          <div className={`
+            p-3 rounded-xl border text-center text-xs font-bold
+            ${(product.stock ?? 0) > 0
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
+              : 'bg-red-500/10 border-red-500/20 text-red-600'
+            }
+          `}>
+            {(product.stock ?? 0) > 0
+              ? `Stock disponible: ${product.stock} unidades`
+              : 'Sin stock disponible'}
+          </div>
+        )}
 
-      {/* Progress bar */}
-      <div className="flex items-center gap-2 px-1">
-        {product.steps?.map((s, idx) => {
-          const isActive = idx === currentStepIndex;
-          const isCompleted = idx < currentStepIndex;
-          return (
-            <div key={s.id} className="flex-1 flex flex-col items-center gap-1">
-              {idx > 0 && (
-                <div className={`w-full h-0.5 -mr-2 ${isCompleted ? 'bg-cm-accent' : 'bg-cm-border'}`} />
-              )}
-              <div
-                className={cn(
-                  'w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 transition-colors',
-                  isCompleted && 'bg-cm-accent text-white',
-                  isActive && 'bg-cm-accent/15 border border-cm-accent text-cm-accent',
-                  !isCompleted && !isActive && 'bg-cm-surface border border-cm-border text-cm-text-secondary'
+        {/* Progress bar */}
+        <div className="flex items-center gap-2 px-1">
+          {product.steps?.map((s, idx) => {
+            const isActive = idx === currentStepIndex;
+            const isCompleted = idx < currentStepIndex;
+            return (
+              <div key={s.id} className="flex-1 flex flex-col items-center gap-1">
+                {idx > 0 && (
+                  <div className={`w-full h-0.5 -mr-2 ${isCompleted ? 'bg-cm-accent' : 'bg-cm-border'}`} />
                 )}
-              >
-                {isCompleted ? <X className="w-3.5 h-3.5" /> : isActive ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                <div
+                  className={cn(
+                    'w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 transition-colors',
+                    isCompleted && 'bg-cm-accent text-white',
+                    isActive && 'bg-cm-accent/15 border border-cm-accent text-cm-accent',
+                    !isCompleted && !isActive && 'bg-cm-surface border border-cm-border text-cm-text-secondary'
+                  )}
+                >
+                  {isCompleted ? <Check className="w-3.5 h-3.5" /> : isActive ? <X className="w-3.5 h-3.5" /> : idx + 1}
+                </div>
+                {isActive && (
+                  <span className="text-[9px] font-black text-cm-accent uppercase tracking-wider mt-0.5">
+                    {s.title?.length > 12 ? s.title.slice(0, 10) + '…' : s.title}
+                  </span>
+                )}
               </div>
-              {isActive && (
-                <span className="text-[9px] font-black text-cm-accent uppercase tracking-wider mt-0.5">
-                  {s.title?.length > 12 ? s.title.slice(0, 10) + '…' : s.title}
-                </span>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+        {/* Step content */}
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={`step-${currentStepIndex}`}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.2 }}
+          >
+            <WizardStep
+              stepData={product.steps?.[currentStepIndex]}
+              selections={wizardSelections}
+              onOptionToggle={onOptionToggle}
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Step content */}
-      <AnimatePresence mode="popLayout">
-        <motion.div
-          key={`step-${currentStepIndex}`}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.2 }}
-        >
-          <WizardStep
-            stepData={product.steps?.[currentStepIndex]}
-            selections={wizardSelections}
-            onOptionToggle={onOptionToggle}
-          />
-        </motion.div>
-      </AnimatePresence>
-
       {/* Bottom bar */}
-      <div className="border-t border-cm-border bg-cm-bg p-4">
+      <div className="shrink-0 border-t border-cm-border/40 bg-cm-bg pt-3 pb-1 -mx-5 px-5">
         {/* Subtotal line */}
         {isLastStep && !isOutOfStock && quantity > 1 && (
           <div className="pb-2 flex justify-between">

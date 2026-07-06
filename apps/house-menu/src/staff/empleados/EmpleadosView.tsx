@@ -29,7 +29,7 @@ export default function EmpleadosView() {
   const { activeBranchId } = useBranch();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const uid = (session as Record<string, unknown> | null)?.firebaseUid as string | undefined;
+  const uid = (session as Record<string, unknown> | null)?.firebaseUid || (session as Record<string, unknown> | null)?.id as string | undefined;
 
   if (!uid) {
     return (

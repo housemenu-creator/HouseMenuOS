@@ -93,7 +93,7 @@ export default function IntegrationsSection({ config, onSave, saving }) {
         <label className="flex items-center gap-3 cursor-pointer group">
           <button type="button" onClick={() => setForm(prev => ({ ...prev, whatsappEnabled: !prev.whatsappEnabled }))}
             className={`relative w-10 h-5 rounded-full transition-colors ${form.whatsappEnabled ? 'bg-cm-success' : 'bg-cm-border group-hover:bg-cm-text-tertiary/30'}`}>
-            <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${form.whatsappEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+            <span className={`absolute top-0.5 w-4 h-4 bg-cm-surface rounded-full shadow-sm transition-transform ${form.whatsappEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
           </button>
           <div className="select-none">
             <span className="text-xs font-semibold text-cm-text">WhatsApp habilitado</span>

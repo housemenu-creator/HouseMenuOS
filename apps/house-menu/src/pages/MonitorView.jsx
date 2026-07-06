@@ -164,7 +164,7 @@ export default function MonitorView() {
 
   // ── Main display ──
   return (
-    <div className="min-h-screen bg-cm-bg overflow-hidden select-none">
+    <div className="flex-1 min-h-0 bg-cm-bg select-none">
       {/* Top bar minimal */}
       <div className="flex items-center justify-center gap-3 px-6 py-3 border-b border-cm-border/10">
         <Monitor className="w-5 h-5 text-cm-accent" />

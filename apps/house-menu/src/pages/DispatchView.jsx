@@ -158,7 +158,7 @@ export default function DispatchView() {
   const isLoading = isLoadingSessions || !ordersLoaded;
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col bg-cm-bg">
       <header className="bg-cm-surface border-b border-cm-border p-4 shrink-0 z-10 shadow-cm-sm">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">

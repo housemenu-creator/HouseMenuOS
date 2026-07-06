@@ -7,7 +7,8 @@
 
 import { ref, get, set, update, push, child, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { tenantPath } from '../../../lib/tenantService';
+import { tenantPath, getTenantId } from '../../../lib/tenantService';
+import { updateSlug } from '../../../lib/slugService';
 
 // ── System Config ───────────────────────────────────────
 

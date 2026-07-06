@@ -30,12 +30,9 @@ function getStartTimestamp(order) {
 }
 
 export default function TimerBadge({ order, elapsedMs, className = '' }) {
-  // Sin order y con elapsedMs inválido → no renderizar nada
-  if (!order && (elapsedMs == null || elapsedMs <= 0)) return null;
-
   const startTs = order ? getStartTimestamp(order) : null;
-  
-  // Si tenemos el pedido, inicializamos el elapsed localmente
+
+  // Inicializamos hooks SIEMPRE, antes de cualquier early return
   const [localElapsed, setLocalElapsed] = useState(() => {
     if (startTs) {
       return Date.now() - new Date(startTs).getTime();
@@ -57,6 +54,9 @@ export default function TimerBadge({ order, elapsedMs, className = '' }) {
 
     return () => clearInterval(interval);
   }, [startTs, order?.status]);
+
+  // Early return DESPUÉS de todos los hooks — mismo número siempre
+  if (!order && (elapsedMs == null || elapsedMs <= 0)) return null;
 
   const activeElapsed = order ? localElapsed : elapsedMs;
   const formatted = formatElapsed(activeElapsed);

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { DisplayMode } from '../types';
 
 interface CashierDisplayProps {

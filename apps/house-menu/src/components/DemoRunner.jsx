@@ -157,7 +157,7 @@ export default function DemoRunner({ isOpen: controlledOpen, onClose }) {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 80 }}
               transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-              className="fixed right-0 top-0 h-full w-full max-w-sm bg-white z-50 flex flex-col shadow-2xl border-l-4 border-cm-border"
+              className="fixed right-0 top-0 h-full w-full max-w-sm bg-cm-surface z-50 flex flex-col shadow-2xl border-l-4 border-cm-border"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
@@ -184,7 +184,7 @@ export default function DemoRunner({ isOpen: controlledOpen, onClose }) {
                         initial={{ width: '0%' }}
                         animate={{ width: '100%' }}
                         transition={{ duration: 20, ease: 'linear' }}
-                        className="h-full bg-white rounded-full"
+                        className="h-full bg-cm-surface rounded-full"
                       />
                     </div>
                     <p className="text-white/50 text-[0.6rem] font-bold mt-1 text-right">~20 segundos</p>
@@ -291,7 +291,7 @@ export default function DemoRunner({ isOpen: controlledOpen, onClose }) {
                       </a>
                       <button
                         onClick={startDemo}
-                        className="flex-1 py-2.5 bg-white text-cm-accent font-bold text-xs rounded-xl hover:bg-white/90 transition-colors"
+                        className="flex-1 py-2.5 bg-cm-surface text-cm-accent font-bold text-xs rounded-xl hover:bg-white/90 transition-colors"
                       >
                         ▶ Repetir Demo
                       </button>
@@ -305,7 +305,7 @@ export default function DemoRunner({ isOpen: controlledOpen, onClose }) {
                 <div className="p-6 border-t border-cm-border shrink-0">
                   <button
                     onClick={startDemo}
-                    className="btn-culinary w-full py-4 flex items-center justify-center gap-2"
+                    className="w-full py-4 flex items-center justify-center gap-2 bg-cm-accent text-white font-black rounded-xl hover:bg-cm-accent-hover transition-colors"
                   >
                     <Play className="w-5 h-5" />
                     {done ? 'REPETIR DEMO' : 'INICIAR DEMO'}

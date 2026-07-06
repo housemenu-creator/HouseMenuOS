@@ -886,4 +886,285 @@ export const analyticsTools: MCPTool[] = [
       }
     },
   },
+
+  // ── 10. Rentabilidad ─────────────────────────────────────
+  {
+    name: "analytics_rentabilidad",
+    description: "Analiza la rentabilidad del negocio: ingresos totales, costos, ganancia neta, margen de ganancia, ROI. Requiere que los productos tengan definido 'costPrice' o 'costo' en Firebase. Responde 'cuál es mi margen de ganancia', 'qué tan rentable es el negocio', 'análisis de rentabilidad'.",
+    parameters: {
+      desde: { type: "string", description: "Fecha inicio YYYY-MM-DD. Default: 30 días atrás" },
+      hasta: { type: "string", description: "Fecha fin YYYY-MM-DD. Default: today" },
+    },
+    async execute(args, branchId) {
+      try {
+        const r = dateRange(30);
+        const desde = parseDate(String(args.desde || r.desde));
+        const hasta = parseDate(String(args.hasta || "today"));
+
+        const orders = await fetchOrders(branchId, desde, hasta);
+        if (orders.length === 0) {
+          return { success: true, message: `📭 No hay ventas entre ${desde} y ${hasta}.` };
+        }
+
+        const products = await fetchProducts(branchId);
+        const costMap = new Map<string, number>();
+        for (const p of products) {
+          const cost = Number(p.costPrice || p.costo || p.base_price || p.price || 0);
+          costMap.set(p.name?.toLowerCase(), cost);
+          costMap.set(p.id, cost);
+        }
+
+        let totalRevenue = 0;
+        let totalCost = 0;
+        let totalProfit = 0;
+        let orderCount = 0;
+
+        for (const o of orders) {
+          const orderTotal = Number(o.total || 0);
+          totalRevenue += orderTotal;
+
+          let orderCost = 0;
+          for (const item of o.items || []) {
+            const searchKey = item.productId || item.name?.toLowerCase() || "";
+            const unitCost = costMap.get(searchKey) || 0;
+            orderCost += unitCost * (item.quantity || 1);
+          }
+
+          totalCost += orderCost;
+          totalProfit += orderTotal - orderCost;
+          orderCount++;
+        }
+
+        const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+        const roi = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+        const avgProfitPerOrder = orderCount > 0 ? totalProfit / orderCount : 0;
+
+        let msg = `💰 *ANÁLISIS DE RENTABILIDAD*\n`;
+        msg += `📆 ${desde} → ${hasta}\n\n`;
+        msg += `📊 *Resumen:*\n`;
+        msg += `  Ingresos: ${fmtSoles(totalRevenue)}\n`;
+        msg += `  Costos: ${fmtSoles(totalCost)}\n`;
+        msg += `  Ganancia neta: ${fmtSoles(totalProfit)}\n`;
+        msg += `  Pedidos: ${orderCount}\n\n`;
+        msg += `📈 *Métricas:*\n`;
+        msg += `  Margen de ganancia: ${profitMargin.toFixed(1)}%\n`;
+        msg += `  ROI: ${roi.toFixed(1)}%\n`;
+        msg += `  Ganancia x pedido: ${fmtSoles(avgProfitPerOrder)}\n`;
+
+        if (profitMargin < 10) {
+          msg += `\n⚠️ *Margen bajo* — revisar costos o precios de venta.`;
+        } else if (profitMargin > 40) {
+          msg += `\n✅ *Margen saludable* — buena rentabilidad.`;
+        }
+
+        return {
+          success: true,
+          data: { desde, hasta, totalRevenue, totalCost, totalProfit, profitMargin, roi, avgProfitPerOrder, orderCount },
+          message: msg,
+        };
+      } catch (e: any) {
+        return { success: false, error: `Error en analytics_rentabilidad: ${e.message}` };
+      }
+    },
+  },
+
+  // ── 11. Desempeño por producto (con márgenes) ────────────
+  {
+    name: "analytics_desempeno_productos",
+    description: "Analiza el desempeño de cada producto: unidades vendidas, ingresos, ganancia, margen por producto, rentabilidad individual. Similar al top productos pero con datos de costo. Responde 'qué producto deja más ganancia', 'cuál es el más rentable', 'desempeño por producto'.",
+    parameters: {
+      limite: { type: "string", description: "Cantidad de productos a mostrar. Default: '20'" },
+      desde: { type: "string", description: "Fecha inicio YYYY-MM-DD. Default: 30 días atrás" },
+      hasta: { type: "string", description: "Fecha fin YYYY-MM-DD. Default: today" },
+      ordenar: { type: "string", description: "Ordenar por: 'ganancia' (más rentable), 'ventas' (más vendido), 'margen' (mejor margen). Default: 'ganancia'" },
+    },
+    async execute(args, branchId) {
+      try {
+        const r = dateRange(30);
+        const desde = parseDate(String(args.desde || r.desde));
+        const hasta = parseDate(String(args.hasta || "today"));
+        const limite = parseInt(String(args.limite || "20"));
+        const ordenar = String(args.ordenar || "ganancia");
+
+        const orders = await fetchOrders(branchId, desde, hasta);
+        if (orders.length === 0) {
+          return { success: true, message: `📭 No hay ventas entre ${desde} y ${hasta}.` };
+        }
+
+        const products = await fetchProducts(branchId);
+        const costMap = new Map<string, { cost: number; category?: string }>();
+        for (const p of products) {
+          const cost = Number(p.costPrice || p.costo || p.base_price || p.price || 0);
+          costMap.set(p.name?.toLowerCase(), { cost, category: p.category });
+          costMap.set(p.id, { cost, category: p.category });
+        }
+
+        // Aggregate product performance
+        const perfMap = new Map<string, {
+          name: string; qty: number; revenue: number; cost: number; profit: number; orders: number; category?: string;
+        }>();
+
+        for (const o of orders) {
+          for (const item of o.items || []) {
+            const key = item.productId || item.name || "?";
+            const existing = perfMap.get(key) || {
+              name: item.name || "?",
+              qty: 0, revenue: 0, cost: 0, profit: 0, orders: 0, category: undefined,
+            };
+            const searchKey = item.productId || item.name?.toLowerCase() || "";
+            const costInfo = costMap.get(searchKey);
+            const unitCost = costInfo?.cost || 0;
+
+            existing.qty += item.quantity || 1;
+            existing.revenue += (item.price || 0) * (item.quantity || 1);
+            existing.cost += unitCost * (item.quantity || 1);
+            existing.orders++;
+            if (costInfo?.category) existing.category = costInfo.category;
+            perfMap.set(key, existing);
+          }
+        }
+
+        // Calculate profits
+        const results = Array.from(perfMap.values()).map(p => ({
+          ...p,
+          profit: p.revenue - p.cost,
+          margin: p.revenue > 0 ? ((p.revenue - p.cost) / p.revenue) * 100 : 0,
+        }));
+
+        // Sort by selected metric
+        if (ordenar === "ventas") {
+          results.sort((a, b) => b.qty - a.qty);
+        } else if (ordenar === "margen") {
+          results.sort((a, b) => b.margin - a.margin);
+        } else {
+          results.sort((a, b) => b.profit - a.profit);
+        }
+
+        const top = results.slice(0, limite);
+        const sortLabel = ordenar === "ventas" ? "más vendidos" : ordenar === "margen" ? "mejor margen" : "más rentables";
+
+        let msg = `📊 *DESEMPEÑO DE PRODUCTOS* (${desde} → ${hasta})\n`;
+        msg += `🏆 Top por: ${sortLabel}\n\n`;
+
+        for (let i = 0; i < top.length; i++) {
+          const p = top[i];
+          const marginStr = p.margin >= 0 ? `+${p.margin.toFixed(1)}%` : `${p.margin.toFixed(1)}%`;
+          const profitIcon = p.profit >= 0 ? "🟢" : "🔴";
+          msg += `${i + 1}. ${p.name}\n`;
+          msg += `   Vendidos: ${p.qty} | Ingreso: ${fmtSoles(p.revenue)} | ${profitIcon} Ganancia: ${fmtSoles(p.profit)} (${marginStr})\n`;
+          if (p.category) msg += `   📂 ${p.category}\n`;
+        }
+
+        // Summary
+        const totalRevenue = results.reduce((s, p) => s + p.revenue, 0);
+        const totalProfit = results.reduce((s, p) => s + p.profit, 0);
+        const topRevenue = top.reduce((s, p) => s + p.revenue, 0);
+        const topConcentration = totalRevenue > 0 ? (topRevenue / totalRevenue) * 100 : 0;
+
+        msg += `\n📌 *Resumen:* ${results.length} productos únicos | Concentración top ${limite}: ${topConcentration.toFixed(1)}% de ingresos`;
+
+        return {
+          success: true,
+          data: { desde, hasta, ordenar, productos: top, totalProductos: results.length, topConcentration },
+          message: msg,
+        };
+      } catch (e: any) {
+        return { success: false, error: `Error en analytics_desempeno_productos: ${e.message}` };
+      }
+    },
+  },
+
+  // ── 12. Análisis por categoría ───────────────────────────
+  {
+    name: "analytics_categorias",
+    description: "Analiza ventas agrupadas por categoría de producto: ingresos por categoría, cantidad vendida, porcentaje del total, productos únicos por categoría. Responde 'qué categoría vende más', 'ventas por categoría', 'qué categoría es más rentable'.",
+    parameters: {
+      desde: { type: "string", description: "Fecha inicio YYYY-MM-DD. Default: 30 días atrás" },
+      hasta: { type: "string", description: "Fecha fin YYYY-MM-DD. Default: today" },
+    },
+    async execute(args, branchId) {
+      try {
+        const r = dateRange(30);
+        const desde = parseDate(String(args.desde || r.desde));
+        const hasta = parseDate(String(args.hasta || "today"));
+
+        const orders = await fetchOrders(branchId, desde, hasta);
+        if (orders.length === 0) {
+          return { success: true, message: `📭 No hay ventas entre ${desde} y ${hasta}.` };
+        }
+
+        const products = await fetchProducts(branchId);
+        const prodCatMap = new Map<string, string>();
+        for (const p of products) {
+          const cat = p.category || "Sin categoría";
+          prodCatMap.set(p.name?.toLowerCase(), cat);
+          prodCatMap.set(p.id, cat);
+        }
+
+        const catMap = new Map<string, { qty: number; revenue: number; products: Set<string>; orders: number }>();
+
+        for (const o of orders) {
+          for (const item of o.items || []) {
+            const searchKey = item.productId || item.name?.toLowerCase() || "";
+            const cat = prodCatMap.get(searchKey) || "Sin categoría";
+
+            const existing = catMap.get(cat) || { qty: 0, revenue: 0, products: new Set(), orders: 0 };
+            existing.qty += item.quantity || 1;
+            existing.revenue += (item.price || 0) * (item.quantity || 1);
+            existing.products.add(item.name || searchKey);
+            catMap.set(cat, existing);
+          }
+        }
+
+        // Count orders per category (unique orders that had items in that category)
+        for (const o of orders) {
+          const catsInOrder = new Set<string>();
+          for (const item of o.items || []) {
+            const searchKey = item.productId || item.name?.toLowerCase() || "";
+            const cat = prodCatMap.get(searchKey) || "Sin categoría";
+            catsInOrder.add(cat);
+          }
+          for (const cat of catsInOrder) {
+            const existing = catMap.get(cat)!;
+            existing.orders++;
+          }
+        }
+
+        const totalRevenue = Array.from(catMap.values()).reduce((s, c) => s + c.revenue, 0);
+        const totalQty = Array.from(catMap.values()).reduce((s, c) => s + c.qty, 0);
+
+        const sorted = Array.from(catMap.entries())
+          .map(([name, data]) => ({
+            name,
+            qty: data.qty,
+            revenue: data.revenue,
+            uniqueProducts: data.products.size,
+            orders: data.orders,
+            revenuePct: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0,
+            qtyPct: totalQty > 0 ? (data.qty / totalQty) * 100 : 0,
+            avgOrderValue: data.orders > 0 ? data.revenue / data.orders : 0,
+          }))
+          .sort((a, b) => b.revenue - a.revenue);
+
+        let msg = `📂 *VENTAS POR CATEGORÍA* (${desde} → ${hasta})\n\n`;
+        for (const cat of sorted) {
+          const bar = "█".repeat(Math.max(1, Math.round((cat.revenue / sorted[0].revenue) * 20)));
+          msg += `*${cat.name}*\n`;
+          msg += `  ${bar} ${fmtSoles(cat.revenue)} (${cat.revenuePct.toFixed(1)}%)\n`;
+          msg += `  📦 ${cat.qty} uds (${cat.qtyPct.toFixed(1)}%) | 🏷️ ${cat.uniqueProducts} productos | 🛵 ${cat.orders} pedidos\n`;
+        }
+
+        msg += `\n📌 *Total:* ${fmtSoles(totalRevenue)} | ${totalQty} unidades | ${sorted.length} categorías`;
+        msg += `\n🏆 *Categoría top:* ${sorted[0]?.name || "N/A"} (${fmtSoles(sorted[0]?.revenue || 0)})`;
+
+        return {
+          success: true,
+          data: { desde, hasta, categorias: sorted, totalRevenue, totalQty, topCategory: sorted[0]?.name },
+          message: msg,
+        };
+      } catch (e: any) {
+        return { success: false, error: `Error en analytics_categorias: ${e.message}` };
+      }
+    },
+  },
 ];

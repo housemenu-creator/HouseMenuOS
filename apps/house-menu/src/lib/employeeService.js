@@ -3,6 +3,7 @@ import { realtimeDB as db } from '@house/db';
 import { nowISO, todayISO, dateKey } from './format';
 import { createUser, updateUser, deleteUser } from './authService';
 import { tenantRef, tenantPath } from './tenantService';
+import { deliveryService } from './deliveryService';
 
 // ── Employee CRUD ──────────────────────────────────────
 
@@ -54,6 +55,7 @@ export async function createEmployee(branchId, data) {
   };
 
   // Auto-create user account for operational roles
+  let userWarning = null;
   if (employee.email && ROLES_WITH_LOGIN.includes(employee.role)) {
     const userResult = await createUser({
       email: employee.email,
@@ -64,11 +66,29 @@ export async function createEmployee(branchId, data) {
     });
     if (userResult.success && userResult.userId) {
       employee.userId = userResult.userId;
+    } else {
+      userWarning = userResult.error || 'No se pudo crear el usuario del empleado. Podés reintentarlo manualmente.';
     }
   }
 
   await set(empRef, employee);
-  return { id: empRef.key, ...employee };
+
+  // Auto-create driver record for delivery role
+  let driverWarning = null;
+  if (employee.role === 'delivery' && employee.email) {
+    const driverResult = await deliveryService.createDriver(branchId, {
+      name: employee.name,
+      phone: employee.phone,
+      email: employee.email,
+      vehicle: data.vehicle || 'Moto',
+      userId: employee.userId || undefined,
+    });
+    if (!driverResult.success) {
+      driverWarning = 'Empleado creado, pero no se pudo crear el registro de repartidor automáticamente. Podés crearlo manualmente desde Admin > Delivery.';
+    }
+  }
+
+  return { id: empRef.key, ...employee, _userWarning: userWarning, _driverWarning: driverWarning };
 }
 
 export async function updateEmployee(branchId, employeeId, data) {
@@ -100,7 +120,36 @@ export async function updateEmployee(branchId, employeeId, data) {
   return updates;
 }
 
-export async function deleteEmployee(branchId, employeeId) {
+/**
+ * Retry creating a user account for an existing employee that has no userId.
+ * Used when the initial createUser failed (e.g. network error, permission denied).
+ * Updates the branch employee record with the new userId on success.
+ */
+export async function createUserForEmployee(branchId, employeeId) {
+  const snap = await get(employeeRef(branchId, employeeId));
+  const emp = snap.val();
+  if (!emp) return { success: false, error: 'Empleado no encontrado' };
+  if (emp.userId) return { success: false, error: 'El empleado ya tiene un usuario vinculado' };
+  if (!emp.email) return { success: false, error: 'El empleado no tiene email. Asignale un email primero.' };
+  if (!ROLES_WITH_LOGIN.includes(emp.role)) return { success: false, error: `El rol ${emp.role} no requiere acceso al sistema.` };
+
+  const userResult = await createUser({
+    email: emp.email,
+    name: emp.name,
+    role: emp.role,
+    pin: emp.pin,
+    branchIds: { [branchId]: true },
+  });
+
+  if (!userResult.success) {
+    return { success: false, error: userResult.error || 'Error al crear el usuario. Revisá que el email no esté ya registrado.' };
+  }
+
+  await update(employeeRef(branchId, employeeId), { userId: userResult.userId, updatedAt: nowISO() });
+  return { success: true, userId: userResult.userId };
+}
+
+export async function deleteEmployee(branchId, employeeId, actorRole) {
   // Read employee to get linked userId before deleting
   const snap = await get(employeeRef(branchId, employeeId));
   const emp = snap.val();
@@ -110,14 +159,17 @@ export async function deleteEmployee(branchId, employeeId) {
   // Doing this before branch removal so we can still read the employee
   let userResult = { success: true };
   if (userId) {
-    userResult = await deleteUser(userId, 'admin');
+    userResult = await deleteUser(userId, 'system', actorRole);
   }
+
+  // ── Si deleteUser fue rechazado (admin/superadmin protegido), NO eliminar branch ──
+  if (!userResult.success) return userResult;
 
   // Remove from branch path (only if user clean succeeded or no link)
   await remove(employeeRef(branchId, employeeId));
 
-  // If cascade delete failed, the branch record is already gone but user remains
-  // — caller can inspect userResult.success to know there's a dangling user
+  // If cascade delete failed, the branch record is still intact and user is untouched
+  // — caller can inspect userResult.success to know the outcome
   return userResult;
 }
 

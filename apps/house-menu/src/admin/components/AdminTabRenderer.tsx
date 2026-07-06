@@ -19,12 +19,14 @@ const UserManager = lazy(() => import('../components/UserManager'));
 const MarketingTab = lazy(() => import('../tabs/MarketingTab'));
 const AnalyticsTab = lazy(() => import('../tabs/AnalyticsTab'));
 const CustomersTab = lazy(() => import('../tabs/CustomersTab'));
+const CustomerAnalyticsTab = lazy(() => import('../tabs/CustomerAnalyticsTab'));
 const LogisticsTab = lazy(() => import('../tabs/LogisticsTab'));
 const EmployeesTab = lazy(() => import('../tabs/EmployeesTab'));
 const SystemConfigTab = lazy(() => import('../tabs/config'));
 const RolesTab = lazy(() => import('../tabs/RolesTab'));
 const AuditTab = lazy(() => import('../tabs/AuditTab'));
 const ReservationsTab = lazy(() => import('../tabs/ReservationsTab'));
+const BrandingTab = lazy(() => import('../tabs/BrandingTab'));
 
 // ── Props ──
 
@@ -97,6 +99,8 @@ function tabContent(activeTab: string, can: (perm: string) => boolean, d: TabDat
       return <AnalyticsTab allOrders={d.allOrders} />;
     case 'customers':
       return <CustomersTab allOrders={d.allOrders} />;
+    case 'customer-analytics':
+      return <CustomerAnalyticsTab />;
     case 'logistics':
       return <LogisticsTab />;
     case 'employees':
@@ -109,6 +113,8 @@ function tabContent(activeTab: string, can: (perm: string) => boolean, d: TabDat
       return <ReservationsTab />;
     case 'settings':
       return <SystemConfigTab />;
+    case 'branding':
+      return <BrandingTab />;
     default:
       return null;
   }

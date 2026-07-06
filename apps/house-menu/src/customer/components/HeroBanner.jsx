@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Clock, ShieldCheck, UtensilsCrossed } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, UtensilsCrossed } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTrackCampaignView } from '../../marketing/hooks/useMarketingAnalytics';
 import { ROUTES } from '../../lib/routes';
 import { useBranch } from '../../context/BranchContext';
 import { marketingService } from '../../lib/marketingService';
-import logo from '../../assets/logo.jpg';
 
 const DEFAULT_KITCHEN_HOURS = [
   { label: 'Almuerzo', open: '11:00', close: '14:30' },
@@ -24,11 +24,8 @@ function useKitchenStatus(kitchenHours) {
   const windows = useMemo(() => (
     (kitchenHours?.length ? kitchenHours : DEFAULT_KITCHEN_HOURS)
       .map((window) => ({
-        label: window.label,
-        open: window.open,
-        close: window.close,
-        openMinutes: timeToMinutes(window.open),
-        closeMinutes: timeToMinutes(window.close),
+        label: window.label, open: window.open, close: window.close,
+        openMinutes: timeToMinutes(window.open), closeMinutes: timeToMinutes(window.close),
       }))
       .filter((window) => window.openMinutes !== null && window.closeMinutes !== null)
       .sort((a, b) => a.openMinutes - b.openMinutes)
@@ -40,22 +37,13 @@ function useKitchenStatus(kitchenHours) {
     const update = () => {
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const openWindow = windows.find((window) => (
-        currentMinutes >= window.openMinutes && currentMinutes < window.closeMinutes
-      ));
-
-      if (openWindow) {
-        setStatus({ isOpen: true, label: openWindow.label, next: openWindow });
-        return;
-      }
-
+      const openWindow = windows.find(w => currentMinutes >= w.openMinutes && currentMinutes < w.closeMinutes);
+      if (openWindow) { setStatus({ isOpen: true, label: openWindow.label, next: openWindow }); return; }
       setStatus({
-        isOpen: false,
-        label: 'Proximo turno',
-        next: windows.find((window) => currentMinutes < window.openMinutes) || windows[0],
+        isOpen: false, label: 'Proximo turno',
+        next: windows.find(w => currentMinutes < w.openMinutes) || windows[0],
       });
     };
-
     update();
     const interval = window.setInterval(update, 60000);
     return () => window.clearInterval(interval);
@@ -64,7 +52,7 @@ function useKitchenStatus(kitchenHours) {
   return status;
 }
 
-export default function HeroBanner({ branchName, campaign, kitchenHours }) {
+export default function HeroBanner({ branchName, campaign, kitchenHours, catalog }) {
   const navigate = useNavigate();
   const { activeBranchId } = useBranch();
   const kitchen = useKitchenStatus(kitchenHours);
@@ -75,6 +63,12 @@ export default function HeroBanner({ branchName, campaign, kitchenHours }) {
   const eyebrow = campaign?.creatives?.heroTitle || 'HOUSE ALMUERZOS';
   const ctaText = campaign?.creatives?.ctaText || 'Ver carta';
 
+  const featuredIds = campaign?.creatives?.featuredProductIds || [];
+  const featuredProducts = useMemo(() => {
+    if (!featuredIds.length || !catalog?.products) return [];
+    return featuredIds.map(id => catalog.products[id]).filter(Boolean).slice(0, 3);
+  }, [featuredIds, catalog?.products]);
+
   const handleOrder = () => {
     if (campaign?.id && activeBranchId) {
       marketingService.incrementCampaignConversions(activeBranchId, campaign.id).catch(() => {});
@@ -83,84 +77,144 @@ export default function HeroBanner({ branchName, campaign, kitchenHours }) {
   };
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: 'easeOut' }}
-      className="relative overflow-hidden rounded-cm-xl border border-cm-border bg-cm-surface shadow-cm-md"
-    >
-      <div className="grid gap-0 lg:grid-cols-[1.08fr_0.92fr]">
-        <div className="flex min-h-[430px] flex-col justify-between p-6 sm:p-8 lg:p-10">
-          <div className="space-y-7">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-cm-full border border-cm-border bg-cm-bg-alt px-3 py-1 text-[0.7rem] font-bold uppercase tracking-normal text-cm-text-secondary">
-                <span className={`h-2 w-2 rounded-full ${kitchen.isOpen ? 'bg-cm-success' : 'bg-cm-warning'}`} />
-                {kitchen.isOpen ? `Cocina ${kitchen.label} abierta` : `${kitchen.label} ${kitchen.next?.open || '11:00'}`}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-cm-full border border-cm-border bg-cm-bg-alt px-3 py-1 text-[0.7rem] font-bold uppercase tracking-normal text-cm-text-secondary">
-                <Clock className="h-3.5 w-3.5 text-cm-accent" />
-                {kitchen.next?.open || '11:00'} - {kitchen.next?.close || '14:30'}
-              </span>
-            </div>
+    <section className="relative overflow-hidden bg-cm-surface">
+      {/* ── Warm ambient background ── */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Base gradient — warm radiance */}
+        <div className="absolute inset-0 bg-gradient-to-br from-cm-accent/[0.03] via-cm-bg to-cm-accent/[0.07]" />
+        {/* Decorative glow blobs */}
+        <div className="absolute -top-40 -right-32 w-[600px] h-[600px] rounded-full bg-cm-accent/[0.05] blur-[120px]" />
+        <div className="absolute -bottom-48 -left-32 w-[500px] h-[500px] rounded-full bg-cm-accent/[0.03] blur-[100px]" />
+        <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] rounded-full bg-cm-accent/[0.02] blur-[80px]" />
+        {/* Subtle dot pattern for texture */}
+        <svg className="absolute inset-0 h-full w-full opacity-[0.012] text-cm-accent" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="hero-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="0.8" fill="currentColor" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#hero-dots)" />
+        </svg>
+      </div>
 
-            <div className="space-y-4">
-              <p className="text-xs font-black uppercase tracking-normal text-cm-accent">{eyebrow}</p>
-              <h1 className="max-w-2xl text-4xl font-black leading-[1.05] tracking-normal text-cm-text sm:text-5xl lg:text-6xl">
-                {headline}
-              </h1>
-              <p className="max-w-xl text-base leading-7 text-cm-text-secondary sm:text-lg">
-                Menu del dia, carta completa y seguimiento de pedidos en una experiencia rapida para oficina, casa o recojo.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={handleOrder}
-                className="inline-flex items-center justify-center gap-2 rounded-cm-md bg-cm-accent px-5 py-3 text-sm font-black text-white shadow-cm-md transition hover:bg-cm-accent-hover focus:outline-none focus:ring-2 focus:ring-cm-accent/40"
-              >
-                <UtensilsCrossed className="h-4 w-4" />
-                {ctaText}
-                <ArrowRight className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.RASTREO)}
-                className="inline-flex items-center justify-center gap-2 rounded-cm-md border border-cm-border bg-cm-bg-alt px-5 py-3 text-sm font-black text-cm-text transition hover:border-cm-border-hover hover:bg-cm-surface-hover focus:outline-none focus:ring-2 focus:ring-cm-accent/30"
-              >
-                Seguir pedido
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            {[
-              { icon: CheckCircle2, label: 'Pago simple', detail: 'Pedido guiado' },
-              { icon: ShieldCheck, label: 'Garantia', detail: 'Soporte de sede' },
-              { icon: Clock, label: 'Despacho', detail: 'Turnos visibles' },
-            ].map(({ icon: Icon, label, detail }) => (
-              <div key={label} className="rounded-cm-md border border-cm-border bg-cm-bg-alt p-3">
-                <Icon className="mb-2 h-4 w-4 text-cm-accent" />
-                <p className="text-xs font-black text-cm-text">{label}</p>
-                <p className="mt-1 text-[0.72rem] font-semibold text-cm-text-tertiary">{detail}</p>
+      {/* ── Content ── */}
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8">
+        <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr] min-h-[500px]">
+          {/* Left: Content */}
+          <div className="flex flex-col justify-center py-14 sm:py-18 lg:py-24 pr-0 lg:pr-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+              className="space-y-6"
+            >
+              {/* Kitchen status badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full border border-cm-border bg-cm-bg/80 backdrop-blur-sm px-3.5 py-1.5 text-[0.65rem] font-bold text-cm-text-secondary">
+                  <span className={`h-2 w-2 rounded-full ${kitchen.isOpen ? 'bg-cm-success' : 'bg-cm-warning'}`} />
+                  {kitchen.isOpen ? `Cocina ${kitchen.label} abierta` : `${kitchen.label} ${kitchen.next?.open || '11:00'}`}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-cm-border bg-cm-bg/80 backdrop-blur-sm px-3.5 py-1.5 text-[0.65rem] font-bold text-cm-text-secondary">
+                  <Clock className="h-3 w-3 text-cm-accent" />
+                  {kitchen.next?.open || '11:00'} — {kitchen.next?.close || '14:30'}
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="relative min-h-[300px] border-t border-cm-border bg-cm-bg-alt lg:min-h-full lg:border-l lg:border-t-0">
-          <img
-            src={logo}
-            alt="House Almuerzos"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
-          <div className="absolute bottom-4 left-4 right-4 rounded-cm-md border border-white/20 bg-black/55 p-4 text-white backdrop-blur-md">
-            <p className="text-xs font-bold uppercase tracking-normal text-white/80">{branchName || 'Sede principal'}</p>
-            <p className="mt-1 text-lg font-black">Comida servida con ritmo de operacion real.</p>
+              {/* Headline */}
+              <div className="space-y-3">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-cm-accent">{eyebrow}</p>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight text-cm-text max-w-xl">
+                  {headline}
+                </h1>
+                <p className="text-base sm:text-lg leading-relaxed text-cm-text-secondary max-w-lg">
+                  Menú del día, carta completa y seguimiento de pedidos en una experiencia rápida para oficina, casa o recojo.
+                </p>
+              </div>
+
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                <button onClick={handleOrder}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-cm-accent px-6 py-3.5 text-sm font-black text-white shadow-cm-md transition-all hover:bg-cm-accent-hover hover:shadow-cm-lg active:scale-[0.98]"
+                >
+                  <UtensilsCrossed className="h-4 w-4" />
+                  {ctaText}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <button onClick={() => navigate(ROUTES.RASTREO)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-cm-border bg-cm-bg/80 backdrop-blur-sm px-6 py-3.5 text-sm font-black text-cm-text transition-all hover:border-cm-accent/30 hover:bg-cm-bg active:scale-[0.98]"
+                >
+                  Seguir pedido
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Featured products */}
+            {featuredProducts.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35 }}
+                className="mt-6"
+              >
+                <p className="text-[0.55rem] font-black uppercase tracking-[0.15em] text-cm-accent mb-2 flex items-center gap-1.5">
+                  <Star className="w-3 h-3" /> Destacados de la campaña
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {featuredProducts.map(p => (
+                    <div key={p.id || p.name} className="flex items-center gap-2 shrink-0 bg-cm-bg/80 backdrop-blur-sm border border-cm-border rounded-xl p-2">
+                      {p.image && <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />}
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-cm-text truncate max-w-[120px]">{p.name}</p>
+                        <p className="text-[0.6rem] font-bold text-cm-accent">S/ {Number(p.base_price || 0).toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Right: Visual panel — bold glass card + decorative brand mark */}
+          <div className="hidden lg:flex flex-col justify-end relative">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex flex-col gap-4 pb-8"
+            >
+              {/* Brand mark — large decorative H */}
+              <div className="relative self-end mr-4">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cm-accent/20 to-cm-accent/5 border border-cm-accent/10 flex items-center justify-center backdrop-blur-sm">
+                  <span className="text-cm-accent text-4xl font-black tracking-tight">H</span>
+                </div>
+                {/* Glow behind */}
+                <div className="absolute -inset-4 -z-10 bg-cm-accent/5 rounded-[2rem] blur-[40px]" />
+              </div>
+
+              {/* Branch glass card — theme-aware frosted glass */}
+              <div className="relative rounded-2xl border border-cm-border/50 bg-cm-surface/70 backdrop-blur-xl p-6 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-cm-accent/20 flex items-center justify-center">
+                    <span className="text-cm-accent text-sm font-black">H</span>
+                  </div>
+                  <div>
+                    <p className="text-cm-text text-sm font-black">{branchName || 'Sede principal'}</p>
+                    <p className="text-cm-text-secondary text-[0.6rem] font-semibold">Abierto ahora</p>
+                  </div>
+                </div>
+                <p className="text-cm-text text-lg sm:text-xl font-black leading-snug">
+                  Comida servida con ritmo de operación real.
+                </p>
+                <div className="mt-4 flex items-center gap-2 text-cm-text-secondary/60 text-[0.55rem] font-semibold">
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-cm-success" /> Ingredientes frescos</span>
+                  <span className="w-1 h-1 rounded-full bg-cm-text-tertiary/30" />
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-cm-success" /> 30 min o menos</span>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }

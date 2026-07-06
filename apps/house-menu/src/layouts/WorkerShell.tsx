@@ -25,7 +25,7 @@ export default function WorkerShell() {
   return (
     <div className="min-h-screen bg-cm-bg flex flex-col">
       <StaffTopBar slot={topBarSlot} />
-      <main className="flex-1 flex flex-col overflow-hidden pt-14">
+      <main className="flex-1 min-h-0 overflow-y-auto pt-14">
         <Outlet context={{ setTopBarSlot } satisfies ShellContext} />
       </main>
 

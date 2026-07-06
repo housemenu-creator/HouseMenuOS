@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import ProductCard from '../../components/ProductCard';
 
-export default function ProductGrid({ products, onSelectProduct, onDirectAdd, searchQuery }) {
+export default function ProductGrid({ products, onSelectProduct, searchQuery }) {
   if (products.length === 0) {
     return (
       <div className="text-center py-12 text-cm-muted bg-cm-bg/50 rounded-2xl border-2 border-dashed border-cm-border p-6">
@@ -52,7 +52,6 @@ export default function ProductGrid({ products, onSelectProduct, onDirectAdd, se
                   productId={key}
                   product={prod}
                   onSelect={onSelectProduct}
-                  onDirectAdd={onDirectAdd}
                 />
               </motion.div>
             ))}

@@ -2,12 +2,16 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { BranchProvider } from './context/BranchContext';
 import { AuthProvider } from './context/AuthContext';
+import { CustomerAuthProvider } from './context/CustomerAuthContext';
 import AuthGuard from './components/AuthGuard';
 import ErrorBoundary from './components/ErrorBoundary';
 import UIProvider from './components/UIProvider';
 import AppLayout from './layouts/AppLayout';
 import WorkerShell from './layouts/WorkerShell';
 import { MarketingProvider } from './context/MarketingContext';
+import TenantResolver from './components/TenantResolver';
+import { useBranding } from './hooks/useBranding';
+import { useBranch } from './context/BranchContext';
 
 const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -20,7 +24,7 @@ const DispatchView = lazy(() => import('./pages/DispatchView'));
 const MozoView = lazy(() => import('./pages/MozoView'));
 const RepartidorView = lazy(() => import('./pages/RepartidorView'));
 const VendedorView = lazy(() => import('./pages/VendedorView'));
-const CajeroView = lazy(() => import('./pages/CajeroView'));
+const CajeroView = lazy(() => import('./cashier'));
 const NotificacionesView = lazy(() => import('./pages/NotificacionesView'));
 const ControlCenterView = lazy(() => import('./pages/ControlCenterView'));
 const EmpleadosView = lazy(() => import('./staff/empleados/EmpleadosView'));
@@ -30,6 +34,21 @@ const KioskMode = lazy(() => import('./kds/components/KioskMode'));
 const MonitorView = lazy(() => import('./pages/MonitorView'));
 const ReservaView = lazy(() => import('./pages/ReservaView'));
 const MisPedidosView = lazy(() => import('./pages/MisPedidosView'));
+const CustomerProfileView = lazy(() => import('./pages/CustomerProfileView'));
+
+// ── Capturar referido desde URL al cargar la app ──
+import { captureReferralFromURL } from './lib/customerService';
+captureReferralFromURL();
+
+/**
+ * Aplica branding global basado en la sucursal activa.
+ * Se monta dentro del árbol de rutas para tener acceso a activeBranchId.
+ */
+function BrandingLayer() {
+  const { activeBranchId } = useBranch();
+  useBranding(activeBranchId);
+  return null;
+}
 
 function SuspenseBoundary({ children, message }) {
   return (
@@ -64,21 +83,42 @@ export default function App() {
       <BranchProvider>
         <BrowserRouter basename={routerBasename}>
           <AuthProvider>
+            <CustomerAuthProvider>
             <UIProvider>
               <MarketingProvider>
+              <BrandingLayer />
               <Routes>
                 {/* ── Onboarding (sin layout, full page) ── */}
                 <Route path="/onboarding" element={<SuspenseBoundary message="Error en el onboarding"><OnboardingWizard /></SuspenseBoundary>} />
                 <Route path="/login" element={<SuspenseBoundary message="Error en el inicio de sesión"><LoginPage /></SuspenseBoundary>} />
 
+                {/* ── Rutas de Cliente SaaS con Resolución de Tenant /r/:slug ── */}
+                <Route path="/r/:slug" element={<TenantResolver />}>
+                  <Route element={<AppLayout />}>
+                    <Route index element={<SuspenseBoundary message="Error en la landing"><LandingView /></SuspenseBoundary>} />
+                    <Route path="rastreo" element={<SuspenseBoundary message="Error en el rastreador de pedidos"><OrderTracker /></SuspenseBoundary>} />
+                    <Route path="admin" element={<AuthGuard allowedRoles={['admin', 'superadmin', 'cajero']}><SuspenseBoundary message="Error en el panel de administración"><AdminView /></SuspenseBoundary></AuthGuard>} />
+                    <Route path="control-center" element={<AuthGuard allowedRoles={['admin', 'superadmin']}><SuspenseBoundary message="Error en el control center"><ControlCenterView /></SuspenseBoundary></AuthGuard>} />
+                  </Route>
+                  {/* Vistas públicas sin sidebar */}
+                  <Route path="carta" element={<SuspenseBoundary message="Error en la vista de cliente"><CustomerView /></SuspenseBoundary>} />
+                  {/* Vistas sin layout con resolución de Tenant */}
+                  <Route path="kiosko" element={<SuspenseBoundary message="Error en el kiosko"><KioskMode /></SuspenseBoundary>} />
+                  <Route path="monitor" element={<SuspenseBoundary message="Error en el monitor"><MonitorView /></SuspenseBoundary>} />
+                  <Route path="reserva" element={<SuspenseBoundary message="Error en reservas"><ReservaView /></SuspenseBoundary>} />
+                  <Route path="mis-pedidos" element={<SuspenseBoundary message="Error en historial"><MisPedidosView /></SuspenseBoundary>} />
+                  <Route path="mi-cuenta" element={<SuspenseBoundary message="Error en tu perfil"><CustomerProfileView /></SuspenseBoundary>} />
+                </Route>
+
                 {/* ── Zona Pública + Admin (con sidebar) ── */}
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<SuspenseBoundary message="Error en la landing"><LandingView /></SuspenseBoundary>} />
-                  <Route path="/carta" element={<SuspenseBoundary message="Error en la vista de cliente"><CustomerView /></SuspenseBoundary>} />
                   <Route path="/rastreo" element={<SuspenseBoundary message="Error en el rastreador de pedidos"><OrderTracker /></SuspenseBoundary>} />
                   <Route path="/admin" element={<AuthGuard allowedRoles={['admin', 'superadmin', 'cajero']}><SuspenseBoundary message="Error en el panel de administración"><AdminView /></SuspenseBoundary></AuthGuard>} />
                   <Route path="/control-center" element={<AuthGuard allowedRoles={['admin', 'superadmin']}><SuspenseBoundary message="Error en el control center"><ControlCenterView /></SuspenseBoundary></AuthGuard>} />
                 </Route>
+                {/* Carta pública sin sidebar */}
+                <Route path="/carta" element={<SuspenseBoundary message="Error en la vista de cliente"><CustomerView /></SuspenseBoundary>} />
 
                 {/* ── Zona Staff (sin sidebar, con WorkerShell) ── */}
                 <Route path="/staff" element={<StaffGuard><WorkerShell /></StaffGuard>}>
@@ -135,6 +175,7 @@ export default function App() {
                   <Route path="/monitor" element={<SuspenseBoundary message="Error en el monitor"><MonitorView /></SuspenseBoundary>} />
                   <Route path="/reserva" element={<SuspenseBoundary message="Error en reservas"><ReservaView /></SuspenseBoundary>} />
                   <Route path="/mis-pedidos" element={<SuspenseBoundary message="Error en historial"><MisPedidosView /></SuspenseBoundary>} />
+                  <Route path="/mi-cuenta" element={<SuspenseBoundary message="Error en tu perfil"><CustomerProfileView /></SuspenseBoundary>} />
 
                 {/* ── Redirects viejas → nuevas ──────── */}
                 <Route path="/cocina" element={<Navigate to="/staff/cocina" replace />} />
@@ -147,6 +188,7 @@ export default function App() {
               </Routes>
               </MarketingProvider>
             </UIProvider>
+            </CustomerAuthProvider>
           </AuthProvider>
         </BrowserRouter>
       </BranchProvider>

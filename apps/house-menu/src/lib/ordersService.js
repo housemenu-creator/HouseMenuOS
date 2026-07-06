@@ -4,6 +4,7 @@ import { app, getSessionId } from '@house/db';
 import { realtimeDB as db } from '@house/db';
 import { ordersPath, ordersStatusPath, ordersUpdatedAtPath, catalogProductsPath } from './paths';
 import { nowISO } from './format';
+import { auditLog } from './auditService';
 
 const functions = getFunctions(app);
 
@@ -194,6 +195,17 @@ export const ordersService = {
           console.warn('Failed to link order to session:', sessionErr);
         }
       }
+
+      auditLog('order.created', {
+        orderId: newOrderRef.key,
+        total: orderData.total,
+        source: orderData.source,
+        payment_method: orderData.payment_method,
+        payment_status: orderData.payment_status,
+        itemCount: orderData.items?.length,
+        customerName: orderData.customerName,
+      }, userEmail || 'system');
+
       return { success: true, orderId: newOrderRef.key };
     } catch (error) {
       console.error('Error creating order:', error);
@@ -214,6 +226,12 @@ export const ordersService = {
         payment_verified_at: nowISO(),
         payment_verified_by: verifierEmail || 'system',
       });
+
+      auditLog('order.payment_verified', {
+        orderId,
+        method: 'Yape/Plin',
+      }, verifierEmail || 'system');
+
       return { success: true };
     } catch (error) {
       console.error('Error verifying payment:', error);
@@ -255,7 +273,7 @@ export const ordersService = {
    * @param {string} orderId ID del pedido
    * @param {string} newStatus Nuevo estado ('preparando', 'listo', 'entregado', 'cancelado')
    */
-  async updateOrderStatus(branchId, orderId, newStatus, userEmail) {
+   async updateOrderStatus(branchId, orderId, newStatus, userEmail, cancelReason) {
     try {
       const orderRef = ref(db, ordersPath(branchId, orderId));
 
@@ -319,8 +337,18 @@ export const ordersService = {
         updatedAt: nowISO(),
         ...(userEmail && { updatedBy: userEmail }),
       };
+      const oldStatus = (await get(orderRef)).val()?.status;
       if (userEmail && newStatus === 'cancelado') updates.canceledBy = userEmail;
+      if (newStatus === 'cancelado' && cancelReason) updates.cancelReason = cancelReason;
       await update(orderRef, updates);
+
+      auditLog('order.status_changed', {
+        orderId,
+        from: oldStatus,
+        to: newStatus,
+        reason: cancelReason || null,
+      }, userEmail || 'system');
+
       return { success: true };
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -375,17 +403,31 @@ export const ordersService = {
   /**
    * Marcar un pedido Pendiente como pagado
    */
-  async markAsPaid(branchId, orderId, paymentMethod, userEmail) {
+  async markAsPaid(branchId, orderId, paymentMethod, userEmail, discount) {
     try {
       const orderRef = ref(db, ordersPath(branchId, orderId));
-      await update(orderRef, {
+      const updates = {
         payment_method: paymentMethod,
         payment_status: 'pagado',
-        status: 'recibido',   // libera la orden a cocina si estaba pendiente_pago
+        status: 'recibido',
         paidAt: nowISO(),
         updatedAt: nowISO(),
         ...(userEmail && { paidBy: userEmail }),
-      });
+      };
+      if (discount) {
+        updates.discount = discount;
+        updates.totalAfterDiscount = discount.type === 'percentage'
+          ? Math.max(0, discount.originalTotal * (1 - Math.min(discount.value, 100) / 100))
+          : Math.max(0, discount.originalTotal - discount.value);
+      }
+      await update(orderRef, updates);
+
+      auditLog('order.marked_paid', {
+        orderId,
+        method: paymentMethod,
+        discount: discount || null,
+      }, userEmail || 'system');
+
       return { success: true };
     } catch (error) {
       console.error('Error marking order as paid:', error);
@@ -499,5 +541,36 @@ export const ordersService = {
         ...data
       });
     });
+  },
+
+  /**
+   * Append a note to an order's notes array
+   * @param {string} branchId
+   * @param {string} orderId
+   * @param {string} text
+   * @param {string} userEmail
+   * @param {string} displayName
+   */
+  async addOrderNote(branchId, orderId, text, userEmail, displayName) {
+    try {
+      const noteEntry = {
+        text,
+        createdBy: userEmail,
+        createdByName: displayName || userEmail,
+        createdAt: nowISO(),
+      };
+      const orderRef = ref(db, ordersPath(branchId, orderId));
+      const snapshot = await get(orderRef);
+      const existing = snapshot.val() || {};
+      const notes = Array.isArray(existing.notes) ? [...existing.notes, noteEntry] : [noteEntry];
+      await update(orderRef, {
+        notes,
+        updatedAt: nowISO(),
+      });
+      return { success: true };
+    } catch (err) {
+      console.warn('ordersService.addOrderNote error:', err);
+      return { success: false, error: err };
+    }
   }
 };

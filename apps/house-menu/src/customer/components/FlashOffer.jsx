@@ -64,9 +64,11 @@ export default function FlashOffer() {
   const handleClaimOffer = () => {
     if (!offer) return;
     const details = (offer.items || []).map((item) => item.name || item);
+    // Use first real productId if available, otherwise fall back to offer id
+    const firstProductId = offer.productIds?.[0] || offer.items?.[0]?.productId || offer.id;
     const newItem = {
       id: `flash-${Date.now()}`,
-      productId: offer.id,
+      productId: firstProductId,
       name: offer.title,
       details,
       price: offer.flashPrice ?? offer.price ?? 0,
@@ -112,24 +114,24 @@ export default function FlashOffer() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -15 }}
-      className="relative overflow-hidden rounded-3xl border-2 border-red-500/30 bg-gradient-to-br from-red-950/40 via-slate-950 to-slate-900 p-6 shadow-cm-lg hover:border-red-500/40 transition-all duration-300"
+      className="relative overflow-hidden rounded-3xl border-2 border-cm-error/30 bg-gradient-to-br from-cm-error/[0.07] to-cm-bg p-6 shadow-cm-lg hover:border-cm-error/40 transition-all duration-300"
     >
       {/* Decorative glows */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-red-600/10 rounded-full blur-[60px] pointer-events-none" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-500/5 rounded-full blur-[60px] pointer-events-none" />
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-cm-error/10 rounded-full blur-[60px] pointer-events-none" />
+      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-cm-warning/5 rounded-full blur-[60px] pointer-events-none" />
       <div className="absolute inset-0 opacity-[0.015] mix-blend-overlay pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle at 10% 90%, white 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
 
       <div className="relative z-10">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[0.65rem] font-black uppercase tracking-widest text-white bg-gradient-to-r from-red-600 to-amber-500 rounded-full shadow-lg shadow-red-900/30 animate-pulse">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[0.65rem] font-black uppercase tracking-widest text-white bg-gradient-to-r from-cm-error to-cm-warning rounded-full shadow-lg shadow-cm-error/30 animate-pulse">
             <Zap className="w-3.5 h-3.5" />
             Oferta Flash Relámpago
           </span>
 
           {offer.endTime && (
-            <div className="flex items-center gap-2 text-red-400 font-bold text-xs bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+            <div className="flex items-center gap-2 text-cm-error font-bold text-xs bg-cm-error/10 px-3 py-1 rounded-full border border-cm-error/20">
               <Clock className="w-3.5 h-3.5 animate-pulse" />
               Termina en: <span className="font-mono font-black tracking-wider text-sm ml-0.5">{formatTime(timeLeft)}</span>
             </div>
@@ -141,12 +143,12 @@ export default function FlashOffer() {
           <div className="space-y-1.5 flex-1">
             {offer.badge && (
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">{offer.badge}</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-cm-warning">{offer.badge}</span>
               </div>
             )}
-            <h3 className="text-2xl font-black text-white leading-tight tracking-tight">{offer.title}</h3>
+            <h3 className="text-2xl font-black text-cm-text leading-tight tracking-tight">{offer.title}</h3>
             {offer.subtitle && (
-              <p className="text-xs text-white/70 leading-relaxed max-w-lg">{offer.subtitle}</p>
+              <p className="text-xs text-cm-text-secondary leading-relaxed max-w-lg">{offer.subtitle}</p>
             )}
 
             {/* Items incluidos */}
@@ -155,8 +157,8 @@ export default function FlashOffer() {
                 {offer.items.map((item, idx) => {
                   const name = typeof item === 'string' ? item : item.name;
                   return (
-                    <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] font-medium text-white/80">
-                      <Sparkles className="w-3 h-3 text-amber-400" /> {name}
+                    <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-cm-bg-alt border border-cm-border text-[10px] font-medium text-cm-text-secondary">
+                      <Sparkles className="w-3 h-3 text-cm-warning" /> {name}
                     </span>
                   );
                 })}
@@ -165,19 +167,19 @@ export default function FlashOffer() {
           </div>
 
           {/* Precio + CTA */}
-          <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-4 p-4 md:p-0 rounded-2xl bg-white/[0.02] md:bg-transparent border border-white/5 md:border-0">
+          <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-4 p-4 md:p-0 rounded-2xl bg-cm-bg/30 md:bg-transparent border border-cm-border/50 md:border-0">
             <div className="text-left md:text-right">
               {originalPrice && (
                 <div className="flex items-center gap-2 md:justify-end">
-                  <span className="text-[10px] text-white/40 line-through">Reg. S/ {Number(originalPrice).toFixed(2)}</span>
+                  <span className="text-[10px] text-cm-text-secondary line-through">Reg. S/ {Number(originalPrice).toFixed(2)}</span>
                   {discountPercent != null && (
-                    <span className="text-[9px] font-black text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                    <span className="text-[9px] font-black text-cm-error bg-cm-error/10 px-1.5 py-0.5 rounded border border-cm-error/20">
                       -{discountPercent}%
                     </span>
                   )}
                 </div>
               )}
-              <p className="text-3xl font-black text-white tracking-tighter mt-0.5">S/ {Number(flashPrice).toFixed(2)}</p>
+              <p className="text-3xl font-black text-cm-text tracking-tighter mt-0.5">S/ {Number(flashPrice).toFixed(2)}</p>
             </div>
 
             <motion.button
@@ -186,8 +188,8 @@ export default function FlashOffer() {
               onClick={handleClaimOffer}
               className={`px-5 py-3 rounded-xl font-black text-xs tracking-wider uppercase transition-all shadow-md flex items-center gap-2 ${
                 added
-                  ? 'bg-emerald-600 text-white shadow-emerald-900/20 border border-emerald-500'
-                  : 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/30 border border-red-500'
+                  ? 'bg-cm-success text-white shadow-cm-success/20 border border-cm-success/50'
+                  : 'bg-cm-error hover:brightness-110 text-white shadow-cm-error/30 border border-cm-error'
               }`}
             >
               {added ? (
@@ -201,9 +203,9 @@ export default function FlashOffer() {
 
         {/* Progress bar */}
         {offer.endTime && (
-          <div className="mt-5 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+          <div className="mt-5 h-1 w-full bg-cm-bg-alt rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-1000 ease-linear rounded-full"
+              className="h-full bg-gradient-to-r from-cm-error to-cm-warning transition-all duration-1000 ease-linear rounded-full"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

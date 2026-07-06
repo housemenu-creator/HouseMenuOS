@@ -91,6 +91,54 @@ export function calculateChange(paid: number, total: number): number {
   return paid - total;
 }
 
+export interface DinerSplit {
+  name: string;
+  items: number[];
+  total: number;
+}
+
+export function calculateSplitDistribution(
+  items: { price: number; quantity: number }[],
+  diners: { name: string; items: number[] }[]
+): DinerSplit[] {
+  const assigned = new Set<number>();
+  return diners.map(diner => {
+    const valid = diner.items.filter(i => i >= 0 && i < items.length);
+    valid.forEach(i => assigned.add(i));
+    return {
+      name: diner.name,
+      items: valid,
+      total: calculateSplitTotal(items, valid),
+    };
+  });
+}
+
+export function getUnassignedItems(
+  totalItems: number,
+  diners: { items: number[] }[]
+): number[] {
+  const assigned = new Set<number>();
+  for (const d of diners) d.items.forEach(i => assigned.add(i));
+  const all = Array.from({ length: totalItems }, (_, i) => i);
+  return all.filter(i => !assigned.has(i));
+}
+
+export function validateSplitBalance(
+  items: { price: number; quantity: number }[],
+  diners: { items: number[] }[]
+): { balanced: boolean; totalAssigned: number; totalOrder: number; unassigned: number[] } {
+  const totalOrder = items.reduce((s, item) => s + (item.price || 0) * (item.quantity || 1), 0);
+  const unassigned = getUnassignedItems(items.length, diners);
+  const allIndices = items.map((_, idx) => idx);
+  const assignedTotal = calculateSplitTotal(items, allIndices.filter(idx => !unassigned.includes(idx)));
+  return {
+    balanced: unassigned.length === 0,
+    totalAssigned: assignedTotal,
+    totalOrder,
+    unassigned,
+  };
+}
+
 export function calculateDiscountedPrice(
   item: { price: number; quantity: number },
   discount?: { type: 'percentage' | 'fixed'; value: number } | null

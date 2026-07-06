@@ -11,7 +11,7 @@ const STATUS_LABELS = {
   preparando: { label: 'Preparando', class: 'bg-amber-500/10 text-amber-500' },
   listo: { label: 'Listo', class: 'bg-emerald-500/10 text-emerald-500' },
   en_camino: { label: 'En camino', class: 'bg-purple-500/10 text-purple-500' },
-  entregado: { label: 'Entregado', class: 'bg-gray-500/10 text-gray-500' },
+      entregado: { label: 'Entregado', class: 'bg-cm-bg-alt text-cm-text-secondary' },
   cancelado: { label: 'Cancelado', class: 'bg-red-500/10 text-red-500' },
 };
 
@@ -151,7 +151,7 @@ export default function MisPedidosView() {
   };
 
   return (
-    <div className="min-h-screen bg-cm-bg">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-cm-bg">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-cm-bg/80 backdrop-blur-xl border-b border-cm-border/50">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">

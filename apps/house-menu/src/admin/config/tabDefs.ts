@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ClipboardList, UtensilsCrossed, Package, Store, Users,
   DollarSign, TrendingUp, Warehouse, Truck, Receipt, Megaphone,
-  Settings, ShieldCheck, History, Calendar,
+  Settings, ShieldCheck, History, Calendar, BarChart3, Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -25,10 +25,12 @@ export const TAB_DEFS: Record<string, TabDef> = {
   marketing: { label: 'Marketing', icon: Megaphone, perm: 'marketing:read' },
   analytics: { label: 'Analytics', icon: TrendingUp, perm: 'analytics:read' },
   customers: { label: 'Clientes', icon: Users, perm: 'analytics:read' },
+  'customer-analytics': { label: 'Customer Analytics', icon: BarChart3, perm: 'analytics:read' },
   logistics: { label: 'Logística', icon: Package, perm: 'inventory:read' },
   employees: { label: 'Personal', icon: Users, perm: 'users:manage' },
   settings: { label: 'Config', icon: Settings, perm: 'config:manage' },
   roles: { label: 'Roles', icon: ShieldCheck, perm: 'system:manage' },
   audit: { label: 'Auditoría', icon: History, perm: 'system:audit' },
   reservations: { label: 'Reservas', icon: Calendar, perm: 'orders:read' },
+  branding: { label: 'Theme', icon: Sparkles, perm: 'config:manage' },
 };

@@ -54,7 +54,7 @@ export default function InlineEdit({ value, onSave, type = "text", className = "
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           disabled={saving}
-          className={`bg-white border-2 border-cm-accent/40 rounded px-1 outline-none focus:border-cm-accent focus:ring-2 focus:ring-cm-accent/20 disabled:opacity-50 ${className}`}
+          className={`bg-cm-surface border-2 border-cm-accent/40 rounded px-1 outline-none focus:border-cm-accent focus:ring-2 focus:ring-cm-accent/20 disabled:opacity-50 ${className}`}
           style={{ minWidth: type === 'number' ? '4rem' : '100%' }}
         />
         {saving && <Loader2 className="w-3 h-3 ml-1 animate-spin text-cm-accent shrink-0" />}

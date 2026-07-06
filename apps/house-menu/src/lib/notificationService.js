@@ -8,6 +8,7 @@
  */
 import { ref, push, set, update, query, limitToLast, onValue, serverTimestamp, orderByChild } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
+import { checkPreference } from './notificationPreferences';
 
 /**
  * Firebase RTDB no permite ".", "#", "$", "[", "]" en keys de paths.
@@ -59,6 +60,46 @@ export async function createNotificationForUsers({ branchId, userIds, type, titl
 }
 
 /**
+ * Create a notification ONLY if the user has this type enabled in preferences.
+ * Returns the notification ID, or null if the user opted out.
+ */
+export async function createFilteredNotification({ branchId, userId, type, title, body, orderId = null, url = null }) {
+  if (!branchId || !userId) return null;
+
+  const pref = await checkPreference(branchId, userId, type);
+  if (!pref.allowed) {
+    return null; // User has this type disabled
+  }
+
+  return createNotification({ branchId, userId, type, title, body, orderId, url });
+}
+
+/**
+ * Create notifications for MULTIPLE users, respecting each user's preferences.
+ * Only users who have the notification type enabled will receive it.
+ */
+export async function createFilteredNotificationForUsers({ branchId, userIds, type, title, body, orderId = null, url = null }) {
+  if (!branchId || !userIds?.length) return;
+
+  // Check all preferences in parallel, then write only for allowed users
+  const checks = await Promise.all(
+    userIds.map(async (uid) => {
+      const pref = await checkPreference(branchId, uid, type);
+      return { userId: uid, allowed: pref.allowed };
+    })
+  );
+
+  const allowedUserIds = checks.filter((c) => c.allowed).map((c) => c.userId);
+  if (allowedUserIds.length === 0) return;
+
+  await Promise.all(
+    allowedUserIds.map((uid) =>
+      createNotification({ branchId, userId: uid, type, title, body, orderId, url })
+    )
+  );
+}
+
+/**
  * Subscribe to notifications for a user (most recent 50).
  * Returns unsubscribe function.
  */
@@ -90,12 +131,18 @@ export function subscribeToNotifications(branchId, userId, onData) {
 /**
  * Mark a single notification as read.
  */
-export async function markAsRead(branchId, userId, notifId) {
+export async function markAsRead(branchId, userId, notifId, trackClick = false) {
   if (!branchId || !userId || !notifId) return;
   const key = safePathKey(userId);
-  await update(ref(db, `branches/${branchId}/notifications/${key}/${notifId}`), {
+  const updates = {
     read: true,
-  });
+  };
+  // Track cuando el usuario hace clic activamente en la notificación
+  if (trackClick) {
+    updates.clickedAt = serverTimestamp();
+    updates._clickedAt_client = Date.now();
+  }
+  await update(ref(db, `branches/${branchId}/notifications/${key}/${notifId}`), updates);
 }
 
 /**

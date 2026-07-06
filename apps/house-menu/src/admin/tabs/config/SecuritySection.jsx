@@ -90,7 +90,7 @@ export default function SecuritySection({ config, onSave, saving }) {
             <label className="flex items-center gap-3 cursor-pointer group">
               <button type="button" onClick={() => setForm(prev => ({ ...prev, allowMultipleSessions: !prev.allowMultipleSessions }))}
                 className={`relative w-9 h-[18px] rounded-full transition-colors ${form.allowMultipleSessions ? 'bg-cm-success' : 'bg-cm-border group-hover:bg-cm-text-tertiary/30'}`}>
-                <span className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow-sm transition-transform ${form.allowMultipleSessions ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                <span className={`absolute top-0.5 w-3.5 h-3.5 bg-cm-surface rounded-full shadow-sm transition-transform ${form.allowMultipleSessions ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
               </button>
               <span className="text-xs text-cm-text-secondary select-none">Permitir mismo usuario en múltiples dispositivos</span>
             </label>
