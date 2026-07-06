@@ -56,6 +56,7 @@ export default function MenuCategoryBlock({
   deleteProduct,
   duplicateProduct,
   onConfigureWizard,
+  onCreateCampaign,
   renameCategory,
   activeBranchId,
   categoriesConfig = {},
