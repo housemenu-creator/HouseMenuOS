@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Upload, Sparkles, Save, ArrowRight } from 'lucide-react';
+import { X, Camera, Upload, Sparkles, Save, ArrowRight, Loader2 } from 'lucide-react';
 import { AIProcessingDisplay } from './AIProcessingDisplay';
 import { useAIProduct } from '../../hooks/useAIProduct';
 import type { ProductDescription } from '../../../lib/aiService';
@@ -29,6 +29,7 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
     isGlutenFree: false,
   });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +38,7 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
       reset();
       setStep('upload');
       setSaving(false);
+      setSaveError(null);
     }
   }, [isOpen, reset]);
 
@@ -71,12 +73,20 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
 
   const handleSave = useCallback(async () => {
     setSaving(true);
-    const id = await saveProduct(form);
-    if (id) {
-      setStep('done');
-      onProductCreated(id, form.name);
+    setSaveError(null);
+    try {
+      const id = await saveProduct(form);
+      if (id) {
+        setStep('done');
+        onProductCreated(id, form.name);
+      } else {
+        setSaveError('No se pudo crear el producto. Intentá de nuevo.');
+      }
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Error al guardar el producto');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }, [form, saveProduct, onProductCreated]);
 
   const handleCreateCampaign = useCallback(() => {
@@ -335,20 +345,31 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
 
         {/* Footer */}
         {step === 'form' && (
-          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-cm-border bg-cm-bg/50">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-cm-text-secondary hover:text-cm-text transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!form.name || !form.price || saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cm-accent text-white font-black text-xs tracking-wider uppercase shadow-lg active:translate-y-px active:shadow-inner transition-all duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {saving ? 'Guardando...' : '⚡ Guardar Producto'}
-            </button>
+          <div className="flex flex-col px-5 py-4 border-t border-cm-border bg-cm-bg/50">
+            {saveError && (
+              <div className="mb-3 px-3 py-2 rounded-lg bg-cm-error/10 border border-cm-error/20 text-xs font-semibold text-cm-error">
+                {saveError}
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-cm-text-secondary hover:text-cm-text transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!form.name || !form.price || saving}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cm-accent text-white font-black text-xs tracking-wider uppercase shadow-lg active:translate-y-px active:shadow-inner transition-all duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                ) : (
+                  <><Save className="w-4 h-4" /> Guardar Producto</>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </motion.div>
