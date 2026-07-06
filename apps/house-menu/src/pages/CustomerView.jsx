@@ -27,6 +27,7 @@ import CategoryRibbon from '../customer/components/CategoryRibbon';
 import ProductGrid from '../customer/components/ProductGrid';
 import BentoDailyMenu from '../customer/components/BentoDailyMenu';
 import MarketingHighlights from '../customer/components/MarketingHighlights';
+import CampaignBanner from '../customer/components/CampaignBanner';
 import UrgencyBar from '../customer/components/UrgencyBar';
 import ProductSkeleton from '../customer/components/ProductSkeleton';
 import ProductSheet from '../customer/components/ProductSheet';
@@ -571,6 +572,7 @@ export default function CustomerView() {
                   catalog={catalog}
                 />
               )}
+              <CampaignBanner dismissible={true} className="mb-4" />
               {layoutConfig.cartaShowDailyMenu && (
                 <BentoDailyMenu 
                   menu={dailyMenus[selectedDate]} 
