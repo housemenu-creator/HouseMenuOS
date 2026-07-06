@@ -83,6 +83,37 @@ export const menuService = {
   },
 
   /**
+   * Crea un producto con datos completos (para AI Smart Create)
+   */
+  async createProductWithData(branchId, productData) {
+    const productsRef = ref(db, catalogProductsPath(branchId));
+    const newProductRef = push(productsRef);
+    const product = {
+      name: productData.name || 'Nuevo Plato',
+      category: productData.category || 'General',
+      base_price: productData.base_price ?? 0,
+      price: productData.price ?? null,
+      available: productData.available ?? false,
+      description: productData.description || '',
+      image: productData.image || '',
+      tags: productData.tags || [],
+      spicy: productData.spicy ?? false,
+      vegan: productData.vegan ?? false,
+      glutenFree: productData.glutenFree ?? false,
+      isWizard: false,
+      steps: [],
+      channels: { carta: true, kiosko: true, landing: false, delivery: true },
+      sortOrder: productData.sortOrder ?? 0,
+      status: 'published',
+      schedule: { enabled: false, start: '12:00', end: '22:00' },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    await set(newProductRef, product);
+    return newProductRef.key;
+  },
+
+  /**
    * Crea una nueva categoría insertando un plato "fantasma" inactivo
    */
   async createCategory(branchId, categoryName) {
