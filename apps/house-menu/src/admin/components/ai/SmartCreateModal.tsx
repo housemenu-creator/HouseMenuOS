@@ -50,7 +50,10 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
   }, [result]);
 
   useEffect(() => {
-    if (error) setStep('upload');
+    if (error) {
+      // AI falló → pasamos a modo manual con formulario vacío
+      setStep('form');
+    }
   }, [error]);
 
   const handleFile = useCallback(
@@ -189,6 +192,19 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
                   <Upload className="w-4 h-4" />
                   Subir desde galería
                 </button>
+
+                {/* Skip AI — create manually */}
+                <div className="relative flex items-center gap-3 pt-2">
+                  <span className="flex-1 h-px bg-cm-border" />
+                  <span className="text-[10px] font-semibold text-cm-text-tertiary uppercase tracking-wider">o</span>
+                  <span className="flex-1 h-px bg-cm-border" />
+                </div>
+                <button
+                  onClick={() => setStep('form')}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-cm-border text-xs font-bold text-cm-text-secondary hover:border-cm-accent/30 hover:text-cm-accent transition-colors"
+                >
+                  Crear producto manualmente
+                </button>
               </motion.div>
             )}
 
@@ -198,7 +214,7 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
               </motion.div>
             )}
 
-            {step === 'form' && result && (
+            {step === 'form' && (
               <motion.div
                 key="form"
                 initial={{ opacity: 0, y: 10 }}
@@ -206,9 +222,15 @@ export function SmartCreateModal({ isOpen, onClose, branchId, categories, onProd
                 exit={{ opacity: 0 }}
                 className="space-y-3"
               >
-                <div className="text-[10px] font-black uppercase tracking-wider text-cm-accent mb-2">
-                  🤖 AI Sugiere
-                </div>
+                {result ? (
+                  <div className="text-[10px] font-black uppercase tracking-wider text-cm-accent mb-2">
+                    🤖 AI Sugiere
+                  </div>
+                ) : (
+                  <div className="px-3 py-2 rounded-lg bg-cm-warning/10 border border-cm-warning/20 text-[10px] font-semibold text-cm-warning mb-2">
+                    📝 Modo manual — completá los campos para crear el producto
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-cm-text-secondary mb-1">

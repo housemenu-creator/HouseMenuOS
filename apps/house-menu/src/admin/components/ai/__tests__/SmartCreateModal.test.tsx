@@ -91,7 +91,7 @@ describe('SmartCreateModal', () => {
     expect(screen.getByDisplayValue('Lomo Saltado')).toBeDefined();
   });
 
-  it('muestra error si AI falla', () => {
+  it('va a modo manual si AI falla', () => {
     mockUseAIProduct.mockReturnValue({
       image: null,
       setImage: vi.fn(),
@@ -106,7 +106,19 @@ describe('SmartCreateModal', () => {
     });
 
     render(<SmartCreateModal {...defaultProps} />);
-    expect(screen.getByText('Error al procesar')).toBeDefined();
+    // AI falla → modo manual con formulario vacío
+    expect(screen.getByText(/Modo manual/)).toBeDefined();
+  });
+
+  it('muestra boton para crear manualmente', () => {
+    render(<SmartCreateModal {...defaultProps} />);
+    expect(screen.getByText('Crear producto manualmente')).toBeDefined();
+  });
+
+  it('va al formulario manual al clickear crear manualmente', () => {
+    render(<SmartCreateModal {...defaultProps} />);
+    fireEvent.click(screen.getByText('Crear producto manualmente'));
+    expect(screen.getByText(/Modo manual/)).toBeDefined();
   });
 
   it('llama onClose al hacer click en X', () => {
