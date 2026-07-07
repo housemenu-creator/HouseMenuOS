@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Download, DollarSign, Trash2, ChevronDown, ChevronUp, Printer,
-  StickyNote, Undo2, Edit3, X, Plus, Minus, Save, AlertTriangle, Loader2, Receipt, ShieldCheck
+  StickyNote, Edit3, X, Loader2, Receipt, ShieldCheck, Undo2
 } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { ordersService } from '../../lib/ordersService';
@@ -10,42 +10,20 @@ import { formatCurrency, formatOrderId } from '../../lib/format';
 import { useToast } from '../../components/ToastContext';
 import { confirmDialog } from '../../components/ConfirmDialog';
 import { useAuth } from '../../context/AuthContext';
+import EditOrderModal from '../components/orders/EditOrderModal';
+import NotesModal from '../components/orders/NotesModal';
+import RefundModal from '../components/orders/RefundModal';
 
-function ItemRow({ item, index, editMode, onChange }) {
+function ItemRow({ item, index }) {
   const qty = Number(item.quantity || 1);
   const price = Number(item.price || 0);
-
-  if (!editMode) {
-    return (
-      <tr key={index} className="border-b border-cm-border/50 last:border-0">
-        <td className="py-2 text-sm text-cm-text">{item.name}</td>
-        <td className="py-2 text-sm text-cm-text-secondary text-center">x{qty}</td>
-        <td className="py-2 text-sm text-cm-text-secondary">{item.details?.join(', ') || '-'}</td>
-        <td className="py-2 text-sm text-cm-text text-right font-medium">{formatCurrency(price)}</td>
-        <td className="py-2 text-sm text-cm-text text-right font-semibold">{formatCurrency((qty * price))}</td>
-      </tr>
-    );
-  }
-
   return (
-    <tr className="border-b border-cm-border/50 last:border-0">
-      <td className="py-2">
-        <input type="text" value={item.name} onChange={e => onChange(index, 'name', e.target.value)}
-          className="w-full bg-cm-bg-alt border border-cm-border rounded px-2 py-1 text-sm text-cm-text focus:outline-none focus:border-cm-accent" />
-      </td>
-      <td className="py-2 text-center">
-        <div className="flex items-center justify-center gap-1">
-          <button onClick={() => onChange(index, 'quantity', Math.max(1, qty - 1))} className="p-0.5 text-cm-text-secondary hover:text-cm-accent"><Minus className="w-3 h-3" /></button>
-          <span className="w-6 text-center text-sm font-semibold text-cm-text">{qty}</span>
-          <button onClick={() => onChange(index, 'quantity', qty + 1)} className="p-0.5 text-cm-text-secondary hover:text-cm-accent"><Plus className="w-3 h-3" /></button>
-        </div>
-      </td>
+    <tr key={index} className="border-b border-cm-border/50 last:border-0">
+      <td className="py-2 text-sm text-cm-text">{item.name}</td>
+      <td className="py-2 text-sm text-cm-text-secondary text-center">x{qty}</td>
       <td className="py-2 text-sm text-cm-text-secondary">{item.details?.join(', ') || '-'}</td>
-      <td className="py-2 text-right">
-        <input type="number" step="0.5" value={price} onChange={e => onChange(index, 'price', Math.max(0, parseFloat(e.target.value) || 0))}
-          className="w-20 text-right bg-cm-bg-alt border border-cm-border rounded px-2 py-1 text-sm text-cm-text focus:outline-none focus:border-cm-accent" />
-      </td>
-      <td className="py-2 text-right font-semibold text-sm text-cm-text">{formatCurrency((qty * price))}</td>
+      <td className="py-2 text-sm text-cm-text text-right font-medium">{formatCurrency(price)}</td>
+      <td className="py-2 text-sm text-cm-text text-right font-semibold">{formatCurrency((qty * price))}</td>
     </tr>
   );
 }
@@ -61,20 +39,15 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editOrder, setEditOrder] = useState(null);
-  const [editItems, setEditItems] = useState([]);
+  const [editSaving, setEditSaving] = useState(false);
 
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notesOrder, setNotesOrder] = useState(null);
-  const [notesText, setNotesText] = useState('');
+  const [notesSaving, setNotesSaving] = useState(false);
 
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundOrder, setRefundOrder] = useState(null);
-  const [refundAmount, setRefundAmount] = useState(0);
-  const [refundReason, setRefundReason] = useState('');
-  const [refundMethod, setRefundMethod] = useState('Efectivo');
-  const [refundLoading, setRefundLoading] = useState(false);
-
-  const [actionLoading, setActionLoading] = useState(false);
+  const [refundProcessing, setRefundProcessing] = useState(false);
 
   // Yape/Plin verification modal
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -145,30 +118,20 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
 
   const openEdit = (order) => {
     setEditOrder(order);
-    setEditItems((order.items || []).map(i => ({ ...i, quantity: Number(i.quantity || 1) })));
     setShowEditModal(true);
   };
 
-  const handleEditItemChange = (index, field, value) => {
-    setEditItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
-  };
-
-  const handleEditItemRemove = (index) => {
-    if (editItems.length <= 1) return;
-    setEditItems(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const saveEdit = async () => {
+  const handleEditSave = async (items, total) => {
     if (!editOrder || !activeBranchId) return;
-    setActionLoading(true);
+    setEditSaving(true);
     try {
-      const subtotal = editItems.reduce((s, i) => s + Number(i.price || 0) * Number(i.quantity || 1), 0);
+      const subtotal = items.reduce((s, i) => s + Number(i.price || 0) * Number(i.quantity || 1), 0);
       const financials = {
         ...editOrder.financials,
         subtotal,
         total: subtotal + (editOrder.financials?.deliveryFee || 0) + (editOrder.financials?.packaging_total || 0),
       };
-      const r = await ordersService.updateOrderItems(activeBranchId, editOrder.id, { items: editItems, financials, total: financials.total }, user?.email);
+      const r = await ordersService.updateOrderItems(activeBranchId, editOrder.id, { items, financials, total: financials.total }, user?.email);
       if (r.success) {
         setShowEditModal(false);
         setEditOrder(null);
@@ -179,44 +142,44 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
     } catch (err) {
       showToast(err.message || 'Error al guardar cambios', 'error');
     }
-    setActionLoading(false);
+    setEditSaving(false);
   };
 
   const openNotes = (order) => {
     setNotesOrder(order);
-    const latestNote = Array.isArray(order.notes) && order.notes.length > 0 ? order.notes[order.notes.length - 1].text : '';
-    setNotesText(latestNote || order.internalNote || '');
     setShowNotesModal(true);
   };
 
-  const saveNotes = async () => {
+  const handleNotesSave = async (text) => {
     if (!notesOrder || !activeBranchId) return;
-    setActionLoading(true);
-    const r = await ordersService.addOrderNote(activeBranchId, notesOrder.id, notesText, user?.email);
-    if (r.success) { setShowNotesModal(false); showToast('Nota guardada'); }
-    else showToast('Error al guardar nota', 'error');
-    setActionLoading(false);
+    setNotesSaving(true);
+    try {
+      const r = await ordersService.addOrderNote(activeBranchId, notesOrder.id, text, user?.email);
+      if (r.success) { setShowNotesModal(false); showToast('Nota guardada'); }
+      else showToast('Error al guardar nota', 'error');
+    } catch (err) {
+      showToast(err.message || 'Error al guardar nota', 'error');
+    }
+    setNotesSaving(false);
   };
 
   const openRefund = (order) => {
     setRefundOrder(order);
-    setRefundAmount(order.financials?.total || 0);
-    setRefundReason('');
     setShowRefundModal(true);
   };
 
-  const processRefund = async () => {
+  const handleRefundConfirm = async ({ amount, method, reason }) => {
     if (!refundOrder || !activeBranchId) return;
-    if (!(await confirmDialog(`Procesar reembolso de ${formatCurrency(refundAmount)} para ${formatOrderId(refundOrder.id)}?`))) return;
-    setRefundLoading(true);
-    const r = await ordersService.processRefund(activeBranchId, refundOrder.id, {
-      amount: refundAmount,
-      method: refundMethod,
-      reason: refundReason,
-    }, user?.email);
-    if (r.success) { setShowRefundModal(false); showToast('Reembolso procesado'); }
-    else showToast('Error al procesar reembolso', 'error');
-    setRefundLoading(false);
+    if (!(await confirmDialog(`Procesar reembolso de ${formatCurrency(amount)} para ${formatOrderId(refundOrder.id)}?`))) return;
+    setRefundProcessing(true);
+    try {
+      const r = await ordersService.processRefund(activeBranchId, refundOrder.id, { amount, method, reason }, user?.email);
+      if (r.success) { setShowRefundModal(false); showToast('Reembolso procesado'); }
+      else showToast('Error al procesar reembolso', 'error');
+    } catch (err) {
+      showToast(err.message || 'Error al procesar reembolso', 'error');
+    }
+    setRefundProcessing(false);
   };
 
   const printOrder = (order) => {
@@ -405,7 +368,7 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
                               </thead>
                               <tbody>
                                 {(o.items || []).map((item, idx) => (
-                                  <ItemRow key={idx} item={item} index={idx} editMode={false} />
+                                  <ItemRow key={idx} item={item} index={idx} />
                                 ))}
                               </tbody>
                             </table>
@@ -522,127 +485,29 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
         )}
       </AnimatePresence>
 
-      {/* Edit Modal */}
-      <AnimatePresence>
-        {showEditModal && editOrder && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setShowEditModal(false)}>
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-cm-surface rounded-xl shadow-cm-lg w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <div className="sticky top-0 bg-cm-surface border-b border-cm-border px-6 py-4 flex items-center justify-between z-10">
-                <h3 className="text-lg font-bold text-cm-text">Editar Pedido</h3>
-                <button onClick={() => setShowEditModal(false)} className="p-1 hover:bg-cm-accent/10 rounded transition-colors"><X className="w-5 h-5 text-cm-text-secondary" /></button>
-              </div>
-              <div className="p-6 space-y-4">
-                <p className="text-sm text-cm-text-secondary">{formatOrderId(editOrder.id)} — {editOrder.customerName || 'Anonimo'}</p>
+      <EditOrderModal
+        isOpen={showEditModal}
+        order={editOrder}
+        onClose={() => { setShowEditModal(false); setEditOrder(null); }}
+        onSave={handleEditSave}
+        saving={editSaving}
+      />
 
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-cm-border">
-                      <th className="text-left py-2 text-xs font-semibold text-cm-text-secondary">Producto</th>
-                      <th className="text-center py-2 text-xs font-semibold text-cm-text-secondary">Cant</th>
-                      <th className="text-left py-2 text-xs font-semibold text-cm-text-secondary hidden sm:table-cell">Detalles</th>
-                      <th className="text-right py-2 text-xs font-semibold text-cm-text-secondary">P.Unit</th>
-                      <th className="text-right py-2 text-xs font-semibold text-cm-text-secondary">Subtotal</th>
-                      <th className="w-8 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {editItems.map((item, idx) => (
-                      <ItemRow key={idx} item={item} index={idx} editMode={true} onChange={handleEditItemChange} />
-                    ))}
-                  </tbody>
-                </table>
+      <NotesModal
+        isOpen={showNotesModal}
+        order={notesOrder}
+        onClose={() => { setShowNotesModal(false); setNotesOrder(null); }}
+        onSave={handleNotesSave}
+        saving={notesSaving}
+      />
 
-                <div className="text-right text-sm font-bold text-cm-text pt-2 border-t border-cm-border">
-                  Nuevo Total: {formatCurrency(editItems.reduce((s, i) => s + Number(i.price || 0) * Number(i.quantity || 1), 0))}
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button onClick={() => setShowEditModal(false)} className="flex-1 py-2.5 border border-cm-border text-sm font-semibold text-cm-text rounded-lg hover:bg-cm-surface-hover transition-colors">Cancelar</button>
-                  <button onClick={saveEdit} disabled={actionLoading} className="flex-1 py-2.5 bg-cm-accent text-white text-sm font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Guardar
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Notes Modal */}
-      <AnimatePresence>
-        {showNotesModal && notesOrder && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setShowNotesModal(false)}>
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-cm-surface rounded-xl shadow-cm-lg w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
-              <div className="px-6 py-4 border-b border-cm-border">
-                <h3 className="text-lg font-bold text-cm-text">Nota interna</h3>
-                <p className="text-xs text-cm-text-secondary">{formatOrderId(notesOrder.id)} — {notesOrder.customerName || 'Anonimo'}</p>
-              </div>
-              <div className="p-6">
-                <textarea value={notesText} onChange={e => setNotesText(e.target.value)} rows={4}
-                  className="w-full bg-cm-bg-alt border border-cm-border rounded-lg px-3 py-2.5 text-sm text-cm-text focus:outline-none focus:border-cm-accent resize-none"
-                  placeholder="Nota visible solo para administradores..." />
-              </div>
-              <div className="px-6 py-4 border-t border-cm-border flex gap-3">
-                <button onClick={() => setShowNotesModal(false)} className="flex-1 py-2.5 border border-cm-border text-sm font-semibold text-cm-text rounded-lg hover:bg-cm-surface-hover transition-colors">Cancelar</button>
-                <button onClick={saveNotes} disabled={actionLoading} className="flex-1 py-2.5 bg-cm-accent text-white text-sm font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Guardar
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Refund Modal */}
-      <AnimatePresence>
-        {showRefundModal && refundOrder && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setShowRefundModal(false)}>
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-cm-surface rounded-xl shadow-cm-lg w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-              <div className="px-6 py-4 border-b border-cm-border">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-cm-warning" />
-                  <h3 className="text-lg font-bold text-cm-text">Reembolsar pedido</h3>
-                </div>
-                <p className="text-xs text-cm-text-secondary mt-1">{formatOrderId(refundOrder.id)} — {refundOrder.customerName || 'Anonimo'}</p>
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <p className="text-xs font-semibold text-cm-text-secondary uppercase tracking-wider mb-1">Monto a reembolsar</p>
-                  <input type="number" step="0.5" value={refundAmount} onChange={e => setRefundAmount(Math.max(0, parseFloat(e.target.value) || 0))}
-                    className="w-full bg-cm-bg-alt border border-cm-border rounded-lg px-3 py-2.5 text-sm text-cm-text focus:outline-none focus:border-cm-accent" />
-                  <p className="text-xs text-cm-text-secondary mt-1">Máximo: {formatCurrency((refundOrder.financials?.total || 0))}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-cm-text-secondary uppercase tracking-wider mb-2">Método de reembolso</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Efectivo', 'Yape/Plin', 'Transferencia'].map(m => (
-                      <button key={m} onClick={() => setRefundMethod(m)}
-                        className={`py-2.5 rounded-xl text-xs font-semibold border transition-all ${
-                          refundMethod === m
-                            ? 'bg-cm-warning border-cm-warning text-white'
-                            : 'bg-cm-accent/5 border-cm-border text-cm-text-secondary hover:bg-cm-accent/10'
-                        }`}
-                      >{m}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-cm-text-secondary uppercase tracking-wider mb-1">Motivo (opcional)</p>
-                  <input type="text" value={refundReason} onChange={e => setRefundReason(e.target.value)}
-                    className="w-full bg-cm-bg-alt border border-cm-border rounded-lg px-3 py-2.5 text-sm text-cm-text focus:outline-none focus:border-cm-accent"
-                    placeholder="Ej: Cliente insatisfecho, error en pedido..." />
-                </div>
-              </div>
-              <div className="px-6 py-4 border-t border-cm-border flex gap-3">
-                <button onClick={() => setShowRefundModal(false)} className="flex-1 py-2.5 border border-cm-border text-sm font-semibold text-cm-text rounded-lg hover:bg-cm-surface-hover transition-colors">Cancelar</button>
-                <button onClick={processRefund} disabled={refundLoading} className="flex-1 py-2.5 bg-cm-warning text-white text-sm font-semibold rounded-lg hover:bg-cm-warning/80 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                  {refundLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />} Reembolsar
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <RefundModal
+        isOpen={showRefundModal}
+        order={refundOrder}
+        onClose={() => { setShowRefundModal(false); setRefundOrder(null); }}
+        onConfirm={handleRefundConfirm}
+        processing={refundProcessing}
+      />
 
       {/* Yape/Plin Verification Modal */}
       <AnimatePresence>
