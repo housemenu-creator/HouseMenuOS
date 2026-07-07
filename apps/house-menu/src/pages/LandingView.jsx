@@ -20,6 +20,7 @@ import { menuService } from '../lib/menuService';
 import CustomerAuthModal from '../components/CustomerAuthModal';
 import logo from '../assets/logo.jpg';
 import HeroBanner from '../customer/components/HeroBanner';
+import CampaignBanner from '../customer/components/CampaignBanner';
 import FlashOffer from '../customer/components/FlashOffer';
 import MarketingHighlights from '../customer/components/MarketingHighlights';
 import UrgencyBar from '../customer/components/UrgencyBar';
@@ -222,6 +223,11 @@ export default function LandingView() {
             <HeroBanner branchName={branchName} campaign={campaign} kitchenHours={kitchenHours} catalog={catalog} />
           </motion.section>
         )}
+
+        {/* ════════════════ CAMPAIGN BANNER ════════════════ */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-4">
+          <CampaignBanner dismissible={true} />
+        </div>
 
         {/* ════════════════ METRICS STRIP ════════════════ */}
         {hasStats && (

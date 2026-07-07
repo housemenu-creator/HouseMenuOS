@@ -20,6 +20,7 @@ interface MenuItemRowProps {
   deleteProduct: (productId: string) => Promise<void>;
   duplicateProduct: (productId: string) => Promise<void>;
   onConfigureWizard: (productId: string) => void;
+  onCreateCampaign?: (product: MenuProduct & { id: string }) => void;
   notify?: (message: string, type?: 'success' | 'error') => void;
   onMoveItem?: (productId: string, direction: 'up' | 'down') => void;
   onReorder?: (sourceId: string, targetId: string) => void;
@@ -48,6 +49,7 @@ export default function MenuItemRow({
   deleteProduct,
   duplicateProduct,
   onConfigureWizard,
+  onCreateCampaign,
   notify,
   onMoveItem,
   onReorder,
@@ -348,6 +350,14 @@ export default function MenuItemRow({
                     <Copy className="w-4 h-4 text-cm-muted" />
                     Duplicar Plato
                   </button>
+
+                  {onCreateCampaign && (
+                    <button onClick={() => { onCreateCampaign(item); setMenuOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-bold text-cm-text hover:bg-cm-accent/5 hover:text-cm-success flex items-center gap-2 transition-colors">
+                      <Sparkles className="w-4 h-4 text-cm-warning" />
+                      ✨ Crear Campaña
+                    </button>
+                  )}
 
                   <div className="h-px bg-cm-border my-1.5" />
 

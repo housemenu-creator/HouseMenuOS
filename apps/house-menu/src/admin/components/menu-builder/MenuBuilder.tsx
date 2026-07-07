@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, PackageOpen, Soup } from 'lucide-react';
+import { Plus, Search, PackageOpen, Soup, Sparkles } from 'lucide-react';
 import MenuCategoryBlock from './MenuCategoryBlock';
 import { PromptModal } from '../ConfirmModal';
 import { Skeleton } from '../Skeleton';
+import { SmartCreateModal } from '../ai/SmartCreateModal';
+import { CampaignQuickWizard } from '../ai/CampaignQuickWizard';
 import type { MenuProduct } from '../../types';
 
 interface MenuBuilderProps {
@@ -69,6 +71,17 @@ export default function MenuBuilder({
 }: MenuBuilderProps) {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSmartCreate, setShowSmartCreate] = useState(false);
+  const [campaignProduct, setCampaignProduct] = useState<MenuProduct & { id: string } | null>(null);
+
+  const handleCreateCampaign = useCallback((product: MenuProduct & { id: string }) => {
+    setCampaignProduct(product);
+  }, []);
+
+  const handleCampaignCreated = useCallback(() => {
+    setCampaignProduct(null);
+    notify?.('Campaña activada exitosamente', 'success');
+  }, [notify]);
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
@@ -113,8 +126,8 @@ export default function MenuBuilder({
   return (
     <>
       <div className="space-y-4">
-        {/* Search bar (always shown) */}
-        <div className="flex items-center gap-3">
+        {/* Search bar + AI Smart Create (always shown) */}
+        <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-muted" />
             <input
@@ -125,6 +138,15 @@ export default function MenuBuilder({
               className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-cm-border bg-cm-surface text-sm font-bold text-cm-text focus:border-cm-accent focus:outline-none transition-colors placeholder:text-cm-muted"
             />
           </div>
+          <button
+            onClick={() => setShowSmartCreate(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-[#0A0A0A] border border-[#2A2A2A] text-cm-success text-[0.6rem] font-black uppercase tracking-wider hover:brightness-125 transition-all shadow-[inset_0_0_15px_rgba(34,197,94,0.08)]"
+            style={{ textShadow: '0 0 6px rgba(34,197,94,0.2)' }}
+            title="Crear producto con AI desde foto"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Smart Create
+          </button>
           {hasFilter && (
             <span className="text-xs font-bold text-cm-muted whitespace-nowrap">
               {filteredCount} de {totalProducts}
@@ -196,6 +218,7 @@ export default function MenuBuilder({
                   deleteProduct={deleteProduct}
                   duplicateProduct={duplicateProduct}
                   onConfigureWizard={onConfigureWizard}
+                  onCreateCampaign={handleCreateCampaign}
                   renameCategory={renameCategory}
                   activeBranchId={activeBranchId}
                   categoriesConfig={categoriesConfig}
@@ -219,6 +242,24 @@ export default function MenuBuilder({
           </button>
         )}
       </div>
+
+      <SmartCreateModal
+        isOpen={showSmartCreate}
+        onClose={() => setShowSmartCreate(false)}
+        branchId={activeBranchId}
+        categories={Object.keys(categoriesConfig)}
+        onProductCreated={() => setShowSmartCreate(false)}
+      />
+
+      {campaignProduct && (
+        <CampaignQuickWizard
+          isOpen={!!campaignProduct}
+          onClose={() => setCampaignProduct(null)}
+          branchId={activeBranchId}
+          product={campaignProduct}
+          onCampaignCreated={handleCampaignCreated}
+        />
+      )}
 
       <PromptModal
         open={showCategoryModal}

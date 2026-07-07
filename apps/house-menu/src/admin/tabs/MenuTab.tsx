@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import MenuBuilder from '../components/menu-builder/MenuBuilder';
 import WizardConfigModal from '../components/menu-builder/WizardConfigModal';
+import { SmartCreateModal } from '../components/ai/SmartCreateModal';
 import { Skeleton } from '../components/Skeleton';
 import { useMenuStats } from '../hooks/useMenuStats';
 import { useToast } from '../hooks/useToast';
@@ -281,6 +282,7 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
   const [dailyMenuForm, setDailyMenuForm] = useState({ name: '', description: '', basePrice: '' });
   const [showDailyMenuModal, setShowDailyMenuModal] = useState(false);
   const [wizardProduct, setWizardProduct] = useState<(MenuProduct & { id: string }) | null>(null);
+  const [smartCreateOpen, setSmartCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(!catalog || !catalog.products);
 
@@ -456,10 +458,19 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
       {/* Header + Stats Dashboard */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-cm-text">Constructor de Menú</h2>
-          {!catalogLoading && (
-            <p className="text-xs text-cm-text-secondary font-medium">{stats.totalProducts} productos</p>
-          )}
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-cm-text">Constructor de Menú</h2>
+            {!catalogLoading && (
+              <span className="text-xs text-cm-text-secondary font-medium">{stats.totalProducts} productos</span>
+            )}
+          </div>
+          <button
+            onClick={() => setSmartCreateOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-cm-accent text-cm-primary text-xs font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Smart Create
+          </button>
         </div>
         {catalogLoading ? (
           <StatsSkeleton />
@@ -630,6 +641,23 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Smart Create Modal */}
+      {activeBranchId && (
+        <SmartCreateModal
+          isOpen={smartCreateOpen}
+          onClose={() => setSmartCreateOpen(false)}
+          branchId={activeBranchId}
+          categories={Object.keys(catalog.categories ?? {}).length > 0
+            ? Object.keys(catalog.categories ?? {})
+            : [...new Set(Object.values(catalog.products ?? {}).map((p: any) => p.category).filter(Boolean))]
+          }
+          onProductCreated={(productId, productName) => {
+            setSmartCreateOpen(false);
+            notify(`✅ "${productName}" creado exitosamente`);
+          }}
+        />
+      )}
 
       {/* Toast de notificación */}
       <AnimatePresence>
