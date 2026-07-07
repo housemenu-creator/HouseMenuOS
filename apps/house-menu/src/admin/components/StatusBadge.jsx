@@ -1,4 +1,5 @@
 const STATUS_MAP = {
+  pendiente_pago: { label: 'Pend. Pago', cls: 'bdg-neutral' },
   recibido:   { label: 'Recibido',    cls: 'bdg-error' },
   preparando: { label: 'En Cocina',   cls: 'bdg-warning' },
   listo:      { label: 'Listo',       cls: 'bdg-accent' },

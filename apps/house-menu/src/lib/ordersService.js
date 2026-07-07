@@ -436,13 +436,22 @@ export const ordersService = {
   },
 
   /**
-   * Agrega o actualiza una nota interna en un pedido
+   * Agrega o actualiza una nota interna en un pedido (backward compat — usa notes[])
    */
-  async addOrderNote(branchId, orderId, note, userEmail) {
+  async addOrderNote(branchId, orderId, note, userEmail, displayName) {
     try {
+      const noteEntry = {
+        text: typeof note === 'string' ? note : '',
+        createdBy: userEmail || 'admin',
+        createdByName: displayName || userEmail || 'admin',
+        createdAt: nowISO(),
+      };
       const orderRef = ref(db, ordersPath(branchId, orderId));
+      const snapshot = await get(orderRef);
+      const existing = snapshot.val() || {};
+      const notes = Array.isArray(existing.notes) ? [...existing.notes, noteEntry] : [noteEntry];
       await update(orderRef, {
-        internalNote: note,
+        notes,
         ...(userEmail && { notedBy: userEmail }),
         updatedAt: nowISO(),
       });
@@ -543,34 +552,4 @@ export const ordersService = {
     });
   },
 
-  /**
-   * Append a note to an order's notes array
-   * @param {string} branchId
-   * @param {string} orderId
-   * @param {string} text
-   * @param {string} userEmail
-   * @param {string} displayName
-   */
-  async addOrderNote(branchId, orderId, text, userEmail, displayName) {
-    try {
-      const noteEntry = {
-        text,
-        createdBy: userEmail,
-        createdByName: displayName || userEmail,
-        createdAt: nowISO(),
-      };
-      const orderRef = ref(db, ordersPath(branchId, orderId));
-      const snapshot = await get(orderRef);
-      const existing = snapshot.val() || {};
-      const notes = Array.isArray(existing.notes) ? [...existing.notes, noteEntry] : [noteEntry];
-      await update(orderRef, {
-        notes,
-        updatedAt: nowISO(),
-      });
-      return { success: true };
-    } catch (err) {
-      console.warn('ordersService.addOrderNote error:', err);
-      return { success: false, error: err };
-    }
-  }
 };

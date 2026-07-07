@@ -184,7 +184,8 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
 
   const openNotes = (order) => {
     setNotesOrder(order);
-    setNotesText(order.internalNote || '');
+    const latestNote = Array.isArray(order.notes) && order.notes.length > 0 ? order.notes[order.notes.length - 1].text : '';
+    setNotesText(latestNote || order.internalNote || '');
     setShowNotesModal(true);
   };
 
@@ -344,7 +345,7 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
                     <td className="px-3 py-3 font-mono text-xs text-cm-text-secondary">{formatOrderId(o.id)}</td>
                     <td className="px-3 py-3 font-semibold text-cm-text">
                       {o.customerName || 'Anonimo'}
-                      {o.internalNote && <StickyNote className="w-3 h-3 inline ml-1 text-cm-warning" />}
+                      {(o.notes?.length > 0 || o.internalNote) && <StickyNote className="w-3 h-3 inline ml-1 text-cm-warning" />}
                     </td>
                     <td className="px-3 py-3 text-cm-text-secondary hidden md:table-cell">{o.location || '-'}</td>
                     <td className="px-3 py-3">
@@ -447,7 +448,7 @@ export default function OrdersTab({ allOrders, searchQuery, onSearchQueryChange,
                                   </p>
                                 </div>
                               )}
-                              {o.internalNote && <p className="text-xs text-cm-warning mt-1"><StickyNote className="w-3 h-3 inline mr-1" />{o.internalNote}</p>}
+                              {(o.notes?.length > 0 || o.internalNote) && <p className="text-xs text-cm-warning mt-1"><StickyNote className="w-3 h-3 inline mr-1" />{o.notes?.[o.notes.length - 1]?.text || o.internalNote}</p>}
                             </div>
 
                             <div className="flex flex-wrap gap-2">

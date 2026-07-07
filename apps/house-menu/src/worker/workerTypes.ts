@@ -123,6 +123,7 @@ export const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg:
 };
 
 export const ORDER_STATUSES = [
+  { value: 'pendiente_pago', label: 'Pendiente de pago', color: 'bg-yellow-500' },
   { value: 'recibido', label: 'Recibido', color: 'bg-cm-warning' },
   { value: 'preparando', label: 'Preparando', color: 'bg-cm-info' },
   { value: 'listo', label: 'Listo', color: 'bg-cm-success' },
