@@ -34,7 +34,7 @@ export function useAdminOrders(activeBranchId: string | null, user: { email?: st
 
         // Delivery notifications
         const isDelivery = (order.type || order.order_type || '').toLowerCase().includes('delivery');
-        if (isDelivery && (order.status === 'pendiente' || order.status === 'listo')) {
+        if (isDelivery && (order.status === 'recibido' || order.status === 'listo')) {
           createNotification({
             branchId: activeBranchId,
             userId: user?.email,
