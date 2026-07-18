@@ -16,6 +16,7 @@ import {
   subscribeMovements, registerMovement,
   subscribeCOGS,
 } from '../../lib/logisticsService';
+import { setIngredientPrice } from '../../lib/pricingService';
 
 const SECTIONS = [
   { key: 'ingredients', label: 'Insumos', icon: Package },
@@ -571,7 +572,8 @@ function MovementsSection({ branchId }) {
 /* ─── PROVEEDORES ─── */
 function SuppliersSection({ branchId }) {
   const [suppliers, setSuppliers] = useState([]);
-  const [loaded, setLoaded] = useState(false);
+  const [ingredients, setIngredients] = useState([]);
+  const [loaded, setLoaded] = useState({ s: false, i: false });
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -580,9 +582,15 @@ function SuppliersSection({ branchId }) {
     tipoDocumento: 'informal', numDocumento: '', plazoPago: 'contado',
     categorias: [], activo: true, notes: '',
   });
+  const [priceModal, setPriceModal] = useState({ open: false, supplierId: null, supplierName: '' });
+  const [priceForm, setPriceForm] = useState({ ingredientId: '', cost: '' });
 
   useEffect(() => {
-    try { return subscribeSuppliers(branchId, (d) => { setSuppliers(d); setLoaded(true); }); }
+    try { return subscribeSuppliers(branchId, (d) => { setSuppliers(d); setLoaded(p => ({...p, s: true})); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeIngredients(branchId, (d) => { setIngredients(d); setLoaded(p => ({...p, i: true})); }); }
     catch (e) { setError(e.message); }
   }, [branchId]);
 
@@ -618,7 +626,7 @@ function SuppliersSection({ branchId }) {
   };
 
   if (error) return <SectionContainer error={error} loading={false} data={[]} />;
-  if (!loaded) return <SectionContainer loading error={null} data={[]} rows={3} />;
+  if (!loaded.s || !loaded.i) return <SectionContainer loading error={null} data={[]} rows={3} />;
 
   return (
     <div className="space-y-4">
@@ -672,6 +680,42 @@ function SuppliersSection({ branchId }) {
         </div>
       )}
 
+      {/* ── Price Modal ── */}
+      {priceModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setPriceModal({...priceModal, open: false})}>
+          <div className="bg-cm-surface rounded-xl shadow-cm-lg p-6 w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-cm-text mb-3">Precios — {priceModal.supplierName}</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase block mb-1">Insumo</label>
+                <select value={priceForm.ingredientId} onChange={e => setPriceForm({...priceForm, ingredientId: e.target.value})}
+                  className="w-full bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs text-cm-text">
+                  <option value="">Seleccionar...</option>
+                  {ingredients.filter(i => i.supplierId === priceModal.supplierId).map(i => (
+                    <option key={i.id} value={i.id}>{i.name} (actual: S/ {Number(i.cost || 0).toFixed(2)})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase block mb-1">Nuevo costo x unidad</label>
+                <input type="number" step="0.01" value={priceForm.cost} onChange={e => setPriceForm({...priceForm, cost: e.target.value})}
+                  className="w-full bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs text-cm-text" />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => { setPriceModal({...priceModal, open: false}); setPriceForm({ ingredientId: '', cost: '' }); }}
+                  className="flex-1 py-2 border border-cm-border text-xs font-semibold text-cm-text rounded-lg">Cancelar</button>
+                <button onClick={async () => {
+                  if (!priceForm.ingredientId || !priceForm.cost) return;
+                  await setIngredientPrice(branchId, priceForm.ingredientId, priceModal.supplierId, priceForm.cost);
+                  setPriceModal({...priceModal, open: false});
+                  setPriceForm({ ingredientId: '', cost: '' });
+                }} className="flex-1 py-2 bg-cm-accent text-white text-xs font-semibold rounded-lg">Guardar precio</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {suppliers.map(s => {
           const docLabel = { ruc: 'RUC', dni: 'DNI', informal: 'Informal' }[s.tipoDocumento] || '—';
@@ -683,6 +727,8 @@ function SuppliersSection({ branchId }) {
                 <div className="flex gap-1">
                   <button onClick={() => editingSupplier(s)}
                     className="p-1 rounded hover:bg-cm-accent/10 text-cm-text-secondary"><Edit3 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => setPriceModal({ open: true, supplierId: s.id, supplierName: s.name })}
+                    className="p-1 rounded hover:bg-cm-info/10 text-cm-text-secondary" title="Gestionar precios"><DollarSign className="w-3.5 h-3.5" /></button>
                   <button onClick={() => deleteSupplier(branchId, s.id)} className="p-1 rounded hover:bg-cm-error/10 text-cm-text-secondary"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
