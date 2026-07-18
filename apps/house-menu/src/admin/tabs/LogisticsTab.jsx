@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Plus, Edit3, Trash2, Search, ClipboardList, Truck, TrendingUp,
-  ArrowUpDown, AlertTriangle, CheckCircle, X, Loader2, Save, History, DollarSign, Store
+  ArrowUpDown, AlertTriangle, CheckCircle, X, Loader2, Save, History, DollarSign, Store,
+  BarChart3, Clock,
 } from 'lucide-react';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
@@ -19,6 +20,7 @@ import {
 import { setIngredientPrice } from '../../lib/pricingService';
 
 const SECTIONS = [
+  { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'ingredients', label: 'Insumos', icon: Package },
   { key: 'recipes', label: 'Recetas', icon: ClipboardList },
   { key: 'movements', label: 'Kardex', icon: History },
@@ -569,6 +571,124 @@ function MovementsSection({ branchId }) {
   );
 }
 
+/* ─── DASHBOARD ─── */
+function DashboardSection({ branchId }) {
+  const [ingredients, setIngredients] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [recipes, setRecipes] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loaded, setLoaded] = useState({});
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    try { return subscribeIngredients(branchId, (d) => { setIngredients(d); setLoaded(p => ({...p, i: true})); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeSuppliers(branchId, (d) => { setSuppliers(d); setLoaded(p => ({...p, s: true})); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribePurchaseOrders(branchId, (d) => { setOrders(d); setLoaded(p => ({...p, o: true})); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeRecipes(branchId, (d) => { setRecipes(d); setLoaded(p => ({...p, r: true})); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    const ref_ = dbRef(db, `branches/${branchId}/catalog/products`);
+    return onValue(ref_, (snap) => {
+      const d = snap.val();
+      setProducts(d ? Object.entries(d).map(([id, p]) => ({ id, ...p })) : []);
+      setLoaded(p => ({...p, p: true}));
+    });
+  }, [branchId]);
+
+  const allLoaded = loaded.i && loaded.s && loaded.o && loaded.r && loaded.p;
+
+  const valorInventario = ingredients.reduce((s, i) => s + (Number(i.stock) * Number(i.cost) || 0), 0);
+  const stockBajo = ingredients.filter(i => i.minStock > 0 && i.stock <= i.minStock);
+  const pendientes = orders.filter(o => o.status === 'pendiente');
+  const productsWithRecipe = new Set(recipes.filter(r => r.productId).map(r => r.productId));
+  const sinReceta = products.filter(p => p.id && !productsWithRecipe.has(p.id));
+
+  if (error) return <SectionContainer error={error} loading={false} data={[]} />;
+  if (!allLoaded) return <SectionContainer loading error={null} data={[]} rows={6} />;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-cm-surface border border-cm-border rounded-xl p-3">
+          <div className="text-[0.55rem] text-cm-text-secondary uppercase font-semibold">Valor inventario</div>
+          <div className="text-lg font-bold text-cm-text mt-1">{fmtCurrency(valorInventario)}</div>
+        </div>
+        <div className="bg-cm-surface border border-cm-border rounded-xl p-3">
+          <div className="text-[0.55rem] text-cm-text-secondary uppercase font-semibold">Stock bajo</div>
+          <div className={`text-lg font-bold mt-1 ${stockBajo.length > 0 ? 'text-cm-error' : 'text-cm-success'}`}>{stockBajo.length}</div>
+        </div>
+        <div className="bg-cm-surface border border-cm-border rounded-xl p-3">
+          <div className="text-[0.55rem] text-cm-text-secondary uppercase font-semibold">OC pendientes</div>
+          <div className={`text-lg font-bold mt-1 ${pendientes.length > 0 ? 'text-cm-warning' : 'text-cm-text'}`}>{pendientes.length}</div>
+        </div>
+        <div className="bg-cm-surface border border-cm-border rounded-xl p-3">
+          <div className="text-[0.55rem] text-cm-text-secondary uppercase font-semibold">Sin receta</div>
+          <div className={`text-lg font-bold mt-1 ${sinReceta.length > 0 ? 'text-cm-warning' : 'text-cm-success'}`}>{sinReceta.length}</div>
+        </div>
+      </div>
+
+      {stockBajo.length > 0 && (
+        <div className="bg-cm-error/5 border border-cm-error/20 rounded-xl p-4">
+          <h3 className="text-xs font-bold text-cm-error mb-2 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" /> Stock bajo
+          </h3>
+          <div className="space-y-1">
+            {stockBajo.slice(0, 5).map(i => (
+              <div key={i.id} className="text-xs text-cm-text-secondary flex justify-between">
+                <span>{i.name}</span>
+                <span className="font-semibold text-cm-error">{i.stock} / min {i.minStock} {i.unit}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {pendientes.length > 0 && (
+        <div className="bg-cm-warning/5 border border-cm-warning/20 rounded-xl p-4">
+          <h3 className="text-xs font-bold text-cm-warning mb-2 flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" /> OC pendientes de recibir
+          </h3>
+          {pendientes.map(o => (
+            <div key={o.id} className="text-xs text-cm-text-secondary flex justify-between">
+              <span>{o.supplierName} — {Object.keys(o.items || {}).length} items</span>
+              <span>{fmtCurrency(o.total || 0)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {sinReceta.length > 0 && (
+        <div className="bg-cm-surface border border-cm-border rounded-xl p-4">
+          <h3 className="text-xs font-bold text-cm-text mb-2">Productos sin receta ({sinReceta.length})</h3>
+          <div className="flex flex-wrap gap-1">
+            {sinReceta.map(p => (
+              <span key={p.id} className="text-[0.55rem] font-medium bg-cm-bg-alt text-cm-text-secondary px-2 py-0.5 rounded-lg">{p.name}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stockBajo.length === 0 && pendientes.length === 0 && sinReceta.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <CheckCircle className="w-10 h-10 text-cm-success mb-2" />
+          <p className="text-sm font-medium text-cm-text-secondary">Todo en orden — no hay alertas</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── PROVEEDORES ─── */
 function SuppliersSection({ branchId }) {
   const [suppliers, setSuppliers] = useState([]);
@@ -1012,6 +1132,7 @@ function COGSSection({ branchId }) {
 }
 
 const SECTION_MAP = {
+  dashboard: DashboardSection,
   ingredients: IngredientsSection,
   recipes: RecipesSection,
   movements: MovementsSection,
