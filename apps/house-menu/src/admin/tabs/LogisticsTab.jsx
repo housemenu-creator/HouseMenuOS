@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Plus, Edit3, Trash2, Search, ClipboardList, Truck, TrendingUp,
-  ArrowUpDown, AlertTriangle, CheckCircle, X, Loader2, Save, History, DollarSign
+  ArrowUpDown, AlertTriangle, CheckCircle, X, Loader2, Save, History, DollarSign, Store
 } from 'lucide-react';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
@@ -27,13 +28,84 @@ const SECTIONS = [
 
 function fmtCurrency(n) { return `S/ ${Number(n).toFixed(2)}`; }
 
+const INGREDIENT_CATEGORIES = [
+  'Verduras y Hortalizas', 'Carnes y Aves', 'Lácteos y Huevos',
+  'Secos y Abarrotes', 'Congelados', 'Bebidas', 'Limpieza', 'Otros',
+];
+
+// ── Simple hook to track loading/error for real-time subs ──
+function useData(subscribeFn, branchId, deps = []) {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const key = `${branchId}-${deps.join('-')}`;
+
+  useEffect(() => {
+    if (!branchId) { setLoading(false); return; }
+    setLoading(true);
+    setError(null);
+    let unsub;
+    try {
+      unsub = subscribeFn(branchId, (d) => { setData(d); setLoading(false); });
+    } catch (e) { setError(e.message); setLoading(false); }
+    return () => { if (unsub) unsub(); };
+  }, [branchId, ...deps]);
+
+  return { data, loading, error };
+}
+
+// ── Loading skeleton ──
+function SectionSkeleton({ rows = 4 }) {
+  return (
+    <div className="animate-pulse space-y-3">
+      <div className="h-8 w-48 bg-cm-border rounded" />
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="h-12 bg-cm-surface border border-cm-border rounded-xl" />
+      ))}
+    </div>
+  );
+}
+
+// ── State wrapper ──
+function SectionContainer({ loading, error, data, emptyMsg, onRetry, children }) {
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <AlertTriangle className="w-10 h-10 text-cm-error mb-3" />
+      <p className="text-sm font-medium text-cm-text-secondary">{error}</p>
+      {onRetry && <button onClick={onRetry} className="mt-3 px-4 py-2 bg-cm-accent text-white text-xs font-bold rounded-lg hover:bg-cm-accent-hover">Reintentar</button>}
+    </div>
+  );
+  if (loading) return <SectionSkeleton />;
+  if (!data?.length) return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Package className="w-10 h-10 text-cm-muted mb-3" />
+      <p className="text-sm font-medium text-cm-text-secondary">{emptyMsg || 'Sin registros'}</p>
+    </div>
+  );
+  return children;
+}
+
+const sectionVariants = {
+  enter: { opacity: 0, y: 12 },
+  center: { opacity: 1, y: 0, transition: { duration: 0.25 } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+};
+
 export default function LogisticsTab() {
   const { activeBranchId } = useBranch();
   const { user } = useAuth();
   const [section, setSection] = useState('ingredients');
 
   if (!activeBranchId) {
-    return <p className="text-sm text-cm-text-secondary text-center py-8">Selecciona una sucursal</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-cm-accent/10 flex items-center justify-center mb-4">
+          <Store className="w-8 h-8 text-cm-accent" />
+        </div>
+        <h2 className="text-lg font-bold text-cm-text">Seleccioná una sucursal</h2>
+        <p className="text-sm text-cm-muted font-medium mt-1">Necesitás una sucursal activa para gestionar logística.</p>
+      </div>
+    );
   }
 
   const SectionComponent = SECTION_MAP[section];
@@ -56,7 +128,17 @@ export default function LogisticsTab() {
         })}
       </nav>
 
-      <SectionComponent branchId={activeBranchId} userEmail={user?.email} />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={section}
+          variants={sectionVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+        >
+          <SectionComponent key={section} branchId={activeBranchId} userEmail={user?.email} />
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
@@ -64,20 +146,46 @@ export default function LogisticsTab() {
 /* ─── INSUMOS ─── */
 function IngredientsSection({ branchId, userEmail }) {
   const [ingredients, setIngredients] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loaded, setLoaded] = useState({ ing: false, sup: false });
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', stock: 0, minStock: 0, cost: 0, supplierId: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', stock: 0, minStock: 0, cost: 0, supplierId: '', category: '' });
 
-  useEffect(() => { const u = subscribeIngredients(branchId, setIngredients); return u; }, [branchId]);
+  const allLoaded = loaded.ing && loaded.sup;
+
+  useEffect(() => {
+    try { return subscribeIngredients(branchId, (d) => { setIngredients(d); setLoaded(p => ({ ...p, ing: true })); }); }
+    catch (e) { setError(e.message); setLoaded(p => ({ ...p, ing: true })); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeSuppliers(branchId, (d) => { setSuppliers(d); setLoaded(p => ({ ...p, sup: true })); }); }
+    catch (e) { setError(e.message); setLoaded(p => ({ ...p, sup: true })); }
+  }, [branchId]);
+
+  const supplierMap = {};
+  suppliers.forEach(s => { supplierMap[s.id] = s.name; });
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return ingredients;
-    const q = search.toLowerCase();
-    return ingredients.filter(i => i.name?.toLowerCase().includes(q));
-  }, [ingredients, search]);
+    let result = ingredients;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(i => i.name?.toLowerCase().includes(q));
+    }
+    if (supplierFilter) {
+      result = result.filter(i => i.supplierId === supplierFilter);
+    }
+    if (categoryFilter) {
+      result = result.filter(i => i.category === categoryFilter);
+    }
+    return result;
+  }, [ingredients, search, supplierFilter, categoryFilter]);
 
-  const resetForm = () => { setForm({ name: '', unit: 'kg', stock: 0, minStock: 0, cost: 0, supplierId: '' }); setEditing(null); };
+  const resetForm = () => { setForm({ name: '', unit: 'kg', stock: 0, minStock: 0, cost: 0, supplierId: '', category: '' }); setEditing(null); };
 
   const handleSave = async () => {
     if (!form.name) return;
@@ -96,6 +204,9 @@ function IngredientsSection({ branchId, userEmail }) {
 
   const lowStock = ingredients.filter(i => i.minStock > 0 && i.stock <= i.minStock);
 
+  if (error) return <SectionContainer error={error} loading={false} data={[]} />;
+  if (!allLoaded) return <SectionContainer loading error={null} data={[]} />;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -105,6 +216,16 @@ function IngredientsSection({ branchId, userEmail }) {
             <input type="text" placeholder="Buscar insumo..." value={search} onChange={e => setSearch(e.target.value)}
               className="w-64 bg-cm-bg-alt border border-cm-border rounded-lg pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
           </div>
+          <select value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}
+            className="w-36 bg-cm-surface border border-cm-border rounded-lg px-2 py-2 text-xs font-medium text-cm-text">
+            <option value="">Todos los proveedores</option>
+            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+            className="w-36 bg-cm-surface border border-cm-border rounded-lg px-2 py-2 text-xs font-medium text-cm-text">
+            <option value="">Todas las categorías</option>
+            {INGREDIENT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
           {lowStock.length > 0 && (
             <div className="flex items-center gap-1.5 text-cm-warning text-xs font-semibold">
               <AlertTriangle className="w-4 h-4" /> {lowStock.length} con stock bajo
@@ -118,7 +239,7 @@ function IngredientsSection({ branchId, userEmail }) {
 
       {showForm && (
         <div className="bg-cm-bg-alt border border-cm-border rounded-xl p-4 space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
             <input type="text" placeholder="Nombre del insumo" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
               className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
             <select value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}
@@ -126,7 +247,17 @@ function IngredientsSection({ branchId, userEmail }) {
               <option value="kg">kg</option><option value="gr">gr</option><option value="litro">litro</option>
               <option value="ml">ml</option><option value="unidad">unidad</option><option value="docena">docena</option>
             </select>
-            <input type="number" placeholder="Stock actual" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })}
+            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+              className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:border-cm-accent text-cm-text">
+              <option value="">Sin categoría</option>
+              {INGREDIENT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={form.supplierId} onChange={e => setForm({ ...form, supplierId: e.target.value })}
+              className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:border-cm-accent text-cm-text">
+              <option value="">Sin proveedor</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+            <input type="number" placeholder="Stock" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })}
               className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
             <input type="number" placeholder="Stock mínimo" value={form.minStock} onChange={e => setForm({ ...form, minStock: e.target.value })}
               className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:border-cm-accent text-cm-text placeholder:text-cm-text-tertiary" />
@@ -147,10 +278,12 @@ function IngredientsSection({ branchId, userEmail }) {
           <thead>
             <tr className="text-cm-text-secondary border-b border-cm-border bg-cm-bg-alt/50">
               <th className="text-left font-semibold py-3 pl-4 pr-4">Insumo</th>
+              <th className="text-left font-semibold py-3 px-3">Categoría</th>
+              <th className="text-left font-semibold py-3 px-3">Proveedor</th>
               <th className="text-center font-semibold py-3 px-3">Stock</th>
-              <th className="text-center font-semibold py-3 px-3">Mínimo</th>
-              <th className="text-center font-semibold py-3 px-3">Unidad</th>
-              <th className="text-right font-semibold py-3 px-3">Costo x unidad</th>
+              <th className="text-center font-semibold py-3 px-3">Mín.</th>
+              <th className="text-center font-semibold py-3 px-3">Ud.</th>
+              <th className="text-right font-semibold py-3 px-3">Costo x ud.</th>
               <th className="text-right font-semibold py-3 pl-3 pr-4">Acciones</th>
             </tr>
           </thead>
@@ -160,12 +293,14 @@ function IngredientsSection({ branchId, userEmail }) {
               return (
                 <tr key={i.id} className="border-b border-cm-border/50 hover:bg-cm-accent/5 transition-colors">
                   <td className="py-3 pl-4 pr-4 font-medium text-cm-text">{i.name}</td>
+                  <td className="py-3 px-3 text-cm-text-secondary">{i.category || '—'}</td>
+                  <td className="py-3 px-3 text-cm-text-secondary">{supplierMap[i.supplierId] || '—'}</td>
                   <td className={`py-3 px-3 text-center font-bold ${isLow ? 'text-cm-error' : 'text-cm-text'}`}>{i.stock ?? 0}</td>
                   <td className="py-3 px-3 text-center text-cm-text-secondary">{i.minStock || 0}</td>
                   <td className="py-3 px-3 text-center text-cm-text-secondary">{i.unit}</td>
                   <td className="py-3 px-3 text-right text-cm-text">{fmtCurrency(i.cost || 0)}</td>
                   <td className="py-3 pl-3 pr-4 text-right">
-                    <button onClick={() => { setForm({ name: i.name, unit: i.unit, stock: i.stock, minStock: i.minStock, cost: i.cost, supplierId: i.supplierId || '' }); setEditing(i.id); setShowForm(true); }}
+                    <button onClick={() => { setForm({ name: i.name, unit: i.unit, category: i.category || '', supplierId: i.supplierId || '', stock: i.stock, minStock: i.minStock, cost: i.cost }); setEditing(i.id); setShowForm(true); }}
                       className="p-1.5 rounded-lg hover:bg-cm-accent/10 text-cm-text-secondary transition-colors"><Edit3 className="w-3.5 h-3.5" /></button>
                     <button onClick={() => handleDelete(i.id)} className="p-1.5 rounded-lg hover:bg-cm-error/10 text-cm-text-secondary transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                   </td>
@@ -184,28 +319,40 @@ function RecipesSection({ branchId }) {
   const [recipes, setRecipes] = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const [products, setProducts] = useState([]);
+  const [loaded, setLoaded] = useState({ r: false, i: false, p: false });
+  const [error, setError] = useState(null);
+  const [formError, setFormError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ productId: '', productName: '', yield: 1, ingredients: [] });
-  const [error, setError] = useState('');
 
-  useEffect(() => { const u = subscribeRecipes(branchId, setRecipes); return u; }, [branchId]);
-  useEffect(() => { const u = subscribeIngredients(branchId, setIngredients); return u; }, [branchId]);
+  const allLoaded = loaded.r && loaded.i && loaded.p;
+
+  useEffect(() => {
+    try { return subscribeRecipes(branchId, (d) => { setRecipes(d); setLoaded(p => ({ ...p, r: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeIngredients(branchId, (d) => { setIngredients(d); setLoaded(p => ({ ...p, i: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
   useEffect(() => {
     const productsRef = dbRef(db, `branches/${branchId}/catalog/products`);
     const u = onValue(productsRef, (snap) => {
       const data = snap.val();
-      if (!data) { setProducts([]); return; }
+      if (!data) { setProducts([]); setLoaded(p => ({ ...p, p: true })); return; }
       setProducts(Object.entries(data).map(([id, p]) => ({ id, ...p })));
+      setLoaded(p => ({ ...p, p: true }));
     });
     return u;
   }, [branchId]);
 
-  const resetForm = () => { setForm({ productId: '', productName: '', yield: 1, ingredients: [] }); setEditing(null); setError(''); };
+  const resetForm = () => { setForm({ productId: '', productName: '', yield: 1, ingredients: [] }); setEditing(null); setFormError(''); };
 
   const handleSave = async () => {
-    setError('');
-    if (!form.productId) { setError('Debés seleccionar un producto para la receta.'); return; }
+    setFormError('');
+    if (!form.productId) { setFormError('Debés seleccionar un producto para la receta.'); return; }
+    if (form.ingredients.length === 0) { setFormError('Agregá al menos un ingrediente.'); return; }
     const data = {
       productId: form.productId || null,
       productName: form.productName || products.find(p => p.id === form.productId)?.name || '',
@@ -242,6 +389,9 @@ function RecipesSection({ branchId }) {
 
   const totalCost = form.ingredients.reduce((s, i) => s + (Number(i.quantity) * Number(i.unitCost) || 0), 0);
 
+  if (error) return <SectionContainer error={error} loading={false} data={[]} />;
+  if (!allLoaded) return <SectionContainer loading error={null} data={[]} rows={3} />;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -260,7 +410,7 @@ function RecipesSection({ branchId }) {
             </div>
           ) : (
           <>  
-          {error && <p className="text-xs font-semibold text-cm-error bg-cm-error/5 px-3 py-1.5 rounded-lg">{error}</p>}
+          {formError && <p className="text-xs font-semibold text-cm-error bg-cm-error/5 px-3 py-1.5 rounded-lg">{formError}</p>}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase block mb-1">Producto <span className="text-cm-error">*</span></label>
@@ -354,11 +504,24 @@ function RecipesSection({ branchId }) {
 function MovementsSection({ branchId }) {
   const [movements, setMovements] = useState([]);
   const [ingredients, setIngredients] = useState([]);
-  useEffect(() => { const u = subscribeMovements(branchId, setMovements); return u; }, [branchId]);
-  useEffect(() => { const u = subscribeIngredients(branchId, setIngredients); return u; }, [branchId]);
+  const [loaded, setLoaded] = useState({ m: false, i: false });
+  const [error, setError] = useState(null);
+  const allLoaded = loaded.m && loaded.i;
+
+  useEffect(() => {
+    try { return subscribeMovements(branchId, (d) => { setMovements(d); setLoaded(p => ({ ...p, m: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeIngredients(branchId, (d) => { setIngredients(d); setLoaded(p => ({ ...p, i: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
 
   const ingMap = {};
   ingredients.forEach(i => { ingMap[i.id] = i; });
+
+  if (error) return <SectionContainer error={error} loading={false} data={[]} />;
+  if (!allLoaded) return <SectionContainer loading error={null} data={[]} rows={5} />;
 
   return (
     <div className="space-y-4">
@@ -408,13 +571,29 @@ function MovementsSection({ branchId }) {
 /* ─── PROVEEDORES ─── */
 function SuppliersSection({ branchId }) {
   const [suppliers, setSuppliers] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', contact: '', phone: '', email: '', notes: '' });
+  const [form, setForm] = useState({
+    name: '', contacto: '', telefono: '', email: '', direccion: '',
+    tipoDocumento: 'informal', numDocumento: '', plazoPago: 'contado',
+    categorias: [], activo: true, notes: '',
+  });
 
-  useEffect(() => { const u = subscribeSuppliers(branchId, setSuppliers); return u; }, [branchId]);
+  useEffect(() => {
+    try { return subscribeSuppliers(branchId, (d) => { setSuppliers(d); setLoaded(true); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
 
-  const resetForm = () => { setForm({ name: '', contact: '', phone: '', email: '', notes: '' }); setEditing(null); };
+  const resetForm = () => {
+    setForm({
+      name: '', contacto: '', telefono: '', email: '', direccion: '',
+      tipoDocumento: 'informal', numDocumento: '', plazoPago: 'contado',
+      categorias: [], activo: true, notes: '',
+    });
+    setEditing(null);
+  };
 
   const handleSave = async () => {
     if (!form.name) return;
@@ -425,6 +604,21 @@ function SuppliersSection({ branchId }) {
     }
     resetForm(); setShowForm(false);
   };
+
+  const editingSupplier = (s) => {
+    setForm({
+      name: s.name, contacto: s.contacto || '', telefono: s.telefono || '',
+      email: s.email || '', direccion: s.direccion || '',
+      tipoDocumento: s.tipoDocumento || 'informal', numDocumento: s.numDocumento || '',
+      plazoPago: s.plazoPago || 'contado', categorias: s.categorias || [],
+      activo: s.activo !== false, notes: s.notes || '',
+    });
+    setEditing(s.id);
+    setShowForm(true);
+  };
+
+  if (error) return <SectionContainer error={error} loading={false} data={[]} />;
+  if (!loaded) return <SectionContainer loading error={null} data={[]} rows={3} />;
 
   return (
     <div className="space-y-4">
@@ -437,15 +631,35 @@ function SuppliersSection({ branchId }) {
 
       {showForm && (
         <div className="bg-cm-bg-alt border border-cm-border rounded-xl p-4 space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <input type="text" placeholder="Nombre" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <input type="text" placeholder="Nombre *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
               className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text" />
-            <input type="text" placeholder="Contacto" value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })}
+            <input type="text" placeholder="Contacto" value={form.contacto} onChange={e => setForm({ ...form, contacto: e.target.value })}
               className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text" />
-            <input type="tel" placeholder="Teléfono" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+            <input type="tel" placeholder="Teléfono" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })}
               className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text" />
             <input type="email" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
               className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text" />
+            <input type="text" placeholder="Dirección" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })}
+              className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text" />
+            <select value={form.tipoDocumento} onChange={e => setForm({ ...form, tipoDocumento: e.target.value })}
+              className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text">
+              <option value="ruc">RUC (Factura)</option>
+              <option value="dni">DNI (Boleta)</option>
+              <option value="informal">Informal (Recibo simple)</option>
+            </select>
+            {form.tipoDocumento !== 'informal' && (
+              <input type="text" placeholder={form.tipoDocumento === 'ruc' ? 'RUC' : 'DNI'} value={form.numDocumento}
+                onChange={e => setForm({ ...form, numDocumento: e.target.value })}
+                className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text" />
+            )}
+            <select value={form.plazoPago} onChange={e => setForm({ ...form, plazoPago: e.target.value })}
+              className="bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text">
+              <option value="contado">Contado</option>
+              <option value="7d">7 días</option>
+              <option value="15d">15 días</option>
+              <option value="30d">30 días</option>
+            </select>
           </div>
           <textarea placeholder="Notas" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2}
             className="w-full bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text placeholder:text-cm-text-tertiary" />
@@ -459,24 +673,39 @@ function SuppliersSection({ branchId }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {suppliers.map(s => (
-          <div key={s.id} className="bg-cm-surface border border-cm-border rounded-xl p-4 space-y-2">
-            <div className="flex items-start justify-between">
-              <h4 className="text-sm font-bold text-cm-text">{s.name}</h4>
-              <div className="flex gap-1">
-                <button onClick={() => { setForm({ name: s.name, contact: s.contact || '', phone: s.phone || '', email: s.email || '', notes: s.notes || '' }); setEditing(s.id); setShowForm(true); }}
-                  className="p-1 rounded hover:bg-cm-accent/10 text-cm-text-secondary"><Edit3 className="w-3.5 h-3.5" /></button>
-                <button onClick={() => deleteSupplier(branchId, s.id)} className="p-1 rounded hover:bg-cm-error/10 text-cm-text-secondary"><Trash2 className="w-3.5 h-3.5" /></button>
+        {suppliers.map(s => {
+          const docLabel = { ruc: 'RUC', dni: 'DNI', informal: 'Informal' }[s.tipoDocumento] || '—';
+          return (
+            <div key={s.id} className="bg-cm-surface border border-cm-border rounded-xl p-4 space-y-2 relative">
+              {!s.activo && <span className="absolute top-2 right-2 text-[0.5rem] font-semibold text-cm-error bg-cm-error/10 px-1.5 py-0.5 rounded">Inactivo</span>}
+              <div className="flex items-start justify-between">
+                <h4 className="text-sm font-bold text-cm-text">{s.name}</h4>
+                <div className="flex gap-1">
+                  <button onClick={() => editingSupplier(s)}
+                    className="p-1 rounded hover:bg-cm-accent/10 text-cm-text-secondary"><Edit3 className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => deleteSupplier(branchId, s.id)} className="p-1 rounded hover:bg-cm-error/10 text-cm-text-secondary"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
               </div>
+              {s.contacto && <div className="text-xs text-cm-text-secondary">Contacto: {s.contacto}</div>}
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[0.6rem] text-cm-text-secondary">
+                {s.telefono && <span>📞 {s.telefono}</span>}
+                {s.email && <span>✉ {s.email}</span>}
+                <span className={s.tipoDocumento === 'informal' ? 'text-cm-warning' : 'text-cm-text-secondary'}>
+                  {docLabel}{s.numDocumento ? `: ${s.numDocumento}` : ''}
+                </span>
+                <span>Pago: {s.plazoPago === 'contado' ? 'Contado' : `${s.plazoPago}`}</span>
+              </div>
+              {s.categorias?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {s.categorias.map((c, i) => (
+                    <span key={i} className="text-[0.5rem] font-semibold bg-cm-bg-alt text-cm-text-secondary px-1.5 py-0.5 rounded">{c}</span>
+                  ))}
+                </div>
+              )}
+              {s.notes && <div className="text-xs text-cm-text-secondary bg-cm-bg-alt rounded-lg px-2 py-1">{s.notes}</div>}
             </div>
-            {s.contact && <div className="text-xs text-cm-text-secondary">Contacto: {s.contact}</div>}
-            <div className="flex gap-3 text-xs text-cm-text-secondary">
-              {s.phone && <span>📞 {s.phone}</span>}
-              {s.email && <span>✉ {s.email}</span>}
-            </div>
-            {s.notes && <div className="text-xs text-cm-text-secondary bg-cm-bg-alt rounded-lg px-2 py-1">{s.notes}</div>}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -487,15 +716,33 @@ function PurchaseOrdersSection({ branchId }) {
   const [orders, setOrders] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [ingredients, setIngredients] = useState([]);
+  const [loaded, setLoaded] = useState({ o: false, s: false, i: false });
+  const [error, setError] = useState(null);
+  const [formError, setFormError] = useState('');
+  const allLoaded = loaded.o && loaded.s && loaded.i;
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ supplierId: '', items: [], notes: '' });
-  const [error, setError] = useState('');
+  const [ingFilterSupplier, setIngFilterSupplier] = useState('');
 
-  useEffect(() => { const u = subscribePurchaseOrders(branchId, setOrders); return u; }, [branchId]);
-  useEffect(() => { const u = subscribeSuppliers(branchId, setSuppliers); return u; }, [branchId]);
-  useEffect(() => { const u = subscribeIngredients(branchId, setIngredients); return u; }, [branchId]);
+  useEffect(() => {
+    try { return subscribePurchaseOrders(branchId, (d) => { setOrders(d); setLoaded(p => ({ ...p, o: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeSuppliers(branchId, (d) => { setSuppliers(d); setLoaded(p => ({ ...p, s: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
+  useEffect(() => {
+    try { return subscribeIngredients(branchId, (d) => { setIngredients(d); setLoaded(p => ({ ...p, i: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
 
-  const resetForm = () => { setForm({ supplierId: '', items: [], notes: '' }); setError(''); };
+  const filteredIngredients = useMemo(() => {
+    if (!ingFilterSupplier) return ingredients;
+    return ingredients.filter(i => i.supplierId === ingFilterSupplier);
+  }, [ingredients, ingFilterSupplier]);
+
+  const resetForm = () => { setForm({ supplierId: '', items: [], notes: '' }); setFormError(''); setIngFilterSupplier(''); };
 
   const addItem = () => {
     const first = ingredients[0];
@@ -515,9 +762,9 @@ function PurchaseOrdersSection({ branchId }) {
   const removeItem = (idx) => setForm({ ...form, items: form.items.filter((_, i) => i !== idx) });
 
   const handleCreate = async () => {
-    setError('');
-    if (!form.supplierId) { setError('Debés seleccionar un proveedor.'); return; }
-    if (form.items.length === 0) { setError('Agregá al menos un insumo a la orden.'); return; }
+    setFormError('');
+    if (!form.supplierId) { setFormError('Debés seleccionar un proveedor.'); return; }
+    if (form.items.length === 0) { setFormError('Agregá al menos un insumo a la orden.'); return; }
     const supplier = suppliers.find(s => s.id === form.supplierId);
     await createPurchaseOrder(branchId, {
       supplierId: form.supplierId,
@@ -527,6 +774,9 @@ function PurchaseOrdersSection({ branchId }) {
     });
     resetForm(); setShowForm(false);
   };
+
+  if (error) return <SectionContainer error={error} loading={false} data={[]} />;
+  if (!allLoaded) return <SectionContainer loading error={null} data={[]} rows={4} />;
 
   return (
     <div className="space-y-4">
@@ -546,19 +796,28 @@ function PurchaseOrdersSection({ branchId }) {
             </div>
           ) : (
           <>
-          {error && <p className="text-xs font-semibold text-cm-error bg-cm-error/5 px-3 py-1.5 rounded-lg">{error}</p>}
+          {formError && <p className="text-xs font-semibold text-cm-error bg-cm-error/5 px-3 py-1.5 rounded-lg">{formError}</p>}
           <label className="text-[0.55rem] font-semibold text-cm-text-secondary uppercase block mb-1">Proveedor <span className="text-cm-error">*</span></label>
           <select value={form.supplierId} onChange={e => setForm({ ...form, supplierId: e.target.value })}
             className="w-full bg-cm-surface border border-cm-border rounded-lg px-3 py-2 text-xs font-medium text-cm-text">
             <option value="">Seleccionar proveedor...</option>
             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-cm-text-secondary font-medium">Filtrar insumos por proveedor:</span>
+            <select value={ingFilterSupplier} onChange={e => setIngFilterSupplier(e.target.value)}
+              className="bg-cm-surface border border-cm-border rounded-lg px-2 py-1.5 text-xs font-medium text-cm-text">
+              <option value="">Todos</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+            <span className="text-cm-muted">{filteredIngredients.length} insumos</span>
+          </div>
           {form.items.map((item, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <select value={item.ingredientId} onChange={e => updateItem(idx, 'ingredientId', e.target.value)}
                 className="flex-[2] bg-cm-surface border border-cm-border rounded-lg px-2 py-1.5 text-xs text-cm-text">
                 <option value="">Seleccionar...</option>
-                {ingredients.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                {filteredIngredients.map(i => <option key={i.id} value={i.id}>{i.name}{i.category ? ` (${i.category})` : ''}</option>)}
               </select>
               <input type="number" placeholder="Cant." value={item.quantity} onChange={e => updateItem(idx, 'quantity', e.target.value)}
                 className="w-16 bg-cm-surface border border-cm-border rounded-lg px-2 py-1.5 text-xs text-cm-text" />
@@ -629,14 +888,22 @@ function PurchaseOrdersSection({ branchId }) {
 function COGSSection({ branchId }) {
   const [cogs, setCogs] = useState({});
   const [products, setProducts] = useState([]);
-  useEffect(() => { const u = subscribeCOGS(branchId, setCogs); return u; }, [branchId]);
+  const [loaded, setLoaded] = useState({ c: false, p: false });
+  const [error, setError] = useState(null);
+  const allLoaded = loaded.c && loaded.p;
+
+  useEffect(() => {
+    try { return subscribeCOGS(branchId, (d) => { setCogs(d); setLoaded(p => ({ ...p, c: true })); }); }
+    catch (e) { setError(e.message); }
+  }, [branchId]);
   useEffect(() => {
     const productsRef = dbRef(db, `branches/${branchId}/catalog/products`);
     const u = onValue(productsRef, (snap) => {
       const data = snap.val();
       if (!data) { setProducts([]); return; }
       setProducts(Object.entries(data).map(([id, p]) => ({ id, ...p })));
-    });
+      setLoaded(p => ({ ...p, p: true }));
+    }, (err) => setError(err.message));
     return u;
   }, [branchId]);
 
@@ -645,6 +912,9 @@ function COGSSection({ branchId }) {
     cost: cogs[p.id]?.costPerPortion || 0,
     margin: p.base_price > 0 ? ((p.base_price - (cogs[p.id]?.costPerPortion || 0)) / p.base_price * 100) : 0,
   })).sort((a, b) => b.margin - a.margin);
+
+  if (error) return <SectionContainer error={error} loading={false} data={[]} />;
+  if (!allLoaded) return <SectionContainer loading error={null} data={[]} rows={6} />;
 
   return (
     <div className="space-y-4">

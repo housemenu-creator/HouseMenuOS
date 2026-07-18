@@ -1,5 +1,6 @@
 import { ref, get, set, push, update, remove, runTransaction, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
+import { pub } from '@house/event-bus';
 import { nowISO } from './format';
 
 /* ─── PATHS ─── */
@@ -17,6 +18,7 @@ export async function createIngredient(branchId, data) {
     minStock: Number(data.minStock) || 0,
     cost: Number(data.cost) || 0,
     supplierId: data.supplierId || null,
+    category: data.category || null,
     createdAt: nowISO(),
     updatedAt: nowISO(),
   };
@@ -161,9 +163,15 @@ export async function registerMovement(branchId, data) {
   // Actualizar stock del ingrediente
   const ingredientRef = ref(db, `${LOG(branchId)}/ingredients/${data.ingredientId}`);
   let newStock = 0;
+  let minStock = 0;
+  let ingredientName = '';
+  let supplierId = null;
   await runTransaction(ingredientRef, (ing) => {
     if (!ing) return;
     const current = Number(ing.stock) || 0;
+    minStock = Number(ing.minStock) || 0;
+    ingredientName = ing.name || '';
+    supplierId = ing.supplierId || null;
     if (data.type === 'entrada') newStock = current + Number(data.quantity);
     else if (data.type === 'salida') newStock = Math.max(0, current - Number(data.quantity));
     else newStock = Number(data.quantity); // ajuste = seteo directo
@@ -174,6 +182,28 @@ export async function registerMovement(branchId, data) {
 
   movement.stockAfter = newStock;
   await set(newRef, movement);
+
+  // ── Evento: stock bajo ──────────────────────────────────
+  // Dispara automáticamente si el stock queda debajo del mínimo
+  if (newStock < minStock && minStock > 0) {
+    try {
+      await pub('inventory.stock.low', {
+        productId: data.ingredientId,
+        productName: ingredientName,
+        currentStock: newStock,
+        minStock,
+        supplierId: supplierId || data.supplierId || null,
+      }, {
+        branchId,
+        userEmail: data.createdBy || 'system',
+        userRole: 'admin',
+      });
+    } catch (err) {
+      // El event-bus nunca debe romper una operación de inventario
+      console.warn('[logistics] No se pudo publicar evento stock.low:', err.message);
+    }
+  }
+
   return { success: true, id: newRef.key };
 }
 
@@ -193,9 +223,15 @@ export async function createSupplier(branchId, data) {
   const newRef = push(ref_);
   const supplier = {
     name: data.name,
-    contact: data.contact || '',
-    phone: data.phone || '',
+    contacto: data.contacto || '',
+    telefono: data.telefono || '',
     email: data.email || '',
+    direccion: data.direccion || '',
+    tipoDocumento: data.tipoDocumento || 'informal',
+    numDocumento: data.numDocumento || '',
+    plazoPago: data.plazoPago || 'contado',
+    categorias: data.categorias || [],
+    activo: data.activo !== false,
     notes: data.notes || '',
     createdAt: nowISO(),
   };
