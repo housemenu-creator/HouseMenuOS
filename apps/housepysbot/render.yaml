@@ -2,8 +2,9 @@ services:
   - type: web
     name: housepysbot
     env: docker
-    repo: https://github.com/archiphone/housepysbot
+    repo: https://github.com/housemenu-creator/HouseMenuOS
     branch: main
+    rootDir: apps/housepysbot
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
@@ -11,12 +12,16 @@ services:
         value: production
       - key: TELEGRAM_BOT_TOKEN
         sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
-        value: deepseek/deepseek-v4-flash:free
-      - key: OPENROUTER_FALLBACK_MODEL
-        value: meta-llama/llama-3.3-70b-instruct:free
+        value: llama-3.3-70b-versatile
+      - key: OPENROUTER_FALLBACK
+        value: llama3-70b-8192
       - key: FIREBASE_API_KEY
         sync: false
       - key: FIREBASE_AUTH_DOMAIN
@@ -27,7 +32,15 @@ services:
         sync: false
       - key: WHATSAPP_ENABLED
         value: "false"
+      - key: WHATSAPP_SESSION_DIR
+        value: ./wa_session
       - key: ADMIN_CHAT_ID
         sync: false
       - key: HOUSEPYSBOT_BRANCH_ID
-        value: "default"
+        value: "monteverde"
+      - key: BOT_FIREBASE_EMAIL
+        sync: false
+      - key: BOT_FIREBASE_PASSWORD
+        sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
