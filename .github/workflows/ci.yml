@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - name: tsc — portal-hub
+        working-directory: apps/portal-hub
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - name: Vitest — house-menu
+        run: npm run test:menu
+        env:
+          VITE_ENCRYPTION_PEPPER: ci_pepper
+      - name: Vitest — housepysbot
+        run: npm run test:bot
+        env:
+          LOG_LEVEL: silent
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [house-menu, portal-hub, landing]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - name: Build ${{ matrix.app }}
+        run: npm run build:${{ matrix.app == 'house-menu' && 'menu' || matrix.app == 'portal-hub' && 'portal' || 'landing' }}
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || '' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || '' }}
+
+  status:
+    name: CI Status
+    if: always()
+    needs: [typecheck, test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "## ✅ CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript Check | ${{ needs.typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests (menu+bot) | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build house-menu | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build portal-hub | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build landing | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY

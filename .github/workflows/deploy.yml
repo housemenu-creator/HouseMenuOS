@@ -1,0 +1,75 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  test-and-build:
+    name: Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Test house-menu
+        run: npm run test:menu
+        env:
+          VITE_ENCRYPTION_PEPPER: ci_pepper
+
+      - name: Test housepysbot
+        run: npm run test:bot
+        env:
+          LOG_LEVEL: silent
+
+      - name: Build house-menu
+        run: npm run build:menu
+
+      - name: Build portal-hub
+        run: npm run build:portal
+
+      - name: Build landing
+        run: npm run build:landing
+
+  deploy-hosting:
+    name: Deploy Hosting
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Deploy all sites
+        run: npx firebase-tools deploy --only hosting --project house-menuapp
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+  deploy-functions:
+    name: Deploy Functions
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Deploy Functions
+        run: npx firebase-tools deploy --only functions --project house-menuapp
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

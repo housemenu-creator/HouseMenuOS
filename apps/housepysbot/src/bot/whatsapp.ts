@@ -93,7 +93,7 @@ export async function startWhatsApp(branchId: string): Promise<void> {
 
   sock = makeWASocket({
     auth: state,
-    logger: pino({ level: "warn" }),
+    logger: pino({ level: "silent" }), // Baileys internal noise disabled — we handle errors explicitly
     browser: ["HousePySbot", "Chrome", "1.0"],
   });
 
