@@ -1,85 +1,99 @@
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from "@whiskeysockets/baileys";
 import pino from "pino";
-import { processMessage, type SenderInfo } from "../agent/index.js";
-import { getHistory, pushHistory } from "../lib/session.js";
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, rmSync } from "fs";
+import { join } from "path";
 import { qrEmitter } from "../services/http-server.js";
-import { checkRateLimit } from "../lib/rateLimit.js";
-import { routeWhatsApp } from "../agents/router.js";
 import { setWhatsAppStatus } from "../lib/wa-status.js";
+import { normalizeWhatsApp } from "../channels/message-normalizer.js";
+import { channelRegistry } from "../channels/channel.interface.js";
+import logger from "../lib/logger.js";
 
 const SESSION_DIR = process.env.WHATSAPP_SESSION_DIR || "./wa_session";
+const BACKUP_DIR = join(SESSION_DIR, "..", "wa_session_backups");
+
+// ── Session backup (antes de conectar) ─────────────────
+function backupSession(): void {
+  if (!existsSync(SESSION_DIR)) return;
+  const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const dest = join(BACKUP_DIR, ts);
+  try {
+    mkdirSync(BACKUP_DIR, { recursive: true });
+    cpSync(SESSION_DIR, dest, { recursive: true, errorOnExist: false });
+    logger.info(`💾 Sesión respaldada → wa_session_backups/${ts}`);
+  } catch (e) {
+    logger.warn("⚠️ No se pudo respaldar wa_session:", (e as Error).message);
+  }
+
+  // Limpiar backups viejos (>7 días), mantener últimos 10
+  try {
+    const entries = existsSync(BACKUP_DIR)
+      ? readdirSync(BACKUP_DIR).filter((n) => /^\d/.test(n)).sort()
+      : [];
+    if (entries.length > 10) {
+      const cutoff = Date.now() - 7 * 86400_000;
+      for (const name of entries.slice(0, entries.length - 10)) {
+        const dir = join(BACKUP_DIR, name);
+        try {
+          const s = statSync(dir);
+          if (s.isDirectory() && s.mtimeMs < cutoff) {
+            rmSync(dir, { recursive: true, force: true });
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+}
 
 let sock: ReturnType<typeof makeWASocket> | null = null;
 
-// ── Message queue ──────────────────────────────────────
+// Startup timestamp: filtrar mensajes previos al arranque (evita replay)
+const startupTs = Math.floor(Date.now() / 1000);
 
-type QueueItem = {
-  sender: string;
-  text: string;
-  branchId: string;
-  agentId: string;
-};
+// ── Watchdog de reconexión ─────────────────────────────
+let reconnectAttempts = 0;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+const MAX_RECONNECT = 10;
 
-const queue: QueueItem[] = [];
-let activeCount = 0;
-const MAX_CONCURRENCY = parseInt(process.env.WHATSAPP_MAX_CONCURRENCY || "5");
-
-function enqueue(item: QueueItem) {
-  queue.push(item);
-  processQueue();
-}
-
-async function processItem(item: QueueItem) {
-  activeCount++;
-  try {
-    try { await sock?.sendPresenceUpdate("composing", item.sender); } catch {}
-
-    // Extract phone from JID (e.g. "51999888777@s.whatsapp.net" → "51999888777")
-    const senderPhone = item.sender.split("@")[0];
-    const senderInfo: SenderInfo = { phone: senderPhone, platform: "whatsapp" };
-
-    const history = await getHistory(`wa:${item.sender}:${item.agentId}`);
-    const res = await processMessage(item.text, item.branchId, history.slice(-10), item.agentId, senderInfo);
-
-    try { await sock?.sendPresenceUpdate("paused", item.sender); } catch {}
-
-    await sock?.sendMessage(item.sender, { text: res });
-    await pushHistory(`wa:${item.sender}`, item.text, res);
-  } catch (err) {
-    console.error("whatsapp queue error:", err);
-    try {
-      await sock?.sendMessage(item.sender, { text: "Ocurrió un error. Intenta de nuevo." });
-    } catch {}
-  } finally {
-    activeCount--;
-    processQueue();
+function scheduleReconnect(branchId: string) {
+  reconnectAttempts++;
+  if (reconnectAttempts > MAX_RECONNECT) {
+    logger.info(`❌ WhatsApp: ${MAX_RECONNECT} intentos fallidos. Esperando QR manual...`);
+    setWhatsAppStatus(false);
+    return;
   }
+  // Exponential backoff: 5s, 10s, 20s, 40s, 80s, 160s, max 300s
+  const delay = Math.min(5 * Math.pow(2, reconnectAttempts - 1), 300) * 1000;
+  if (reconnectAttempts === 1 || reconnectAttempts % 5 === 0) {
+    logger.info(`🔄 WhatsApp reconexión #${reconnectAttempts} en ${Math.round(delay / 1000)}s...`);
+  }
+  reconnectTimer = setTimeout(() => startWhatsApp(branchId), delay);
 }
 
-function processQueue() {
-  while (queue.length > 0 && activeCount < MAX_CONCURRENCY) {
-    const item = queue.shift()!;
-    processItem(item);
+function resetWatchdog() {
+  reconnectAttempts = 0;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
 }
 
 // ── Connection ─────────────────────────────────────────
 
 export async function startWhatsApp(branchId: string): Promise<void> {
+  backupSession();
   let state, saveCreds;
   try {
     const auth = await useMultiFileAuthState(SESSION_DIR);
     state = auth.state;
     saveCreds = auth.saveCreds;
   } catch (e) {
-    console.error("📁 wa_session: error al cargar credenciales:", e);
+    logger.error(e, "📁 wa_session: error al cargar credenciales:");
     throw e;
   }
 
   sock = makeWASocket({
     auth: state,
-    printQRInTerminal: true,
-    logger: pino({ level: "silent" }),
+    logger: pino({ level: "warn" }),
     browser: ["HousePySbot", "Chrome", "1.0"],
   });
 
@@ -92,17 +106,19 @@ export async function startWhatsApp(branchId: string): Promise<void> {
     if (connection === "close") {
       setWhatsAppStatus(false);
       const code = (lastDisconnect?.error as any)?.output?.statusCode;
+      const reason = (lastDisconnect?.error as any)?.message || (lastDisconnect?.error as any)?.toString() || "desconocido";
       const shouldReconnect = code !== DisconnectReason.loggedOut;
-      if (shouldReconnect) {
-        console.log("🔄 WhatsApp desconectado, reconectando en 5s...");
-        setTimeout(() => startWhatsApp(branchId), 5000);
-      } else {
-        console.log("❌ WhatsApp: sesión cerrada. Escanea el QR de nuevo.");
+      if (!shouldReconnect) {
+        logger.info("❌ WhatsApp: sesión cerrada. Escanea el QR de nuevo.");
+        resetWatchdog();
+        return;
       }
+      scheduleReconnect(branchId);
     } else if (connection === "open") {
+      resetWatchdog();
       const number = sock?.user?.id?.split(":")[0] || "";
       setWhatsAppStatus(true, number);
-      console.log("✅ WhatsApp conectado!");
+      logger.info("✅ WhatsApp conectado!");
       qrEmitter.emit("connected");
     }
   });
@@ -111,10 +127,12 @@ export async function startWhatsApp(branchId: string): Promise<void> {
     for (const msg of messages) {
       if (msg.key.fromMe) continue;
       if (!msg.message) continue;
-
-      const sender = msg.key.remoteJid || "unknown";
-      const { agentId } = routeWhatsApp(sender);
-      const rateKey = `wa:${sender}:${agentId}`;
+      // Ignorar mensajes anteriores al startup (replay de sesión)
+      const msgTs = typeof (msg as any).messageTimestamp === "number" ? (msg as any).messageTimestamp : 0;
+      if (msgTs > 0 && msgTs < startupTs) continue;
+      // Ignorar grupos (@g.us) y broadcasts (@broadcast)
+      const jid = msg.key.remoteJid || "";
+      if (jid.endsWith("@g.us") || jid.endsWith("@broadcast")) continue;
 
       // ── Handle non-text media types ──────────────────
       const mediaType = detectMediaType(msg.message);
@@ -129,7 +147,7 @@ export async function startWhatsApp(branchId: string): Promise<void> {
         };
         const reply = responses[mediaType];
         if (reply) {
-          await sock?.sendMessage(sender, { text: reply });
+          try { await sock?.sendMessage(jid, { text: reply }); } catch {}
         }
         continue;
       }
@@ -137,11 +155,10 @@ export async function startWhatsApp(branchId: string): Promise<void> {
       const text = extractText(msg.message);
       if (!text) continue;
 
-      if (!checkRateLimit(rateKey)) {
-        await sock?.sendMessage(sender, { text: "⏳ Espera un momento antes de enviar otro mensaje." });
-        continue;
-      }
-      enqueue({ sender, text, branchId, agentId });
+      // Enrutar por el ChannelRegistry (Message Router unificado)
+      const messageId = msg.key.id || undefined;
+      const normalized = normalizeWhatsApp({ sender: jid, text, messageId });
+      await channelRegistry.onMessage(normalized);
     }
   });
 }
@@ -169,11 +186,18 @@ function extractText(msg: any): string | null {
   return null;
 }
 
+/** Enviar indicador de typing a un chat de WhatsApp */
+export async function sendWATyping(jid: string): Promise<void> {
+  try {
+    await sock?.sendPresenceUpdate("composing", jid);
+  } catch {}
+}
+
 export { getWhatsAppStatus } from "../lib/wa-status.js";
 
 export async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
   if (!sock) {
-    console.warn("⚠️ WhatsApp no conectado, no se pudo enviar mensaje a", to);
+    logger.warn(to, "⚠️ WhatsApp no conectado, no se pudo enviar mensaje a");
     return false;
   }
   try {
@@ -184,17 +208,9 @@ export async function sendWhatsAppMessage(to: string, text: string): Promise<boo
     await sock.sendMessage(jid, { text });
     return true;
   } catch (err) {
-    console.error("❌ sendWhatsAppMessage error:", err);
+    logger.error(err, "❌ sendWhatsAppMessage error:");
     return false;
   }
 }
 
-export function getDrainPromise(): Promise<void> {
-  return new Promise((resolve) => {
-    const check = () => {
-      if (queue.length === 0 && activeCount === 0) return resolve();
-      setTimeout(check, 100);
-    };
-    check();
-  });
-}
+/** @deprecated Cola eliminada — los mensajes van directo al ChannelRegistry */

@@ -4,6 +4,7 @@ import type { Database } from "firebase/database";
 import { getDatabase, ref, get, child, set, push, update, remove, onChildAdded, onChildChanged, off } from "firebase/database";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import "dotenv/config";
+import logger from "../lib/logger.js";
 
 let _app: FirebaseApp | null = null;
 let _db: Database | null = null;
@@ -48,12 +49,12 @@ export async function authenticateBot() {
     const auth = getAuth(_app);
     try {
       await signInWithEmailAndPassword(auth, botEmail, botPassword);
-      console.log("🔐 Firebase Auth: bot autenticado como", botEmail);
+      logger.info(botEmail, "🔐 Firebase Auth: bot autenticado como");
     } catch (e: any) {
       // En desarrollo, si hay rate-limit, continuamos igual — las reglas
       // de la DB permiten lecturas sin auth para datos públicos.
-      console.warn("⚠️ Firebase Auth:", e.message || e);
-      console.warn("   Continuando sin autenticación (modo degradado)");
+      logger.warn("⚠️ Firebase Auth:", e.message || e);
+      logger.warn("   Continuando sin autenticación (modo degradado)");
     }
   } else {
     throw new Error("Faltan BOT_FIREBASE_EMAIL y/o BOT_FIREBASE_PASSWORD en .env");

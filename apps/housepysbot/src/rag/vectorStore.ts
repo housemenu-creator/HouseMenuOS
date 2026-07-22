@@ -1,7 +1,10 @@
 /**
  * RAG - Vector Store (Supabase)
- * Persistent storage with in-memory fallback
+ * Persistent storage with local JSON fallback
  */
+import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync } from "fs";
+import { join } from "path";
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const SUPABASE_HEADERS = {
@@ -10,6 +13,9 @@ const SUPABASE_HEADERS = {
   'Content-Type': 'application/json',
   'Prefer': 'return=representation',
 };
+
+const CACHE_DIR = process.env.WHATSAPP_SESSION_DIR || "./wa_session";
+const CACHE_PATH = join(CACHE_DIR, "rag_cache.json");
 
 export interface Document {
   id: string;
@@ -32,6 +38,31 @@ function cosineSimilarity(a: number[], b: number[]): number {
 // In-memory cache (keeps things fast)
 const memoryCache: Document[] = [];
 
+// ── Local persistence ──────────────────────────────────
+function loadFromDisk(): boolean {
+  try {
+    if (!existsSync(CACHE_PATH)) return false;
+    const raw = readFileSync(CACHE_PATH, "utf-8");
+    const docs = JSON.parse(raw) as Document[];
+    memoryCache.length = 0;
+    memoryCache.push(...docs);
+    return docs.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function saveToDisk(): void {
+  try {
+    if (!existsSync(CACHE_DIR)) {
+      mkdirSync(CACHE_DIR, { recursive: true });
+    }
+    writeFileSync(CACHE_PATH, JSON.stringify(memoryCache), "utf-8");
+  } catch {
+    // Non-critical — memory still works
+  }
+}
+
 async function addToMemory(doc: Document): Promise<void> {
   const idx = memoryCache.findIndex(d => d.id === doc.id);
   if (idx >= 0) {
@@ -42,12 +73,15 @@ async function addToMemory(doc: Document): Promise<void> {
 }
 
 async function syncFromSupabase(): Promise<void> {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    loadFromDisk();
+    return;
+  }
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rag_documents?select=*`, {
       headers: SUPABASE_HEADERS,
     });
-    if (!res.ok) return;
+    if (!res.ok) { loadFromDisk(); return; }
     const data = (await res.json()) as any[];
     memoryCache.length = 0;
     memoryCache.push(...data.map((row: any) => ({
@@ -57,15 +91,41 @@ async function syncFromSupabase(): Promise<void> {
       metadata: row.metadata || {},
       embedding: row.embedding || [],
     })));
+    saveToDisk(); // persist the fresh fetch for next startup
   } catch {
-    // Silently fail - in-memory works without Supabase
+    loadFromDisk(); // fallback: whatever we had on disk
   }
+}
+
+/**
+ * Keyword-based query fallback (zero API calls, works offline)
+ */
+async function queryByKeywords(text: string, k = 3): Promise<Document[]> {
+  if (memoryCache.length === 0) {
+    await syncFromSupabase();
+  }
+  if (memoryCache.length === 0) return [];
+
+  const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  if (words.length === 0) return memoryCache.slice(0, k);
+
+  return memoryCache
+    .map(doc => {
+      const haystack = (doc.content + ' ' + JSON.stringify(doc.metadata)).toLowerCase();
+      const matches = words.filter(w => haystack.includes(w)).length;
+      return { doc, score: matches / words.length };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, k)
+    .filter(r => r.score > 0)
+    .map(r => r.doc);
 }
 
 export const vectorStore = {
   async upsert(doc: Document): Promise<void> {
     // Always update memory
     addToMemory(doc);
+    saveToDisk();
     // Try to persist to Supabase
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
     try {
@@ -89,6 +149,7 @@ export const vectorStore = {
     for (const doc of docs) {
       addToMemory(doc);
     }
+    saveToDisk();
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
     try {
       await fetch(`${SUPABASE_URL}/rest/v1/rag_documents`, {
@@ -107,6 +168,7 @@ export const vectorStore = {
     }
   },
 
+  /** Embedding search (primary) */
   async query(embedding: number[], k = 3): Promise<Document[]> {
     // Use memory cache for fast similarity search
     if (memoryCache.length === 0) {
@@ -125,8 +187,14 @@ export const vectorStore = {
       .map(r => r.doc);
   },
 
+  /** Keyword fallback (zero API calls, works offline) */
+  async queryByKeywords(text: string, k = 3): Promise<Document[]> {
+    return queryByKeywords(text, k);
+  },
+
   async clear(): Promise<void> {
     memoryCache.length = 0;
+    try { if (existsSync(CACHE_PATH)) unlinkSync(CACHE_PATH); } catch {}
     if (!SUPABASE_URL || !SUPABASE_KEY) return;
     try {
       await fetch(`${SUPABASE_URL}/rest/v1/rag_documents`, {

@@ -1,4 +1,5 @@
 import { initFirebase, ref, get, child } from "./firebase.js";
+import logger from "../lib/logger.js";
 const db = initFirebase();
 
 export interface BranchInfo {
@@ -44,7 +45,7 @@ export async function getBranchInfo(branchId: string): Promise<BranchInfo | null
       freeThreshold: data.freeThreshold ?? 0,
     };
   } catch (e) {
-    console.warn("branch.getBranchInfo error:", e);
+    logger.warn(e, "branch.getBranchInfo error:");
     return null;
   }
 }

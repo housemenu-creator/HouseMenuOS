@@ -7,6 +7,8 @@ import { registry } from "../mcp/registry.js";
 import { renderDSStyles, renderFontPreload, icon } from "../lib/render-ds.js";
 import { getAllBranchIds, getBranchInfo } from "../lib/branch.js";
 import { syncBranchKnowledge } from "../rag/syncFirebase.js";
+import { handleWebhook } from "./webhooks.js";
+import logger from "../lib/logger.js";
 
 export const qrEmitter = new EventEmitter();
 
@@ -32,7 +34,7 @@ const TOKEN_CACHE_TTL = 55 * 60 * 1000; // 55 min (tokens last 60 min)
 async function verifyFirebaseToken(token: string): Promise<{ valid: boolean; uid?: string; error?: string }> {
   const apiKey = process.env.FIREBASE_API_KEY;
   if (!apiKey) {
-    console.error("❌ FIREBASE_API_KEY no configurado — auth rechazado");
+    logger.error("❌ FIREBASE_API_KEY no configurado — auth rechazado");
     return { valid: false, error: "FIREBASE_API_KEY no configurada en el servidor" };
   }
 
@@ -93,139 +95,25 @@ async function verifyFirebaseToken(token: string): Promise<{ valid: boolean; uid
 async function requireAnonymousAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.warn("⚠️ requireAnonymousAuth: no auth header");
+    logger.warn("⚠️ requireAnonymousAuth: no auth header");
     res.status(401).json({ success: false, error: "Se requiere autenticación anónima" });
     return;
   }
   const token = authHeader.slice(7);
-  console.log("🔑 Verificando token...");
+  logger.info("🔑 Verificando token...");
   const result = await verifyFirebaseToken(token);
   if (!result.valid) {
-    console.warn("⚠️ Token inválido:", result.error);
+    logger.warn(result.error, "⚠️ Token inválido:");
     res.status(401).json({ success: false, error: result.error || "Token inválido" });
     return;
   }
-  console.log("✅ Token válido para uid:", result.uid);
+  logger.info(result.uid, "✅ Token válido para uid:");
   (req as any).user = { uid: result.uid };
   next();
 }
 
 // ── Webhook helpers ────────────────────────────────────
-const webhookDedup = new Map<string, number>();
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, ts] of webhookDedup) {
-    if (now - ts > 300_000) webhookDedup.delete(key);
-  }
-}, 60_000);
-
-function normalizeProviderOrder(provider: string, payload: any): any | null {
-  const data = payload.order || payload;
-  switch (provider) {
-    case "rappi": {
-      return {
-        id: data.id || data.order_id,
-        cliente: data.customer?.name || data.cliente || "Cliente Rappi",
-        items: (data.items || []).map((i: any) => ({
-          productId: i.id || i.product_id,
-          name: i.name || i.title || "Producto",
-          quantity: i.quantity || 1,
-          price: Number(i.price || i.unit_price || 0),
-        })),
-        direccion: data.delivery_address || data.address || data.direccion || "",
-        telefono: data.customer?.phone || data.phone || "",
-        nota: data.instructions || data.nota || "",
-        metodo_pago: "tarjeta",
-        tipo: "delivery",
-        provider: "rappi",
-        providerOrderId: data.id || data.order_id,
-      };
-    }
-    case "pedidos_ya":
-    case "pedidosya": {
-      return {
-        id: data.id || data.order_id,
-        cliente: data.delivery?.customer?.name || data.cliente || "Cliente PedidosYa",
-        items: (data.items || []).map((i: any) => ({
-          productId: i.id || i.product_id,
-          name: i.name || i.title || "Producto",
-          quantity: i.quantity || 1,
-          price: Number(i.price || i.unit_price || 0),
-        })),
-        direccion: data.delivery?.address || data.address || data.direccion || "",
-        telefono: data.delivery?.customer?.phone || data.phone || "",
-        nota: data.instructions || data.nota || "",
-        metodo_pago: "tarjeta",
-        tipo: "delivery",
-        provider: "pedidos_ya",
-        providerOrderId: data.id || data.order_id,
-      };
-    }
-    case "uber":
-    case "uber_eats": {
-      return {
-        id: data.id || data.order_id || data.display_id,
-        cliente: data.delivery?.customer?.name || data.customer_name || "Cliente Uber",
-        items: (data.items || data.cart?.items || []).map((i: any) => ({
-          productId: i.id || i.product_id,
-          name: i.title || i.name || i.product_name,
-          quantity: i.quantity || 1,
-          price: Number(i.price_amount || i.price || i.unit_price || 0),
-        })),
-        direccion: data.delivery?.location?.address || data.address || data.direccion || "",
-        telefono: data.delivery?.customer?.phone || data.phone || "",
-        nota: data.instructions || data.nota || "",
-        metodo_pago: "tarjeta",
-        tipo: "delivery",
-        provider: "uber_eats",
-        providerOrderId: data.id || data.order_id,
-      };
-    }
-    default: {
-      if (data.items || data.cliente) {
-        return {
-          ...data,
-          provider,
-          providerOrderId: data.providerOrderId || data.id,
-        };
-      }
-      return null;
-    }
-  }
-}
-
-async function processWebhookOrder(provider: string, branchId: string, normalized: any, dedupKey: string) {
-  try {
-    const { ref: fbRef, child: fbChild, push: fbPush, set: fbSet, initFirebase } = await import("../lib/firebase.js");
-    const db = initFirebase();
-    const ordersRef = fbChild(fbRef(db), `branches/${branchId}/orders`);
-    const newRef = fbPush(ordersRef);
-    const timestamp = new Date().toISOString();
-    const subtotal = normalized.items.reduce((s: number, i: any) => s + (i.price || 0) * (i.quantity || 1), 0);
-    const order = {
-      id: newRef.key,
-      items: normalized.items,
-      cliente: normalized.cliente || "Delivery",
-      direccion: normalized.direccion || "",
-      telefono: normalized.telefono || "",
-      nota: normalized.nota || "",
-      metodo_pago: normalized.metodo_pago || "tarjeta",
-      tipo: "delivery",
-      deliveryFee: 0,
-      subtotal,
-      total: subtotal,
-      status: "recibido",
-      provider: normalized.provider || provider,
-      providerOrderId: normalized.providerOrderId || "",
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    await fbSet(newRef, order);
-    console.log(`📦 Webhook [${provider}]: Pedido #${newRef.key} — ${order.cliente} — S/ ${order.total.toFixed(2)}`);
-  } catch (e: any) {
-    console.error(`❌ Webhook error [${provider}]:`, e);
-  }
-}
+// (moved to ./webhooks.ts — imported above)
 
 // ── Status transition map ──────────────────────────────
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
@@ -238,21 +126,17 @@ const ALLOWED_TRANSITIONS: Record<string, string[]> = {
 };
 
 // ══════════════════════════════════════════════════════════
-// Start HTTP Server
+// Create Express App (all middleware + routes, no server)
 // ══════════════════════════════════════════════════════════
-export function startHttpServer(port: number = 3000) {
+export function createApp(): express.Application {
   const app = express();
-  const server = http.createServer(app);
-  io = new SocketIOServer(server, {
-    cors: { origin: ["http://localhost:3000", "http://127.0.0.1:3000"] },
-  });
 
   app.use(express.json({ limit: "100kb" }));
 
   // ── JSON parse error handler (body-parser) ──────────
   app.use((err: any, req: any, res: any, next: any) => {
     if (err instanceof SyntaxError && "body" in err) {
-      console.error("🚨 JSON parse error en", req.method, req.path, ":", err.message);
+      logger.error("🚨 JSON parse error en", req.method, req.path, ":", err.message);
       res.status(400).json({ success: false, error: "JSON inválido en el cuerpo de la solicitud" });
       return;
     }
@@ -295,6 +179,132 @@ export function startHttpServer(port: number = 3000) {
       uptime: process.uptime(),
       memory: mem ? `${Math.round(mem.heapUsed / 1024 / 1024)}MB` : undefined,
       timestamp: new Date().toISOString(),
+    });
+  });
+
+  // ══════════════════════════════════════════════════════
+  // Admin Panel (conexiones + configuración)
+  // ══════════════════════════════════════════════════════
+  app.get("/admin", async (_req, res) => {
+    let waStatus = { status: "unknown", number: "" };
+    try {
+      const { getWhatsAppStatus } = await import("../lib/wa-status.js");
+      waStatus = JSON.parse(getWhatsAppStatus());
+    } catch {}
+    const dsStyles = renderDSStyles();
+    const fontPreload = renderFontPreload();
+    res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HousePySbot — Admin</title>
+  ${fontPreload}
+  ${dsStyles}
+  <style>
+    body { padding: 1.5rem; max-width: 600px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; font-weight: 800; color: var(--cm-text); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .sub { font-size: 0.85rem; color: var(--cm-text-secondary); margin-bottom: 1.5rem; }
+    .card { background: var(--cm-surface); border: 1px solid var(--cm-border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card h2 { font-size: 1rem; font-weight: 700; color: var(--cm-text); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.85rem; border-bottom: 1px solid var(--cm-border); }
+    .row:last-child { border-bottom: none; }
+    .label { color: var(--cm-text-secondary); }
+    .value { font-weight: 600; color: var(--cm-text); }
+    .ok { color: #34C759; } .warn { color: var(--cm-accent); } .err { color: #FF453A; }
+    .qr-box { margin-top: 0.75rem; text-align: center; }
+    .qr-box img { width: 200px; height: 200px; border-radius: 12px; }
+    .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1px solid var(--cm-border); background: var(--cm-surface); color: var(--cm-text); text-decoration: none; }
+    .btn:hover { border-color: var(--cm-accent); }
+    .nav { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>🔧 HousePySbot</h1>
+  <p class="sub">Panel de administración de conexiones</p>
+
+  <div class="nav">
+    <a href="/admin" class="btn">🔧 Admin</a>
+    <a href="/monitor" class="btn">📊 Monitor</a>
+    <a href="/kds" class="btn">🍳 KDS</a>
+    <a href="/menu" class="btn">🍽 Menú</a>
+  </div>
+
+  <div class="card">
+    <h2>💬 WhatsApp</h2>
+    <div class="row"><span class="label">Estado</span><span class="value ${waStatus.status === 'connected' ? 'ok' : 'err'}">${waStatus.status === 'connected' ? '✅ Conectado' : waStatus.status === 'disconnected' ? '❌ Desconectado' : '⏳ Desconocido'}</span></div>
+    <div class="row"><span class="label">Número</span><span class="value">${waStatus.number ? waStatus.number : '—'}</span></div>
+    <div class="row"><span class="label">QR</span><span class="value"><a href="/" target="_blank" class="btn">📲 Ver QR</a></span></div>
+  </div>
+
+  <div class="card">
+    <h2>✈️ Telegram</h2>
+    <div class="row"><span class="label">Bot</span><span class="value">${process.env.TELEGRAM_BOT_TOKEN ? '✅ Configurado' : '❌ No configurado'}</span></div>
+    <div class="row"><span class="label">Username</span><span class="value">${process.env.TELEGRAM_BOT_USERNAME || '—'}</span></div>
+    <div class="row"><span class="label">Admin Chat ID</span><span class="value">${process.env.ADMIN_CHAT_ID || '—'}</span></div>
+  </div>
+
+  <div class="card">
+    <h2>🤖 IA</h2>
+    <div class="row"><span class="label">Modelo</span><span class="value">${process.env.OPENROUTER_MODEL || 'llama-3.3-70b-versatile'}</span></div>
+    <div class="row"><span class="label">Provider</span><span class="value">${process.env.OPENAI_BASE_URL || 'Groq'}</span></div>
+    <div class="row"><span class="label">Fallback</span><span class="value">${process.env.OPENROUTER_FALLBACK || 'llama3-70b-8192'}</span></div>
+  </div>
+
+  <div class="card">
+    <h2>📡 Servicios</h2>
+    <div class="row"><span class="label">Firebase</span><span class="value ${process.env.FIREBASE_API_KEY ? 'ok' : 'err'}">${process.env.FIREBASE_API_KEY ? '✅ Configurado' : '❌ No configurado'}</span></div>
+    <div class="row"><span class="label">RAG Docs</span><span class="value" id="ragCount">—</span></div>
+    <div class="row"><span class="label">Sucursal</span><span class="value">${process.env.HOUSEPYSBOT_BRANCH_ID || 'default'}</span></div>
+  </div>
+
+  <div class="card" style="text-align:center;color:var(--cm-text-secondary);font-size:0.8rem">
+    HousePySbot v0.1.0 — corriendo en puerto ${process.env.HTTP_PORT || 3000}
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io({ transports: ["websocket", "polling"] });
+    socket.on("qr", (url) => {
+      const el = document.querySelector(".card:first-child .qr-box");
+      if (el) el.innerHTML = '<img src="' + url + '" alt="QR" />';
+    });
+    socket.on("connected", () => location.reload());
+    socket.on("disconnect", () => {});
+    fetch('/rag/count').then(r => r.json()).then(d => { document.getElementById('ragCount').textContent = d.count + ' docs'; }).catch(() => {});
+  </script>
+</body>
+</html>`);
+  });
+
+  // ══════════════════════════════════════════════════════
+  // RAG count API
+  // ══════════════════════════════════════════════════════
+  app.get("/rag/count", async (_req, res) => {
+    try {
+      const { vectorStore } = await import("../rag/vectorStore.js");
+      const count = await vectorStore.count();
+      res.json({ count });
+    } catch { res.json({ count: 0 }); }
+  });
+
+  // ══════════════════════════════════════════════════════
+  // Bot API (consumido por el frontend React)
+  // ══════════════════════════════════════════════════════
+  app.get("/api/bot/status", async (_req, res) => {
+    let waStatus = { status: "unknown", number: "" };
+    try {
+      const { getWhatsAppStatus } = await import("../lib/wa-status.js");
+      waStatus = JSON.parse(getWhatsAppStatus());
+    } catch {}
+    res.json({
+      whatsapp: { status: waStatus.status, number: waStatus.number, enabled: process.env.WHATSAPP_ENABLED === "true" },
+      telegram: { configured: Boolean(process.env.TELEGRAM_BOT_TOKEN), username: process.env.TELEGRAM_BOT_USERNAME || null, adminChatId: process.env.ADMIN_CHAT_ID || null },
+      ai: { model: process.env.OPENROUTER_MODEL || "llama-3.3-70b-versatile", provider: process.env.OPENAI_BASE_URL?.includes("groq") ? "Groq" : process.env.OPENAI_BASE_URL || "Groq", fallback: process.env.OPENROUTER_FALLBACK || "llama3-70b-8192" },
+      firebase: { configured: Boolean(process.env.FIREBASE_API_KEY), projectId: process.env.FIREBASE_PROJECT_ID || null },
+      branch: process.env.HOUSEPYSBOT_BRANCH_ID || "monteverde",
+      uptime: process.uptime(),
+      version: "0.1.0",
     });
   });
 
@@ -403,7 +413,7 @@ export function startHttpServer(port: number = 3000) {
     };
     firebase.initializeApp(FIREBASE_CONFIG);
     function escapeHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-    firebase.auth().signInAnonymously().catch((e) => console.warn("Monitor: anonymous auth falló", e.message));
+    firebase.auth().signInAnonymously().catch((e) => logger.warn(e.message, "Monitor: anonymous auth falló"));
     const db = firebase.database();
     function loadAllBranchesStatus() {
       const grid = document.getElementById("branchGrid");
@@ -425,7 +435,7 @@ export function startHttpServer(port: number = 3000) {
           const status = recibido > 3 ? "err" : (recibido > 0 ? "warn" : "ok");
           const card = document.getElementById("card-"+b);
           if (card) card.innerHTML = "<h3>📍 "+escapeHtml(b)+"</h3><div class='stat'><span class='stat-label'>${icon("bell", 14)} Nuevos</span><span class='stat-value "+status+"'>"+recibido+"</span></div><div class='stat'><span class='stat-label'>${icon("loader", 14)} Prep.</span><span class='stat-value'>"+preparando+"</span></div><div class='stat'><span class='stat-label'>${icon("check", 14)} Listos</span><span class='stat-value'>"+listo+"</span></div><div class='stat'><span class='stat-label'>${icon("store", 14)} Delivery</span><span class='stat-value'>"+delivery+"</span></div><div class='stat'><span class='stat-label'>${icon("receipt", 14)} Total</span><span class='stat-value'>"+total+"</span></div>";
-        }, (err) => { console.warn("Error loading branch "+b+":", err); });
+        }, (err) => { logger.warn("Error loading branch "+b+":", err); });
       }
     }
     loadAllBranchesStatus();
@@ -530,7 +540,7 @@ export function startHttpServer(port: number = 3000) {
     };
     firebase.initializeApp(FIREBASE_CONFIG);
     function escapeHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-    firebase.auth().signInAnonymously().catch((e) => console.warn("KDS: anonymous auth falló", e.message));
+    firebase.auth().signInAnonymously().catch((e) => logger.warn(e.message, "KDS: anonymous auth falló"));
     const db = firebase.database();
     let orders = {};
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -570,14 +580,14 @@ export function startHttpServer(port: number = 3000) {
       let retried = false;
       const doFetch = async () => {
         let token = "";
-        try { if (firebase.auth().currentUser) token = await firebase.auth().currentUser.getIdToken(); } catch(e) { console.warn("Token error:", e); }
+        try { if (firebase.auth().currentUser) token = await firebase.auth().currentUser.getIdToken(); } catch(e) { logger.warn(e, "Token error:"); }
         const headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = "Bearer " + token;
         const resp = await fetch("/api/orders/"+orderId+"/status", { method: "POST", headers, body: JSON.stringify({ branchId: BRANCH, status }) });
         if (!resp.ok && resp.status === 401 && !retried) { retried = true; try { await firebase.auth().currentUser.getIdToken(true); } catch(e) {} return doFetch(); }
         return resp;
       };
-      try { await doFetch(); } catch(e) { console.error("Error al actualizar estado:", e); }
+      try { await doFetch(); } catch(e) { logger.error(e, "Error al actualizar estado:"); }
     };
     const ordersRef = db.ref("branches/"+BRANCH+"/orders");
     ordersRef.on("child_added", (snap) => {
@@ -686,7 +696,7 @@ export function startHttpServer(port: number = 3000) {
     };
     firebase.initializeApp(FIREBASE_CONFIG);
     function escapeHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-    firebase.auth().signInAnonymously().catch((e) => console.warn("QR Menu: anonymous auth falló", e.message));
+    firebase.auth().signInAnonymously().catch((e) => logger.warn(e.message, "QR Menu: anonymous auth falló"));
     const db = firebase.database();
     let products = {};
     let cart = {};
@@ -758,7 +768,7 @@ export function startHttpServer(port: number = 3000) {
       let retried = false;
       const doFetch = async () => {
         let token = "";
-        try { if (firebase.auth().currentUser) token = await firebase.auth().currentUser.getIdToken(); } catch(e) { console.warn("Token error:", e); }
+        try { if (firebase.auth().currentUser) token = await firebase.auth().currentUser.getIdToken(); } catch(e) { logger.warn(e, "Token error:"); }
         const headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = "Bearer " + token;
         const resp = await fetch("/api/orders", { method: "POST", headers, body: JSON.stringify({ branchId: BRANCH, customerName: name, items, observaciones: document.getElementById("inputNota").value.trim(), payment_method: document.getElementById("inputPago").value, order_type: MESA ? "Mesa" : "Para Llevar", mesa: MESA || null, source: "qr_menu" }) });
@@ -803,7 +813,7 @@ export function startHttpServer(port: number = 3000) {
       rateLimitMap.set(ip, rlEntry);
     }
     if (rlEntry.count >= 30) {
-      console.warn(`Rate limit excedido para ${ip}`);
+      logger.warn(`Rate limit excedido para ${ip}`);
       res.status(429).json({ success: false, error: "Demasiados pedidos. Espera un momento e intenta nuevamente." });
       return;
     }
@@ -811,19 +821,19 @@ export function startHttpServer(port: number = 3000) {
 
     try {
       const { branchId, ...orderData } = req.body;
-      console.log("📦 POST /api/orders — body keys:", Object.keys(req.body).join(", "));
+      logger.info("📦 POST /api/orders — body keys:", Object.keys(req.body).join(", "));
 
       // ── branchId validation ──────────────────────────
       const knownBranches = getAllBranchIds().length > 0 ? getAllBranchIds() : ["default"];
       const bid = String(branchId || "").trim() || knownBranches[0] || "default";
-      console.log("  branchId received:", branchId, "→ resolved:", bid, "known:", knownBranches.join(","));
+      logger.info("  branchId received:", branchId, "→ resolved:", bid, "known:", knownBranches.join(","));
       if (!knownBranches.includes(bid)) {
         res.status(400).json({ success: false, error: `Sucursal "${bid}" no válida.` });
         return;
       }
 
       // ── Validate required fields ─────────────────────
-      console.log("  items?", Array.isArray(orderData.items), "length:", orderData.items?.length, "customerName:", JSON.stringify(orderData.customerName));
+      logger.info("  items?", Array.isArray(orderData.items), "length:", orderData.items?.length, "customerName:", JSON.stringify(orderData.customerName));
       if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
         res.status(400).json({ success: false, error: "Se requiere al menos un item en el pedido" });
         return;
@@ -853,7 +863,7 @@ export function startHttpServer(port: number = 3000) {
           }
         }
       } catch (e) {
-        console.warn(`No se pudo cargar catálogo para ${bid}:`, e);
+        logger.warn(`No se pudo cargar catálogo para ${bid}:`, e);
       }
 
       // ── Sanitize items & recalculate prices server-side ──
@@ -914,20 +924,23 @@ export function startHttpServer(port: number = 3000) {
         sessionId: orderData.sessionId || '',
       };
 
-      // Multi-path update: write the order + the orders_by_session index atomically
+      // Multi-path update: order + reverse indices (session + customer_orders)
       const updates: Record<string, any> = {
         [`branches/${bid}/orders/${newRef.key}`]: order,
       };
       if (orderData.sessionId) {
         updates[`branches/${bid}/orders_by_session/${orderData.sessionId}/${newRef.key}`] = true;
       }
+      if (order.customerPhone) {
+        updates[`branches/${bid}/customer_orders/${order.customerPhone}/${newRef.key}`] = true;
+      }
       await fb.update(fb.ref(db), updates);
-      console.log(`📦 Pedido #${newRef.key} — ${order.customerName} — S/ ${grandTotal.toFixed(2)}`);
+      logger.info(`📦 Pedido #${newRef.key} — ${order.customerName} — S/ ${grandTotal.toFixed(2)}`);
       res.json({ success: true, orderId: newRef.key });
     } catch (e: any) {
       // Decrement rate limit counter on failure
       if (rlEntry) rlEntry.count = Math.max(0, rlEntry.count - 1);
-      console.error("Error en POST /api/orders:", e);
+      logger.error(e, "Error en POST /api/orders:");
       const msg = process.env.NODE_ENV === "production" ? "Error interno del servidor" : e.message;
       res.status(500).json({ success: false, error: `Error al crear pedido: ${msg}` });
     }
@@ -945,7 +958,7 @@ export function startHttpServer(port: number = 3000) {
       rateLimitMap.set(ip, rlEntry);
     }
     if (rlEntry.count >= 30) {
-      console.warn(`Rate limit excedido para ${ip}`);
+      logger.warn(`Rate limit excedido para ${ip}`);
       res.status(429).json({ success: false, error: "Demasiados pedidos. Espera un momento e intenta nuevamente." });
       return;
     }
@@ -992,11 +1005,11 @@ export function startHttpServer(port: number = 3000) {
         updatedAt: new Date().toISOString(),
       });
 
-      console.log(`🔄 KDS: Pedido #${orderId} → ${status}`);
+      logger.info(`🔄 KDS: Pedido #${orderId} → ${status}`);
       res.json({ success: true });
     } catch (e: any) {
       if (rlEntry) rlEntry.count = Math.max(0, rlEntry.count - 1);
-      console.error("Error en POST /api/orders/:id/status:", e);
+      logger.error(e, "Error en POST /api/orders/:id/status:");
       const msg = process.env.NODE_ENV === "production" ? "Error interno del servidor" : e.message;
       res.status(500).json({ success: false, error: msg });
     }
@@ -1005,36 +1018,20 @@ export function startHttpServer(port: number = 3000) {
   // ══════════════════════════════════════════════════════
   // API: Webhook receiver for delivery platforms
   // ══════════════════════════════════════════════════════
-  app.post("/api/webhooks/:provider", (req, res) => {
+  app.post("/api/webhooks/:provider", async (req, res) => {
     const provider = req.params.provider;
     const branchId = String(req.query.branch || "").trim() || "";
-    const knownBranches = getAllBranchIds().length > 0 ? getAllBranchIds() : ["default"];
 
-    if (!knownBranches.includes(branchId)) {
-      res.status(400).json({ error: `Sucursal "${branchId}" no válida para webhook` });
+    const result = await handleWebhook(provider, branchId, req.body);
+    if (result.error) {
+      res.status(400).json({ success: false, error: result.error });
       return;
     }
-
-    const normalized = normalizeProviderOrder(provider, req.body);
-    if (!normalized) {
-      res.status(400).json({ error: "Payload no reconocido" });
-      return;
-    }
-
-    const dedupKey = `${provider}:${normalized.providerOrderId || JSON.stringify(normalized.items)}`;
-
-    // Prevent duplicate webhooks
-    if (webhookDedup.has(dedupKey)) {
-      console.log(`Webhook [${provider}]: duplicado ignorado`);
+    if (result.dedup) {
       res.status(200).json({ success: true, dedup: true });
       return;
     }
-    webhookDedup.set(dedupKey, Date.now());
-
-    // Respond 202 immediately, process in background
     res.status(202).json({ success: true, message: "Pedido recibido" });
-
-    processWebhookOrder(provider, branchId, normalized, dedupKey);
   });
 
   // ══════════════════════════════════════════════════════
@@ -1044,7 +1041,7 @@ export function startHttpServer(port: number = 3000) {
     const { tool, args, apikey } = req.body;
     const knownApiKey = process.env.API_KEY;
     if (!knownApiKey) {
-      console.error("❌ API_KEY no configurada — MCP endpoint deshabilitado");
+      logger.error("❌ API_KEY no configurada — MCP endpoint deshabilitado");
       res.status(500).json({ error: "Server configuration error" });
       return;
     }
@@ -1057,7 +1054,7 @@ export function startHttpServer(port: number = 3000) {
         const result = await (registry as any).execute(tool, args || {});
         res.json({ success: true, data: result });
       } catch (e: any) {
-        console.error("MCP query error:", e);
+        logger.error(e, "MCP query error:");
         res.status(500).json({ success: false, error: e.message });
       }
     })();
@@ -1078,9 +1075,20 @@ export function startHttpServer(port: number = 3000) {
     res.json({ success: true, results });
   });
 
-  // ══════════════════════════════════════════════════════
+  return app;
+}
+
+// ══════════════════════════════════════════════════════════
+// Start HTTP Server (wraps createApp + Socket.IO + listen)
+// ══════════════════════════════════════════════════════════
+export function startHttpServer(port: number = 3000) {
+  const app = createApp();
+  const server = http.createServer(app);
+  io = new SocketIOServer(server, {
+    cors: { origin: ["http://localhost:3000", "http://127.0.0.1:3000"] },
+  });
+
   // Socket.IO: WhatsApp QR events
-  // ══════════════════════════════════════════════════════
   qrEmitter.on("qr", (qr: string) => {
     QRCode.toDataURL(qr, { width: 280, margin: 2 }, (_err, url) => {
       io?.emit("qr", url);
@@ -1091,7 +1099,7 @@ export function startHttpServer(port: number = 3000) {
   });
 
   server.listen(port, () => {
-    console.log(`🌐 HTTP Server: http://localhost:${port}`);
+    logger.info(`🌐 HTTP Server: http://localhost:${port}`);
   });
 
   return { app, server };

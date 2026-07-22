@@ -20,6 +20,15 @@ function generateCode(): string {
   return code;
 }
 
+function generateLinkingToken(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let token = "";
+  for (let i = 0; i < 16; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
 // ── TOOLS ───────────────────────────────────────────────
 
 export const notificationTools: MCPTool[] = [
@@ -165,6 +174,58 @@ export const notificationTools: MCPTool[] = [
         };
       } catch (e: any) {
         return { success: false, error: `Error al generar cupón: ${e.message}` };
+      }
+    },
+  },
+
+  // ── 4. Promocionar Telegram ────────────────────────────
+  {
+    name: "promocionar_telegram",
+    description: "Genera un mensaje promocional con un enlace directo a Telegram para que el cliente migre. Incluye un token de vinculación único. Usalo cuando un cliente pida algo por WhatsApp o muestre intención de pedido.",
+    parameters: {
+      telefono: {
+        type: "string",
+        description: "Teléfono del cliente (con código de país) para vincularlo al migrar. Opcional, pero recomendado para que la migración sea automática.",
+      },
+      incentivo: {
+        type: "string",
+        description: "Incentivo a ofrecer. Ej: '10% de descuento', 'papas gratis', 'delivery gratis'. Opcional.",
+      },
+    },
+    async execute(args) {
+      try {
+        const telefono = String(args.telefono || "").trim();
+        const incentivo = String(args.incentivo || "").trim();
+        const username = process.env.TELEGRAM_BOT_USERNAME || "HousePySBot";
+        const token = generateLinkingToken();
+
+        // Guardar token en RTDB (expira en 30 min)
+        const branchId = process.env.HOUSEPYSBOT_BRANCH_ID || "monteverde";
+        await set(child(ref(db), `branches/${branchId}/linking_tokens/${token}`), {
+          usado: false,
+          telefono: telefono || null,
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 30 * 60 * 1000,
+        });
+
+        const link = `https://t.me/${username}?start=link_${token}`;
+        const promo = incentivo
+          ? `🎁 *Pedí por Telegram y obtené ${incentivo}!*\n\n`
+          : "";
+
+        const msg =
+          `${promo}📱 *¿Sabías que podés hacer tu pedido por Telegram?*\n\n` +
+          `Es más rápido, recibís notificaciones al instante y ` +
+          (incentivo ? `tenés ${incentivo} en tu primer pedido. ` : `tenés promociones exclusivas. `) +
+          `¡Probálo ahora!\n\n👉 [Abrir Telegram](${link})`;
+
+        return {
+          success: true,
+          data: { link, token, incentivo },
+          message: msg,
+        };
+      } catch (e: any) {
+        return { success: false, error: `Error al generar promo: ${e.message}` };
       }
     },
   },

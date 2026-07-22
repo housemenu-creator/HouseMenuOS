@@ -1,5 +1,6 @@
 import { initFirebase, ref, get, child, push, set, update } from "../../lib/firebase.js";
 import type { MCPTool } from "../registry.js";
+import logger from "../../lib/logger.js";
 
 const db = initFirebase();
 
@@ -119,6 +120,27 @@ try {
           stockNuevo: newStock,
           motivo,
         });
+
+        // ── Evento: stock bajo ──────────────────────────────────────
+        if (cantidad < 0 && (prod.minStock ?? 0) > 0 && newStock < prod.minStock) {
+          try {
+            const eventId = `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+            await set(child(ref(db), `events/${branchId}/pending/${eventId}`), {
+              id: eventId, type: 'inventory.stock.low', version: '1',
+              tenantId: branchId, branchId,
+              occurredAt: new Date().toISOString(),
+              source: 'bot', correlationId: `corr_${Date.now()}`,
+              payload: {
+                productId: prodId, productName: prod.name,
+                currentStock: newStock, minStock: prod.minStock,
+                supplierId: prod.supplierId || null,
+              },
+              metadata: { idempotencyKey: eventId, userEmail: 'bot', userRole: 'admin' },
+            });
+          } catch (e: any) {
+            logger.warn('[inventory] No se pudo publicar evento stock.low:', e.message);
+          }
+        }
 
         const direction = cantidad > 0 ? "agregaron" : "redujeron";
         const motivoMsg = args.motivo ? ` (${args.motivo})` : "";

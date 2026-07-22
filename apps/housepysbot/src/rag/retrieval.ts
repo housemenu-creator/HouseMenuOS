@@ -4,14 +4,21 @@
  */
 import { vectorStore, Document } from './vectorStore.js';
 import { createEmbedding } from './embeddings.js';
+import logger from "../lib/logger.js";
 
 /**
  * Retrieve relevant context for a user query
  */
 export async function getRelevantContext(query: string, k = 3): Promise<string> {
-  // Generate embedding for the query
-  const embedding = await createEmbedding(query);
-  const docs = await vectorStore.query(embedding, k);
+  // Try embedding search first, fall back to keyword matching
+  let docs: Document[];
+  try {
+    const embedding = await createEmbedding(query);
+    docs = await vectorStore.query(embedding, k);
+  } catch {
+    logger.warn("Embedding API unavailable, using keyword fallback");
+    docs = await vectorStore.queryByKeywords(query, k);
+  }
   if (docs.length === 0) return '';
 
   const parts = docs.map(doc => {

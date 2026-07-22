@@ -9,6 +9,7 @@ import { initFirebase, ref, get, child, update, push, set } from "../lib/firebas
 import { executeTask } from "../agent/executor.js";
 import { sendTelegramMessage } from "./telegram-sender.js";
 import { getPrimaryBranchId } from "../lib/branch.js";
+import logger from "../lib/logger.js";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -119,7 +120,7 @@ const SEED_TASKS: Record<string, Record<string, unknown>> = {
     cada_minutos: 10080, // 7 días
     activa: true,
     canal: "telegram",
-    tools_permitidas: ["clientes_inactivos", "enviar_whatsapp", "generar_cupon"],
+    tools_permitidas: ["clientes_inactivos", "enviar_whatsapp", "generar_cupon", "promocionar_telegram"],
     ultima_ejecucion: null,
     proxima_ejecucion: null,
     // branch_id omitido → automáticamente usa el branch primario (getPrimaryBranchId())
@@ -198,7 +199,7 @@ async function ensureSeedTasks(db: ReturnType<typeof initFirebase>, branchId: st
     for (const [id, task] of Object.entries(SEED_TASKS)) {
       if (!existingTasks[id]) {
         await set(child(ref(db), `agent_tasks/${id}`), task as Record<string, unknown>);
-        console.log(`📋 Scheduler: tarea seed "${id}" creada`);
+        logger.info(`📋 Scheduler: tarea seed "${id}" creada`);
       }
     }
 
@@ -221,11 +222,11 @@ async function ensureSeedTasks(db: ReturnType<typeof initFirebase>, branchId: st
 
       if (Object.keys(updates).length > 0) {
         await update(child(ref(db), `agent_tasks/${id}`), updates);
-        console.log(`📋 Scheduler: migrada tarea "${id}" — ${Object.keys(updates).join(", ")}`);
+        logger.info(`📋 Scheduler: migrada tarea "${id}" — ${Object.keys(updates).join(", ")}`);
       }
     }
   } catch (e) {
-    console.warn("⚠️ Scheduler: error al crear seed tasks:", e);
+    logger.warn(e, "⚠️ Scheduler: error al crear seed tasks:");
   }
 }
 
@@ -289,9 +290,9 @@ async function ensureTestEmployee(db: ReturnType<typeof initFirebase>, branchId:
     // No active employees → create test employee
     const empRef = push(child(ref(db), `branches/${branchId}/employees`));
     await set(empRef, sanitize(TEST_EMPLOYEE));
-    console.log(`👤 Scheduler: empleado de prueba creado (PIN: 123456) — ${empRef.key}`);
+    logger.info(`👤 Scheduler: empleado de prueba creado (PIN: 123456) — ${empRef.key}`);
   } catch (e) {
-    console.warn("⚠️ Scheduler: error al crear empleado de prueba:", e);
+    logger.warn(e, "⚠️ Scheduler: error al crear empleado de prueba:");
   }
 }
 
@@ -364,7 +365,7 @@ async function ensureTestData(db: ReturnType<typeof initFirebase>, branchId: str
       for (const o of TEST_ORDERS) {
         const ordRef = push(child(ref(db), `branches/${branchId}/orders`));
         await set(ordRef, sanitize(o));
-        console.log(`📦 Test data: pedido #${ordRef.key?.slice(-6).toUpperCase()} — ${o.cliente} (${o.status})`);
+        logger.info(`📦 Test data: pedido #${ordRef.key?.slice(-6).toUpperCase()} — ${o.cliente} (${o.status})`);
       }
     }
 
@@ -381,11 +382,11 @@ async function ensureTestData(db: ReturnType<typeof initFirebase>, branchId: str
       for (const c of TEST_CUSTOMERS) {
         const custRef = push(child(ref(db), "customers"));
         await set(custRef, sanitize(c));
-        console.log(`👤 Test data: cliente "${c.name}" creado`);
+        logger.info(`👤 Test data: cliente "${c.name}" creado`);
       }
     }
   } catch (e) {
-    console.warn("⚠️ Scheduler: error al crear test data:", e);
+    logger.warn(e, "⚠️ Scheduler: error al crear test data:");
   }
 }
 
@@ -410,7 +411,7 @@ export function startScheduler(): () => void {
     try {
       const snap = await get(child(ref(db), "agent_tasks"));
       if (!snap.exists()) {
-        console.log("⏱️ Scheduler tick: no hay agent_tasks aún");
+        logger.info("⏱️ Scheduler tick: no hay agent_tasks aún");
         running = false;
         return;
       }
@@ -418,7 +419,7 @@ export function startScheduler(): () => void {
       const tasks = snap.val() as Record<string, any>;
       const now = Date.now();
       const activeCount = Object.values(tasks).filter((t: any) => t.activa !== false).length;
-      console.log(`⏱️ Scheduler tick: ${Object.keys(tasks).length} tareas (${activeCount} activas) — ${new Date(now).toLocaleTimeString("es-PE")}`);
+      logger.info(`⏱️ Scheduler tick: ${Object.keys(tasks).length} tareas (${activeCount} activas) — ${new Date(now).toLocaleTimeString("es-PE")}`);
 
       for (const [id, task] of Object.entries(tasks)) {
         try {
@@ -434,7 +435,7 @@ export function startScheduler(): () => void {
             condResult = await evaluateCondition(db, task, taskBranch, id);
             shouldRun = condResult.triggered;
             if (!shouldRun) {
-              console.log(`  ⏳ "${id}": condición no gatillada (${condResult.reason || "sin coincidencias"})`);
+              logger.info(`  ⏳ "${id}": condición no gatillada (${condResult.reason || "sin coincidencias"})`);
             }
           } else {
             const isFirstRun = task.proxima_ejecucion == null;
@@ -450,7 +451,7 @@ export function startScheduler(): () => void {
             ? `${task.instruccion}\n\n📋 CONTEXTO DE LA CONDICIÓN:\n${condResult.context.message}`
             : task.instruccion;
 
-          console.log(`▶️ Scheduler: ejecutando "${id}" (${instruccionFinal.slice(0, 80)}...)`);
+          logger.info(`▶️ Scheduler: ejecutando "${id}" (${instruccionFinal.slice(0, 80)}...)`);
           const allowedTools: string[] = task.tools_permitidas || [];
 
           const result = await executeTask(
@@ -459,7 +460,7 @@ export function startScheduler(): () => void {
             taskBranch,
           );
 
-          console.log(`  ✅ Resultado: ${result.success ? "ok" : "error"} — ${(result.summary || result.error || "").slice(0, 120)}`);
+          logger.info(`  ✅ Resultado: ${result.success ? "ok" : "error"} — ${(result.summary || result.error || "").slice(0, 120)}`);
 
           // ── Log to AGENT_AUDIT ──────────────────────
           const auditEntry = {
@@ -502,7 +503,7 @@ export function startScheduler(): () => void {
                 [`alertas_notificadas/${id}`]: true,
               }).catch(() => {});
             }
-            console.log(`  🔔 Marcados ${condResult.triggeredItems.length} items como notificados`);
+            logger.info(`  🔔 Marcados ${condResult.triggeredItems.length} items como notificados`);
           }
 
           // ── Notify ───────────────────────────────────
@@ -522,11 +523,11 @@ export function startScheduler(): () => void {
             }
           }
         } catch (taskErr: any) {
-          console.error(`❌ Scheduler: error en tarea "${id}":`, taskErr);
+          logger.error(`❌ Scheduler: error en tarea "${id}":`, taskErr);
         }
       }
     } catch (e: any) {
-      console.error("❌ Scheduler tick error:", e);
+      logger.error(e, "❌ Scheduler tick error:");
     }
 
     running = false;

@@ -12,6 +12,7 @@
 import { initFirebase, ref, set, push, update, child } from "./firebase.js";
 import { increment } from "firebase/database";
 import { get } from "firebase/database";
+import logger from "../lib/logger.js";
 
 const db = initFirebase();
 
@@ -37,7 +38,7 @@ export async function reportHeartbeat(
     };
     await set(child(ref(db), `${BASE}/agents/${agentId}`), payload);
   } catch (e) {
-    console.warn(`telemetry.heartbeat error (${agentId}):`, e);
+    logger.warn(`telemetry.heartbeat error (${agentId}):`, e);
   }
 }
 
@@ -90,7 +91,7 @@ export async function reportToolCall(
       totalTools: increment(1),
     });
   } catch (e) {
-    console.warn(`telemetry.toolCall error:`, e);
+    logger.warn(`telemetry.toolCall error:`, e);
   }
 }
 
@@ -115,7 +116,7 @@ export async function reportError(
       totalErrors: increment(1),
     });
   } catch (e) {
-    console.warn(`telemetry.error error:`, e);
+    logger.warn(`telemetry.error error:`, e);
   }
 }
 
@@ -132,7 +133,7 @@ export async function reportSystemHealth(health: {
       lastHeartbeat: Date.now(),
     }));
   } catch (e) {
-    console.warn(`telemetry.systemHealth error:`, e);
+    logger.warn(`telemetry.systemHealth error:`, e);
   }
 }
 

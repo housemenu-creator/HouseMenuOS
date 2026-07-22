@@ -4,6 +4,8 @@
  */
 import { vectorStore } from './vectorStore.js';
 import { Document } from './vectorStore.js';
+import { initFirebase, ref, get } from '../lib/firebase.js';
+import logger from "../lib/logger.js";
 
 // --- Types for Firebase data ---
 interface Product {
@@ -21,9 +23,7 @@ interface Product {
 // --- Sync Menu ---
 async function syncMenu(branchId: string): Promise<number> {
   try {
-    // Import here to avoid issues if firebase isn't init
-    const { getDatabase, ref, get } = await import('firebase/database');
-    const db = getDatabase();
+    const db = initFirebase();
     const snap = await get(ref(db, `branches/${branchId}/catalog/products`));
 
     if (!snap.exists()) return 0;
@@ -54,7 +54,7 @@ async function syncMenu(branchId: string): Promise<number> {
     await vectorStore.bulkUpsert(docs);
     return docs.length;
   } catch (e) {
-    console.error('syncMenu error:', e);
+    logger.error('syncMenu error:', e);
     return 0;
   }
 }
@@ -62,8 +62,7 @@ async function syncMenu(branchId: string): Promise<number> {
 // --- Sync Policies ---
 async function syncPolicies(branchId: string): Promise<number> {
   try {
-    const { getDatabase, ref, get } = await import('firebase/database');
-    const db = getDatabase();
+    const db = initFirebase();
     const snap = await get(ref(db, `branches/${branchId}/config`));
 
     if (!snap.exists()) return 0;
@@ -94,14 +93,14 @@ async function syncPolicies(branchId: string): Promise<number> {
     await vectorStore.bulkUpsert(docs);
     return docs.length;
   } catch (e) {
-    console.error('syncPolicies error:', e);
+    logger.error('syncPolicies error:', e);
     return 0;
   }
 }
 
 // --- Full Sync ---
 export async function syncBranchKnowledge(branchId: string) {
-  console.log(`🔄 Syncing knowledge for branch ${branchId}...`);
+  logger.info(`🔄 Syncing knowledge for branch ${branchId}...`);
 
   // Clear existing
   await vectorStore.clear();
@@ -111,6 +110,6 @@ export async function syncBranchKnowledge(branchId: string) {
   const policyCount = await syncPolicies(branchId);
   const total = menuCount + policyCount;
 
-  console.log(`✅ Synced ${total} documents (menu: ${menuCount}, policies: ${policyCount})`);
+  logger.info(`✅ Synced ${total} documents (menu: ${menuCount}, policies: ${policyCount})`);
   return { menuCount, policyCount, total };
 }

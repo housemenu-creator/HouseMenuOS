@@ -51,6 +51,7 @@ export function loadTools(): void {
 // Entry points (http.ts, bot.ts) and agent/index.ts call loadTools() explicitly.
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import logger from "../lib/logger.js";
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -83,7 +84,7 @@ async function startMcpServer() {
   });
 
   const transport = new StdioServerTransport();
-  console.error("🚀 MCP Server iniciado (stdio)");
+  logger.error("🚀 MCP Server iniciado (stdio)");
   await server.connect(transport);
 }
 

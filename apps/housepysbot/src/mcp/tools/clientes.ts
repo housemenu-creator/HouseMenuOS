@@ -34,6 +34,22 @@ async function getCustomerOrders(phone: string, branchId: string): Promise<any[]
   const customer = await getCustomerByPhone(cleaned);
   if (!customer) return [];
 
+  // Try reverse index first (customer_orders / phone → { orderId: true })
+  const indexSnap = await get(child(ref(db), `branches/${branchId}/customer_orders/${customer.phone}`));
+  if (indexSnap.exists()) {
+    const orderIds = Object.keys(indexSnap.val());
+    const orders = await Promise.all(
+      orderIds.map(async (id) => {
+        const o = await get(child(ref(db), `branches/${branchId}/orders/${id}`));
+        return o.exists() ? { id, ...o.val() } : null;
+      }),
+    );
+    return orders.filter(Boolean).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }
+
+  // Fallback: full scan (migration window)
   const snap = await get(child(ref(db), `branches/${branchId}/orders`));
   if (!snap.exists()) return [];
 

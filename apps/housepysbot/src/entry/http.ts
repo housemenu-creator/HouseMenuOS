@@ -9,6 +9,7 @@ import "dotenv/config";
 import { initFirebase, authenticateBot } from "../lib/firebase.js";
 import { startHttpServer } from "../services/http-server.js";
 import { loadTools } from "../mcp/server.js";
+import logger from "../lib/logger.js";
 
 const port = parseInt(process.env.PORT || process.env.HTTP_PORT || "3000");
 
@@ -24,15 +25,15 @@ async function main() {
   try {
     initFirebase();
     await withTimeout(authenticateBot(), 15_000, "authenticateBot()");
-    console.log("🔐 Bot autenticado, HTTP server listo para operaciones con DB");
+    logger.info("🔐 Bot autenticado, HTTP server listo para operaciones con DB");
   } catch (e: any) {
-    console.error("❌ Firebase Auth:", e.message);
+    logger.error(e.message, "❌ Firebase Auth:");
     process.exit(1);
   }
 
   loadTools();
   startHttpServer(port);
-  console.log(`🌐 HTTP Server: http://localhost:${port}`);
+  logger.info(`🌐 HTTP Server: http://localhost:${port}`);
 }
 
 main();

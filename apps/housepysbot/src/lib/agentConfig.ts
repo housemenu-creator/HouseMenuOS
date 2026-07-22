@@ -10,6 +10,7 @@
 import { initFirebase, get, child, ref, update } from "./firebase.js";
 import type { AgentConfig } from "../agents/config.js";
 import { AGENTS as FALLBACK_AGENTS } from "../agents/config.js";
+import logger from "../lib/logger.js";
 
 const db = initFirebase();
 
@@ -51,7 +52,7 @@ export async function getAgentConfigFromFirebase(
       allowedTools: Array.isArray(data.allowedTools) ? data.allowedTools : [],
     };
   } catch (e) {
-    console.warn(`agentConfig.getAgentConfigFromFirebase error (${agentId}):`, e);
+    logger.warn(`agentConfig.getAgentConfigFromFirebase error (${agentId}):`, e);
     return null;
   }
 }

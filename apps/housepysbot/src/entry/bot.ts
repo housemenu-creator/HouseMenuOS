@@ -4,16 +4,24 @@
  *
  * Usage:
  *   npx tsx src/entry/bot.ts
+ *
+ * Architecture:
+ *   Each channel is a ChannelAdapter behind a common interface.
+ *   Incoming messages → MessageNormalizer → ChannelRegistry → Conversation Engine
+ *   Outgoing responses ← ChannelAdapter ← ChannelRegistry
  */
 import "dotenv/config";
-import { createBot } from "../bot/telegram.js";
-import { startWhatsApp } from "../bot/whatsapp.js";
+import { channelRegistry } from "../channels/channel.interface.js";
+import { WhatsAppAdapter } from "../channels/whatsapp/whatsapp.adapter.js";
+import { TelegramAdapter } from "../channels/telegram/telegram.adapter.js";
+import { setupMessageHandler } from "../messaging/message-router.js";
 import { startCocinaWatcher } from "../services/cocina.js";
 import { startOrderNotifier } from "../services/orderNotifier.js";
 import { startMonitor } from "../services/monitor.js";
 import { startScheduler } from "../services/scheduler.js";
 import { initFirebase, authenticateBot } from "../lib/firebase.js";
 import { getPrimaryBranchId, getAllBranchIds } from "../lib/branch.js";
+import logger from "../lib/logger.js";
 
 const branchId = getPrimaryBranchId();
 const allBranchIds = getAllBranchIds();
@@ -28,59 +36,59 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
 }
 
 async function main() {
-  // Firebase — must auth before any watchers/startups
+  // ── Firebase ────────────────────────────────────────
   try {
     initFirebase();
     await withTimeout(authenticateBot(), 15_000, "authenticateBot()");
-    console.log("🔐 Bot autenticado, servicios listos para operaciones con DB");
+    logger.info("🔐 Bot autenticado, servicios listos para operaciones con DB");
   } catch (e: any) {
-    console.error("❌ Firebase:", e.message);
+    logger.error(e.message, "❌ Firebase:");
     process.exit(1);
   }
 
-  // Telegram
+  // ── Set up message handler (conversation engine) ───
+  setupMessageHandler();
+
+  // ── Register channel adapters ────────────────────────
   if (process.env.TELEGRAM_BOT_TOKEN) {
-    const bot = createBot(process.env.TELEGRAM_BOT_TOKEN, branchId);
-    bot.launch().then(() => {
-      console.log("🤖 Telegram: ✅");
-    }).catch((e) => {
-      console.error("🤖 Telegram:", e);
-    });
+    channelRegistry.register(new TelegramAdapter(process.env.TELEGRAM_BOT_TOKEN));
+    logger.info("🤖 Telegram: registrado");
   } else {
-    console.log("🤖 Telegram: ❌ (sin TELEGRAM_BOT_TOKEN)");
+    logger.info("🤖 Telegram: ❌ (sin TELEGRAM_BOT_TOKEN)");
   }
 
-  // WhatsApp
   if (process.env.WHATSAPP_ENABLED === "true") {
-    startWhatsApp(branchId).then(() => {
-      console.log("💬 WhatsApp: iniciado");
-    }).catch((e) => {
-      console.error("💬 WhatsApp:", e);
-    });
+    channelRegistry.register(new WhatsAppAdapter());
+    logger.info("💬 WhatsApp: registrado");
   } else {
-    console.log("💬 WhatsApp: ❌ (WHATSAPP_ENABLED=false)");
+    logger.info("💬 WhatsApp: ❌ (WHATSAPP_ENABLED=false)");
   }
 
-  // Watchers
+  // ── Start all channel adapters ───────────────────────
+  await channelRegistry.startAll(branchId);
+
+  // ── Watchers ─────────────────────────────────────────
   startCocinaWatcher();
   startOrderNotifier();
   startMonitor();
 
-  // Task Scheduler
+  // ── Task Scheduler ──────────────────────────────────
   stopScheduler = startScheduler();
-  console.log("⏰ Scheduler: ✅");
+  logger.info("⏰ Scheduler: ✅");
 
-  console.log(`📡 HousePySbot Bots — ${allBranchIds.join(", ")}`);
+  logger.info(`📡 HousePySbot Bots — ${allBranchIds.join(", ")}`);
 }
 
 // ── Graceful shutdown ──────────────────────────────────
 process.once("SIGINT", () => {
-  console.log("\n⏳ Cerrando...");
+  logger.info("\n⏳ Cerrando...");
   if (stopScheduler) stopScheduler();
+  channelRegistry.stopAll();
   process.exit(0);
 });
 process.once("SIGTERM", () => {
   if (stopScheduler) stopScheduler();
+  channelRegistry.stopAll();
   process.exit(0);
 });
 

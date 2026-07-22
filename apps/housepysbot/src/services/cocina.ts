@@ -2,6 +2,7 @@ import { initFirebase, ref, child, set, push, onChildAdded, off } from "../lib/f
 import { getAllBranchIds } from "../lib/branch.js";
 import { reportToolCall } from "../lib/telemetry.js";
 import { retry } from "../lib/retry.js";
+import logger from "../lib/logger.js";
 
 const db = initFirebase();
 
@@ -28,7 +29,7 @@ export function startCocinaWatcher() {
             {
               maxAttempts: 3,
               onRetry: (attempt, err) =>
-                console.warn(`cocina watch retry ${attempt}/${3} [${branchId}]: ${err.message}`),
+                logger.warn(`cocina watch retry ${attempt}/${3} [${branchId}]: ${err.message}`),
             },
           );
 
@@ -41,7 +42,7 @@ export function startCocinaWatcher() {
             0,
           );
         } catch (e) {
-          console.error(`cocina watcher error [${branchId}] tras ${3} intentos:`, e);
+          logger.error(`cocina watcher error [${branchId}] tras ${3} intentos:`, e);
         }
       })();
     });
@@ -49,6 +50,6 @@ export function startCocinaWatcher() {
     cleanups.push(() => off(ordersRef));
   }
 
-  console.log(`🍳 Cocina Watcher: ${branchIds.length} sucursal(es)`);
+  logger.info(`🍳 Cocina Watcher: ${branchIds.length} sucursal(es)`);
   return () => cleanups.forEach((fn) => fn());
 }

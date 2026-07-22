@@ -3,6 +3,7 @@
  * NVIDIA (primary) + OpenAI (fallback)
  */
 import OpenAI from 'openai';
+import logger from "../lib/logger.js";
 
 function getNvidiaClient(): OpenAI | null {
   if (!process.env.NVIDIA_API_KEY) return null;
@@ -13,9 +14,13 @@ function getNvidiaClient(): OpenAI | null {
 }
 
 function getOpenAIClient(): OpenAI | null {
-  if (!process.env.OPENAI_API_KEY) return null;
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  // Groq keys (gsk_) no sirven para OpenAI embeddings
+  if (apiKey.startsWith('gsk_')) return null;
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey,
+    baseURL: 'https://api.openai.com/v1', // explícito, no heredar env
   });
 }
 
@@ -43,7 +48,7 @@ export async function createEmbedding(text: string): Promise<number[]> {
         });
         return response.data[0].embedding;
       } catch (e: any) {
-        console.log(`❌ NVIDIA ${model} failed:`, e.message);
+        logger.info(`❌ NVIDIA ${model} failed:`, e.message);
         if (e.message?.includes('429') || e.message?.includes('rate')) {
           await new Promise(r => setTimeout(r, 500));
           continue;

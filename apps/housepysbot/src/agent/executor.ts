@@ -41,15 +41,11 @@ const FALLBACK_MODEL = process.env.OPENROUTER_FALLBACK || "openrouter/auto";
 // ── Helpers ────────────────────────────────────────────
 
 function createClient(): OpenAI {
-  const key = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENROUTER_API_KEY no configurada");
+  const key = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENAI_API_KEY (Groq) no configurada");
   return new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
+    baseURL: process.env.OPENAI_BASE_URL || "https://api.groq.com/openai/v1",
     apiKey: key,
-    defaultHeaders: {
-      "HTTP-Referer": "https://github.com/archiphone/House-Portal-OS",
-      "X-Title": "HousePySbot-Tasks",
-    },
   });
 }
 

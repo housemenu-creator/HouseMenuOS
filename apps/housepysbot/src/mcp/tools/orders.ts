@@ -62,6 +62,7 @@ export const ordersTools: MCPTool[] = [
       metodo_pago: { type: "string", description: "Método de pago: efectivo, tarjeta, yape, plin (opcional, default efectivo)" },
       nota: { type: "string", description: "Nota adicional para el pedido (opcional)" },
       tipo: { type: "string", description: "Tipo de pedido: delivery, recojo, mesa (opcional, default delivery)" },
+      fuente: { type: "string", description: "Canal por el que llegó el pedido: whatsapp, telegram, qr_menu, web (opcional, auto-detectado)" },
     },
     async execute(args, branchId) {
       try {
@@ -119,16 +120,43 @@ export const ordersTools: MCPTool[] = [
           deliveryFee,
           total: subtotal + deliveryFee,
           status: "recibido",
+          source: String(args.fuente || "whatsapp"),
           createdAt: timestamp,
           updatedAt: timestamp,
         };
 
         await set(newRef, order);
 
+        // Notificar al admin por Telegram
+        (async () => {
+          const adminChatId = process.env.ADMIN_CHAT_ID;
+          if (!adminChatId) return;
+          const token = process.env.TELEGRAM_BOT_TOKEN;
+          if (!token) return;
+          const itemsStr = order.items.map((i: any) => `• ${i.quantity}x ${i.name} — S/ ${(i.price * i.quantity).toFixed(2)}`).join("\n");
+          const feeNote = deliveryFee > 0 ? `\n🚚 Delivery: S/ ${deliveryFee.toFixed(2)}` : deliveryFee === 0 && tipo === "delivery" ? "\n🚚 Delivery gratis" : "";
+          const sourceIcon = order.source === "telegram" ? "✈️" : order.source === "qr_menu" ? "📱" : "💬";
+          const msg = `${sourceIcon} *Nuevo pedido!*\n\n` +
+            `👤 ${order.cliente}${order.telefono ? ` (${order.telefono})` : ""}\n` +
+            `📋 #${order.id?.slice(-6).toUpperCase()}\n` +
+            `━━━━━━━━━━━━\n${itemsStr}\n━━━━━━━━━━━━\n` +
+            `💰 *S/ ${order.total.toFixed(2)}*${feeNote}\n` +
+            `💳 ${order.metodo_pago}\n` +
+            `📍 ${order.direccion || "Recojo en local"}\n` +
+            `📡 ${order.source}`;
+          try {
+            await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chat_id: parseInt(adminChatId), text: msg, parse_mode: "Markdown" }),
+            });
+          } catch {}
+        })();
+
         const feeNote = deliveryFee > 0 ? ` + S/ ${deliveryFee.toFixed(2)} delivery` : deliveryFee === 0 && tipo === "delivery" ? " (delivery gratis)" : "";
         return {
           success: true,
-          data: { orderId: newRef.key, total: order.total },
+          data: { orderId: newRef.key, total: order.total, source: order.source },
           message: `Pedido #${newRef.key} creado: S/ ${order.total.toFixed(2)}${feeNote}`,
         };
       } catch (e: any) {

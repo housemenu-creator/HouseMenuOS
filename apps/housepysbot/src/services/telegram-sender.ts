@@ -1,3 +1,4 @@
+import logger from "../lib/logger.js";
 /**
  * Telegram Sender — standalone Telegram message sender via Bot API.
  *
@@ -13,12 +14,12 @@ export async function sendTelegramMessage(
 ): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
-    console.warn("⚠️ TELEGRAM_BOT_TOKEN no configurado, no se pudo enviar mensaje");
+    logger.warn("⚠️ TELEGRAM_BOT_TOKEN no configurado, no se pudo enviar mensaje");
     return false;
   }
 
   if (!chatId) {
-    console.warn("⚠️ chat_id vacío, no se pudo enviar mensaje");
+    logger.warn("⚠️ chat_id vacío, no se pudo enviar mensaje");
     return false;
   }
 
@@ -36,11 +37,11 @@ export async function sendTelegramMessage(
 
     const data = (await res.json()) as { ok: boolean; description?: string };
     if (!data.ok) {
-      console.warn(`⚠️ Telegram send error: ${data.description}`);
+      logger.warn(`⚠️ Telegram send error: ${data.description}`);
     }
     return data.ok;
   } catch (err) {
-    console.error("❌ telegram-sender error:", err);
+    logger.error(err, "❌ telegram-sender error:");
     return false;
   }
 }

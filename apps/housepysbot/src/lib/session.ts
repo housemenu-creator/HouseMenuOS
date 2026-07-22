@@ -1,5 +1,6 @@
 import { getDb } from "./firebase.js";
 import { ref, push, query, limitToLast, orderByKey, get } from "firebase/database";
+import logger from "../lib/logger.js";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -59,7 +60,7 @@ export async function getHistory(key: string): Promise<Message[]> {
     setCached(key, messages);
     return messages;
   } catch (e) {
-    console.warn("session.getHistory error:", e);
+    logger.warn(e, "session.getHistory error:");
     return [];
   }
 }
@@ -80,6 +81,6 @@ export async function pushHistory(key: string, user: string, assistant: string) 
     push(chatRef, { role: "user", content: user, ts: Date.now() });
     push(chatRef, { role: "assistant", content: assistant, ts: Date.now() });
   } catch (e) {
-    console.error("session fb push error:", e);
+    logger.error(e, "session fb push error:");
   }
 }
