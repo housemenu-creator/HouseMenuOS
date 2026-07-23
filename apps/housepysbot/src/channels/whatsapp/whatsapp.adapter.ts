@@ -8,7 +8,7 @@
 import type { ChannelAdapter, ChannelAction, SendTextOptions, NormalizedMessage } from "../channel.interface.js";
 import { channelRegistry } from "../channel.interface.js";
 import { normalizeWhatsApp } from "../message-normalizer.js";
-import { startWhatsApp as startBaileys, sendWhatsAppMessage, sendWATyping } from "../../bot/whatsapp.js";
+import { startWhatsApp as startBaileys, stopWhatsApp, sendWhatsAppMessage, sendWATyping } from "../../bot/whatsapp.js";
 import { setWhatsAppStatus } from "../../lib/wa-status.js";
 import logger from "../../lib/logger.js";
 
@@ -21,7 +21,8 @@ export class WhatsAppAdapter implements ChannelAdapter {
   }
 
   async stop(): Promise<void> {
-    // No queue to drain — messages go directly to ChannelRegistry
+    // stopWhatsApp almacena el branchId internamente cuando inició
+    await stopWhatsApp();
   }
 
   async sendText(recipientId: string, text: string, _options?: SendTextOptions): Promise<void> {

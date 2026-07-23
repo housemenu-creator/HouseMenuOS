@@ -6,6 +6,7 @@ import { qrEmitter } from "../services/http-server.js";
 import { setWhatsAppStatus } from "../lib/wa-status.js";
 import { normalizeWhatsApp } from "../channels/message-normalizer.js";
 import { channelRegistry } from "../channels/channel.interface.js";
+import { loadWASession, saveCredsToFirebase, saveFullSessionToFirebase, startPeriodicBackup } from "../lib/wa-auth-firebase.js";
 import logger from "../lib/logger.js";
 
 const SESSION_DIR = process.env.WHATSAPP_SESSION_DIR || "./wa_session";
@@ -52,6 +53,8 @@ const startupTs = Math.floor(Date.now() / 1000);
 // ── Watchdog de reconexión ─────────────────────────────
 let reconnectAttempts = 0;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let waBranchId: string = "monteverde";
+let stopBackup: (() => void) | null = null;
 const MAX_RECONNECT = 10;
 
 function scheduleReconnect(branchId: string) {
@@ -80,12 +83,18 @@ function resetWatchdog() {
 // ── Connection ─────────────────────────────────────────
 
 export async function startWhatsApp(branchId: string): Promise<void> {
+  waBranchId = branchId;
   backupSession();
+  await loadWASession(branchId);
   let state, saveCreds;
   try {
     const auth = await useMultiFileAuthState(SESSION_DIR);
     state = auth.state;
-    saveCreds = auth.saveCreds;
+    const ogSave = auth.saveCreds;
+    saveCreds = async () => {
+      await ogSave();
+      await saveCredsToFirebase(branchId).catch(() => {});
+    };
   } catch (e) {
     logger.error(e, "📁 wa_session: error al cargar credenciales:");
     throw e;
@@ -111,6 +120,7 @@ export async function startWhatsApp(branchId: string): Promise<void> {
       if (!shouldReconnect) {
         logger.info("❌ WhatsApp: sesión cerrada. Escanea el QR de nuevo.");
         resetWatchdog();
+        if (stopBackup) { stopBackup(); stopBackup = null; }
         return;
       }
       scheduleReconnect(branchId);
@@ -120,6 +130,10 @@ export async function startWhatsApp(branchId: string): Promise<void> {
       setWhatsAppStatus(true, number);
       logger.info("✅ WhatsApp conectado!");
       qrEmitter.emit("connected");
+
+      // Firebase persistence: backup periódico
+      if (stopBackup) stopBackup();
+      stopBackup = startPeriodicBackup(branchId);
     }
   });
 
@@ -211,6 +225,16 @@ export async function sendWhatsAppMessage(to: string, text: string): Promise<boo
     logger.error(err, "❌ sendWhatsAppMessage error:");
     return false;
   }
+}
+
+/**
+ * Clean shutdown: stop periodic backup + save full session to Firebase.
+ * Call from the adapter's stop() or from SIGTERM handlers.
+ */
+export async function stopWhatsApp(): Promise<void> {
+  if (stopBackup) { stopBackup(); stopBackup = null; }
+  await saveFullSessionToFirebase(waBranchId).catch(() => {});
+  logger.info("💤 WhatsApp: backup final guardado en Firebase");
 }
 
 /** @deprecated Cola eliminada — los mensajes van directo al ChannelRegistry */
