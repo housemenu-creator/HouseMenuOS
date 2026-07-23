@@ -7,7 +7,7 @@
  *   - Quick customer lookup
  */
 
-import { initFirebase, ref, get, child } from "../../lib/firebase.js";
+import { initFirebase, ref, get, child, set } from "../../lib/firebase.js";
 import type { MCPTool } from "../registry.js";
 
 const db = initFirebase();
@@ -17,12 +17,23 @@ const db = initFirebase();
 async function getCustomerByPhone(phone: string): Promise<any | null> {
   const cleaned = phone.replace(/[^0-9]/g, "");
   if (cleaned.length < 8) return null;
+
+  // Try reverse index first (O(1))
+  const idxSnap = await get(child(ref(db), `customers_by_phone/${cleaned}`));
+  if (idxSnap.exists()) {
+    const custSnap = await get(child(ref(db), `customers/${idxSnap.val()}`));
+    if (custSnap.exists()) return { id: idxSnap.val(), ...custSnap.val() };
+  }
+
+  // Fallback: scan all customers (O(n)) — lazy-writes index for next time
   const snap = await get(child(ref(db), "customers"));
   if (!snap.exists()) return null;
   const customers = snap.val() as Record<string, any>;
   for (const [id, c] of Object.entries(customers)) {
     const custPhone = (c.phone || "").replace(/[^0-9]/g, "");
     if (custPhone && custPhone.includes(cleaned.slice(-9))) {
+      // ponytail: lazy index write — next lookup is O(1)
+      set(child(ref(db), `customers_by_phone/${custPhone}`), id).catch(() => {});
       return { id, ...c };
     }
   }

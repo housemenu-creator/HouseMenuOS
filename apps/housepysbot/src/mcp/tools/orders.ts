@@ -44,6 +44,7 @@ export const ordersTools: MCPTool[] = [
     name: "crear_pedido",
     description: "Crea un nuevo pedido con productos del menú. Calcula automáticamente el costo de delivery según la zona si aplica.",
     parameters: {
+      sucursal: { type: "string", description: "ID de sucursal donde crear el pedido (opcional, default la actual)" },
       cliente: { type: "string", description: "Nombre del cliente" },
       items: {
         type: "array",
@@ -66,7 +67,8 @@ export const ordersTools: MCPTool[] = [
     },
     async execute(args, branchId) {
       try {
-        const catalogSnap = await get(child(ref(db), `branches/${branchId}/catalog/products`));
+        const bid = String(args.sucursal || branchId);
+        const catalogSnap = await get(child(ref(db), `branches/${bid}/catalog/products`));
         if (!catalogSnap.exists()) return { success: false, error: "El menú no está disponible" };
         const products = catalogSnap.val() as Record<string, any>;
 
@@ -94,7 +96,7 @@ export const ordersTools: MCPTool[] = [
         let freeThreshold = 0;
 
         if (tipo === "delivery") {
-          const branchSnap = await get(child(ref(db), `branches_config/${branchId}`));
+          const branchSnap = await get(child(ref(db), `branches_config/${bid}`));
           if (branchSnap.exists()) {
             const cfg = branchSnap.val();
             deliveryFee = Number(cfg.deliveryFee) || 0;
@@ -103,16 +105,18 @@ export const ordersTools: MCPTool[] = [
           if (freeThreshold > 0 && subtotal >= freeThreshold) deliveryFee = 0;
         }
 
-        const ordersRef = child(ref(db), or(branchId));
+        const ordersRef = child(ref(db), or(bid));
         const newRef = push(ordersRef);
         const timestamp = new Date().toISOString();
 
+        const phoneRaw = String(args.telefono || "");
         const order = {
           id: newRef.key,
           items: parsedItems,
           cliente: String(args.cliente || "Cliente"),
           direccion: String(args.direccion || ""),
-          telefono: String(args.telefono || ""),
+          telefono: phoneRaw,
+          phone: phoneRaw, // ponytail: duplicado para orderNotifier que lee .phone
           metodo_pago: String(args.metodo_pago || "efectivo"),
           nota: String(args.nota || ""),
           tipo,

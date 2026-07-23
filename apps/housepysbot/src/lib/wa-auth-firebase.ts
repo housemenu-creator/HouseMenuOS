@@ -97,8 +97,14 @@ export async function saveCredsToFirebase(branchId: string): Promise<void> {
   }
 }
 
+// ── Mutex to prevent concurrent full backups ──────────
+const backupInProgress = new Set<string>();
+
 /** Archive all session files (except creds.json) to Firebase RTDB. */
 export async function saveFullSessionToFirebase(branchId: string): Promise<void> {
+  // Mutex: skip if previous backup is still running
+  if (backupInProgress.has(branchId)) return;
+  backupInProgress.add(branchId);
   try {
     const files = readAllFiles(SESSION_DIR);
     delete files["creds.json"]; // already saved separately
@@ -109,14 +115,16 @@ export async function saveFullSessionToFirebase(branchId: string): Promise<void>
     logger.info(`📁 wa_session: archive → Firebase (${Object.keys(files).length} archivos, ${(buf.length / 1024).toFixed(1)}KB)`);
   } catch (e) {
     logger.warn(e, "📁 wa_session: error al guardar archive en Firebase");
+  } finally {
+    backupInProgress.delete(branchId);
   }
 }
 
 /** Start periodic full-session backup. Retorna cleanup fn. */
-export function startPeriodicBackup(branchId: string, intervalMs = 60_000): () => void {
+export function startPeriodicBackup(branchId: string, intervalMs = 300_000): () => void {
   const id = setInterval(() => {
     saveFullSessionToFirebase(branchId).catch(() => {});
   }, intervalMs);
-  logger.info(`📁 wa_session: backup automático cada ${intervalMs / 1000}s`);
+  logger.info(`📁 wa_session: backup automático cada ${intervalMs / 1000}s (mutex protegido)`);
   return () => clearInterval(id);
 }

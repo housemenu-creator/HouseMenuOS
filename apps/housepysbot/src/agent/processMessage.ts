@@ -31,7 +31,7 @@ function getAdapter() {
 
 type Message = { role: "user" | "assistant"; content: string };
 
-const MAX_TOOL_ITERATIONS = 5;
+const MAX_TOOL_ITERATIONS = parseInt(process.env.AGENT_MAX_TOOL_ITERATIONS || "8", 10);
 
 // ── Multi-turn agent loop ─────────────────────────────
 

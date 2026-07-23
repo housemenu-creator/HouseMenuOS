@@ -11,7 +11,7 @@ import { startScheduler } from "./services/scheduler.js";
 import { initFirebase, authenticateBot } from "./lib/firebase.js";
 import { reportHeartbeat, reportSystemHealth } from "./lib/telemetry.js";
 import { getPrimaryBranchId, getAllBranchIds } from "./lib/branch.js";
-import { syncBranchKnowledge } from "./rag/syncFirebase.js";
+import { syncBranchKnowledge, startKnowledgeListener } from "./rag/syncFirebase.js";
 import logger from "./lib/logger.js";
 
 const branchId = getPrimaryBranchId();
@@ -79,12 +79,13 @@ logger.info(`   Sucursales: ${allBranchIds.join(", ")}`);
 logger.info(`   Primaria: ${branchId}`);
 logger.info(`   Modelo: ${process.env.OPENROUTER_MODEL || "openrouter/free"}`);
 
-// ── RAG: Sync knowledge base at startup ───────────────
+// ── RAG: Sync knowledge base + live listener ───────────
 (async () => {
   for (const bId of allBranchIds) {
     try {
       const result = await syncBranchKnowledge(bId);
-      logger.info(`   🧠 RAG: ${result.total} docs sync'd for ${bId}`);
+      startKnowledgeListener(bId); // ponytail: live sync on knowledge doc changes
+      logger.info(`   🧠 RAG: ${result.total} docs sync'd + live listener for ${bId}`);
     } catch (e: any) {
       logger.warn(`   ⚠️ RAG sync failed for ${bId}: ${e.message}`);
     }

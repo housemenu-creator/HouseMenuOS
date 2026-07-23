@@ -65,6 +65,19 @@ storybook-static/
 # Speckit backup
 .spec-kit-backup/
 
+# Scratch / test artifacts (root)
+_*.json
+_*.cjs
+_*.mjs
+_*.js
+_*.txt
+*.exe
+*.db
+.tunnel-url
+.tunnel-watchdog.log
+tmp-*
+test-*.mjs
+
 # Docker build artifacts (tracked in repo only until removed)
 docker/nginx-dist/
 

@@ -1,16 +1,40 @@
 import { initFirebase, ref, get, child, update } from "../../lib/firebase.js";
 import type { MCPTool } from "../registry.js";
+import { getAllBranchIds } from "../../lib/branch.js";
 
 const db = initFirebase();
 
 export const branchTools: MCPTool[] = [
   {
-    name: "info_restaurante",
-    description: "Muestra la información del restaurante: nombre, dirección, horario, teléfono y configuración de delivery",
+    name: "ver_sucursales",
+    description: "Muestra todas las sucursales disponibles del restaurante",
     parameters: {},
     async execute(_args, branchId) {
+      const ids = getAllBranchIds();
+      const lines: string[] = ["🏪 *Sucursales disponibles:*\n"];
+      for (const id of ids) {
+        const snap = await get(child(ref(db), `branches_config/${id}`));
+        const info = snap.exists() ? snap.val() : {};
+        lines.push(`• *${info.name || id}*`);
+        if (info.address) lines.push(`  📍 ${info.address}`);
+        if (info.phone) lines.push(`  📞 ${info.phone}`);
+        if (info.schedule) lines.push(`  🕐 ${info.schedule}`);
+        lines.push(id === branchId ? "  ✅ *Sucursal actual*" : "");
+        lines.push("");
+      }
+      return { success: true, data: { sucursales: ids }, message: lines.filter(Boolean).join("\n").trim() };
+    },
+  },
+  {
+    name: "info_restaurante",
+    description: "Muestra la información del restaurante: nombre, dirección, horario, teléfono y configuración de delivery",
+    parameters: {
+      sucursal: { type: "string", description: "ID de sucursal (opcional, default la actual)" },
+    },
+    async execute(args, branchId) {
       try {
-        const snapshot = await get(child(ref(db), `branches_config/${branchId}`));
+        const bid = String(args.sucursal || branchId);
+        const snapshot = await get(child(ref(db), `branches_config/${bid}`));
         if (!snapshot.exists()) return { success: false, error: "No hay información del restaurante disponible." };
 
         const info = snapshot.val();

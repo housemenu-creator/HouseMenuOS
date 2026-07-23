@@ -899,6 +899,7 @@ export function createApp(): express.Application {
         status: "recibido",
         customerName: String(orderData.customerName).trim().slice(0, 100),
         customerPhone: String(orderData.customerPhone || "").trim().slice(0, 20),
+        phone: String(orderData.customerPhone || "").trim().slice(0, 20), // ponytail: duplicado para orderNotifier que lee .phone
         customerEmail: String(orderData.customerEmail || "").trim().slice(0, 120),
         cliente: String(orderData.customerName).trim().slice(0, 100),
         location: String(orderData.location || "").slice(0, 300),

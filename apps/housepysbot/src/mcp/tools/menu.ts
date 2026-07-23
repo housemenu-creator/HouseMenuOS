@@ -10,12 +10,14 @@ export const menuTools: MCPTool[] = [
     name: "ver_menu",
     description: "Muestra los productos del menú disponibles, agrupados por categoría. Puedes filtrar por categoría y paginar los resultados.",
     parameters: {
+      sucursal: { type: "string", description: "ID de sucursal para ver su menú (opcional, default la actual)" },
       categoria: { type: "string", description: "Filtrar por categoría, ej: \"Entradas\", \"Platos de Fondo\", \"Bebidas\" (opcional)" },
       pagina: { type: "string", description: "Número de página para paginación, ej: \"1\", \"2\" (opcional, default 1)" },
     },
     async execute(args, branchId) {
       try {
-        const snapshot = await get(child(ref(db), cp(branchId)));
+        const bid = String(args.sucursal || branchId);
+        const snapshot = await get(child(ref(db), cp(bid)));
         if (!snapshot.exists()) return { success: false, error: "El menú no está disponible" };
         const catalog = snapshot.val();
         const products = catalog?.products ? Object.values(catalog.products) as any[] : [];
@@ -84,10 +86,12 @@ export const menuTools: MCPTool[] = [
     description: "Busca productos en el menú por nombre o descripción",
     parameters: {
       q: { type: "string", description: "Término de búsqueda" },
+      sucursal: { type: "string", description: "ID de sucursal para buscar en su menú (opcional, default la actual)" },
     },
     async execute(args, branchId) {
       try {
-        const snapshot = await get(child(ref(db), `${cp(branchId)}/products`));
+        const bid = String(args.sucursal || branchId);
+        const snapshot = await get(child(ref(db), `${cp(bid)}/products`));
         if (!snapshot.exists()) return { success: false, error: "El menú no está disponible" };
         const products = snapshot.val() as Record<string, any>;
         const q = String(args.q || "").toLowerCase();

@@ -8,7 +8,7 @@
 import { getBranchInfo } from "../lib/branch.js";
 import { getAgentConfigCached } from "../lib/agentConfig.js";
 import { getRelevantContext } from "../rag/retrieval.js";
-import { initFirebase, ref, get, child } from "../lib/firebase.js";
+import { initFirebase, ref, get, child, set } from "../lib/firebase.js";
 import logger from "../lib/logger.js";
 
 // ── Types ──────────────────────────────────────────────
@@ -42,6 +42,29 @@ async function lookupCustomerByPhone(phone: string): Promise<CustomerProfile | n
   if (cleaned.length < 8) return null;
 
   try {
+    // Try reverse index first (O(1))
+    const idxSnap = await get(child(ref(db), `customers_by_phone/${cleaned}`));
+    if (idxSnap.exists()) {
+      const custSnap = await get(child(ref(db), `customers/${idxSnap.val()}`));
+      if (custSnap.exists()) {
+        const c = custSnap.val();
+        const favProducts = await getFavoriteProducts(idxSnap.val(), c.email, c.phone);
+        return {
+          id: idxSnap.val(),
+          name: c.name || "",
+          phone: c.phone || "",
+          email: c.email || "",
+          orderCount: c.orderCount || 0,
+          totalSpent: c.totalSpent || 0,
+          points: c.points || 0,
+          lastOrderAt: c.lastOrderAt || "",
+          createdAt: c.createdAt || "",
+          favoriteProducts: favProducts,
+        };
+      }
+    }
+
+    // Fallback: scan all customers — lazy-writes index for next time
     const snap = await get(child(ref(db), "customers"));
     if (!snap.exists()) return null;
 
@@ -49,6 +72,8 @@ async function lookupCustomerByPhone(phone: string): Promise<CustomerProfile | n
     for (const [id, c] of Object.entries(customers)) {
       const custPhone = (c.phone || "").replace(/[^0-9]/g, "");
       if (custPhone && custPhone.includes(cleaned.slice(-9))) {
+        // ponytail: lazy index write
+        set(child(ref(db), `customers_by_phone/${custPhone}`), id).catch(() => {});
         const favProducts = await getFavoriteProducts(id, c.email, c.phone);
         return {
           id,

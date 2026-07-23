@@ -123,12 +123,14 @@ async function processWebhookOrder(
       (s: number, i: any) => s + (i.price || 0) * (i.quantity || 1),
       0,
     );
+    const phoneRaw = normalized.telefono || "";
     const order = {
       id: newRef.key,
       items: normalized.items,
       cliente: normalized.cliente || "Delivery",
       direccion: normalized.direccion || "",
-      telefono: normalized.telefono || "",
+      telefono: phoneRaw,
+      phone: phoneRaw, // ponytail: duplicado para orderNotifier que lee .phone
       nota: normalized.nota || "",
       metodo_pago: normalized.metodo_pago || "tarjeta",
       tipo: "delivery",

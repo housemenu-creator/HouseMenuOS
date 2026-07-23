@@ -1,4 +1,4 @@
-import { initFirebase, ref, child, get, update, onChildChanged, off } from "../lib/firebase.js";
+import { initFirebase, ref, child, get, update, onChildChanged } from "../lib/firebase.js";
 import { getAllBranchIds } from "../lib/branch.js";
 import { sendWhatsAppMessage } from "../bot/whatsapp.js";
 import logger from "../lib/logger.js";
@@ -106,9 +106,9 @@ function startWatcherForBranch(branchId: string): () => void {
 
   // In-memory cache: orderId → last known status + notifications
   const statusCache = new Map<string, string>();
+  let listenerUnsub: (() => void) | null = null;
 
-  // Pre-warm: read all existing orders to know current status (blocking before listen)
-  // This prevents re-notifications on restart.
+  // Pre-warm + register listener AFTER cache is ready (evita race condition)
   (async () => {
     try {
       const snap = await get(ordersRef);
@@ -124,69 +124,79 @@ function startWatcherForBranch(branchId: string): () => void {
     } catch (e) {
       logger.warn(`📋 OrderNotifier [${branchId}]: no se pudo precargar cache:`, e);
     }
-  })();
 
-  const unsub = onChildChanged(ordersRef, (snap) => {
-    const order = snap.val();
-    if (!order || !order.phone) return;
+    // ── Register AFTER cache is ready ──
+    listenerUnsub = onChildChanged(ordersRef, (snap) => {
+      const order = snap.val();
+      if (!order || !order.phone) return;
 
-    const orderId = snap.key!;
-    const newStatus = order.status;
-    const oldStatus = statusCache.get(orderId);
+      const orderId = snap.key!;
+      const newStatus = order.status;
+      const oldStatus = statusCache.get(orderId);
 
-    // Update cache
-    statusCache.set(orderId, newStatus);
+      // Update cache
+      statusCache.set(orderId, newStatus);
 
-    // Skip if already notified via Firebase (survives restarts)
-    const alreadyNotified = order.whatsappNotified?.[newStatus];
-    if (alreadyNotified) {
-      // Still update cache so we don't re-process on next change
-      return;
-    }
+      // Skip if already notified via Firebase (survives restarts)
+      const alreadyNotified = order.whatsappNotified?.[newStatus];
+      if (alreadyNotified) {
+        // Still update cache so we don't re-process on next change
+        return;
+      }
 
-    // Skip if status didn't change (compared to in-memory cache)
-    if (!newStatus || newStatus === oldStatus) return;
+      // Skip if status didn't change (compared to in-memory cache)
+      if (!newStatus || newStatus === oldStatus) return;
 
       // Check if this transition is notifiable
-    const transition = NOTIFIABLE_TRANSITIONS[newStatus];
-    if (!transition) return;
+      const transition = NOTIFIABLE_TRANSITIONS[newStatus];
+      if (!transition) return;
 
-    const text = transition.message(order);
-    const dbRef = ref(db, `branches/${branchId}/orders/${orderId}`);
+      const text = transition.message(order);
+      const dbRef = ref(db, `branches/${branchId}/orders/${orderId}`);
 
-    // Send WhatsApp
-    (async () => {
-      try {
-        const sent = await sendWhatsAppMessage(order.phone, text);
-        if (sent) {
-          await update(dbRef, { [`whatsappNotified/${newStatus}`]: Date.now() });
-          logger.info(`💬 [${branchId}] WA: ${order.phone} — #${(order.shortCode || orderId).slice(-4).toUpperCase()} → ${STATUS_LABELS[newStatus] || newStatus}`);
+      // Send WhatsApp (con retry si WA está desconectado)
+      (async () => {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const sent = await sendWhatsAppMessage(order.phone, text);
+            if (sent) {
+              await update(dbRef, { [`whatsappNotified/${newStatus}`]: Date.now() });
+              logger.info(`💬 [${branchId}] WA: ${order.phone} — #${(order.shortCode || orderId).slice(-4).toUpperCase()} → ${STATUS_LABELS[newStatus] || newStatus}`);
+              break;
+            }
+            // No enviado — esperar y reintentar si hay intentos restantes
+            if (attempt < 3) {
+              logger.warn(`💬 WA notify reattempt ${attempt}/3 [${branchId}] ${orderId}`);
+              await new Promise((r) => setTimeout(r, attempt * 5000));
+            }
+          } catch (e) {
+            logger.error(`❌ Error WA notify [${branchId}] ${orderId} (attempt ${attempt}/3):`, e);
+            if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 5000));
+          }
         }
-      } catch (e) {
-        logger.error(`❌ Error WA notify [${branchId}] ${orderId}:`, e);
-      }
-    })();
+      })();
 
-    // Send Telegram if cliente vinculado
-    (async () => {
-      try {
-        const chatId = await chatIdByPhone(branchId, order.phone);
-        if (!chatId) return;
-        const alreadyNotified = order.telegramNotified?.[newStatus];
-        if (alreadyNotified) return;
-        const sent = await sendTelegramMessage(chatId, text);
-        if (sent) {
-          await update(dbRef, { [`telegramNotified/${newStatus}`]: Date.now() });
-          logger.info(`💬 [${branchId}] TG: ${chatId} — #${(order.shortCode || orderId).slice(-4).toUpperCase()} → ${STATUS_LABELS[newStatus] || newStatus}`);
+      // Send Telegram if cliente vinculado
+      (async () => {
+        try {
+          const chatId = await chatIdByPhone(branchId, order.phone);
+          if (!chatId) return;
+          const alreadyNotified = order.telegramNotified?.[newStatus];
+          if (alreadyNotified) return;
+          const sent = await sendTelegramMessage(chatId, text);
+          if (sent) {
+            await update(dbRef, { [`telegramNotified/${newStatus}`]: Date.now() });
+            logger.info(`💬 [${branchId}] TG: ${chatId} — #${(order.shortCode || orderId).slice(-4).toUpperCase()} → ${STATUS_LABELS[newStatus] || newStatus}`);
+          }
+        } catch (e) {
+          logger.error(`❌ Error TG notify [${branchId}] ${orderId}:`, e);
         }
-      } catch (e) {
-        logger.error(`❌ Error TG notify [${branchId}] ${orderId}:`, e);
-      }
-    })();
-  });
+      })();
+    });
+  })();
 
   return () => {
-    off(ordersRef);
+    if (listenerUnsub) listenerUnsub();
     statusCache.clear();
   };
 }

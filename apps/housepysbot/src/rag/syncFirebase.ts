@@ -4,7 +4,7 @@
  */
 import { vectorStore } from './vectorStore.js';
 import { Document } from './vectorStore.js';
-import { initFirebase, ref, get } from '../lib/firebase.js';
+import { initFirebase, ref, get, child, onChildAdded, onChildChanged } from '../lib/firebase.js';
 import logger from "../lib/logger.js";
 
 // --- Types for Firebase data ---
@@ -123,12 +123,64 @@ async function syncKnowledge(branchId: string): Promise<number> {
       });
     }
 
+    // Track IDs so the live listener skips the initial batch
+    for (const id of Object.keys(knowledge)) {
+      knownKnowledgeIds.add(id);
+    }
+
     await vectorStore.bulkUpsert(docs);
     return docs.length;
   } catch (e) {
     logger.error('syncKnowledge error:', e);
     return 0;
   }
+}
+
+// ── Live knowledge listener (real-time RAG sync) ───────
+const knownKnowledgeIds = new Set<string>();
+
+/**
+ * Start a real-time listener on the knowledge node so RAG stays fresh
+ * without requiring a full restart. Fires when docs are added/changed.
+ */
+export function startKnowledgeListener(branchId: string): () => void {
+  const db = initFirebase();
+  const knowledgeRef = ref(db, `branches/${branchId}/knowledge`);
+
+  // onChildAdded fires for ALL existing children on first listen, then for new ones.
+  // We skip the initial batch (already synced at startup) via knownKnowledgeIds.
+  const offAdded = onChildAdded(knowledgeRef, async (snap) => {
+    const id = snap.key;
+    if (!id || knownKnowledgeIds.has(id)) return;
+    knownKnowledgeIds.add(id);
+    const doc = snap.val();
+    if (!doc?.content?.trim()) return;
+    await vectorStore.upsert({
+      id: `knowledge-${id}`,
+      content: doc.content,
+      source: doc.source || 'knowledge',
+      metadata: { title: doc.title || id, category: doc.category || 'General', ...(doc.metadata || {}) },
+    });
+    logger.info(`📘 RAG live: knowledge doc "${doc.title || id}" added`);
+  });
+
+  // onChildChanged only fires when an EXISTING doc is modified
+  const offChanged = onChildChanged(knowledgeRef, async (snap) => {
+    const id = snap.key;
+    if (!id) return;
+    const doc = snap.val();
+    if (!doc?.content?.trim()) return;
+    await vectorStore.upsert({
+      id: `knowledge-${id}`,
+      content: doc.content,
+      source: doc.source || 'knowledge',
+      metadata: { title: doc.title || id, category: doc.category || 'General', ...(doc.metadata || {}) },
+    });
+    logger.info(`📘 RAG live: knowledge doc "${doc.title || id}" updated`);
+  });
+
+  logger.info(`📘 RAG live listener started for ${branchId}`);
+  return () => { offAdded(); offChanged(); };
 }
 
 // --- Full Sync ---

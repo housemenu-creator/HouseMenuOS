@@ -37,6 +37,7 @@ HERRAMIENTAS DISPONIBLES:
 - crear_pedido: Crea un nuevo pedido con productos del menú
 - consultar_pedido: Consulta el estado de un pedido por su ID
 - info_restaurante: Muestra la información del restaurante
+- ver_sucursales: Muestra todas las sucursales disponibles
 - calcular_costo_zona: Calcula el costo de delivery para una dirección
 - cliente_buscar: Busca datos completos de un cliente por teléfono o nombre
 - cliente_puntos: Consulta los puntos de fidelidad de un cliente
@@ -68,7 +69,7 @@ Reglas específicas:
 - Si tenés información del cliente en el contexto, USALA. No preguntes datos que ya sabés`,
     allowedTools: [
       "ver_menu", "buscar_producto", "crear_pedido",
-      "consultar_pedido", "info_restaurante",
+      "consultar_pedido", "info_restaurante", "ver_sucursales",
       "calcular_costo_zona",
       "cliente_buscar", "cliente_puntos", "cliente_recomendar",
       "promocionar_telegram",
