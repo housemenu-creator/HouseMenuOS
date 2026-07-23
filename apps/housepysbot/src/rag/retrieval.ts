@@ -9,7 +9,7 @@ import logger from "../lib/logger.js";
 /**
  * Retrieve relevant context for a user query
  */
-export async function getRelevantContext(query: string, k = 3): Promise<string> {
+export async function getRelevantContext(query: string, k = 10): Promise<string> {
   // Try embedding search first, fall back to keyword matching
   let docs: Document[];
   try {
@@ -29,6 +29,8 @@ Categoría: ${doc.metadata.category || 'General'}`;
     } else if (doc.source === 'policy') {
       return `📜 ${doc.metadata.title}
 ${doc.content}`;
+    } else if (doc.source === 'knowledge') {
+      return `📘 ${doc.metadata.title || 'Información'}\n${doc.content}`;
     } else {
       return `ℹ️ ${doc.content}`;
     }

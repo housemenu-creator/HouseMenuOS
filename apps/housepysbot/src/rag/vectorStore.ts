@@ -14,7 +14,7 @@ const SUPABASE_HEADERS = {
   'Prefer': 'return=representation',
 };
 
-const CACHE_DIR = process.env.WHATSAPP_SESSION_DIR || "./wa_session";
+const CACHE_DIR = process.env.RAG_CACHE_DIR || "./data";
 const CACHE_PATH = join(CACHE_DIR, "rag_cache.json");
 
 export interface Document {

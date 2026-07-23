@@ -98,6 +98,39 @@ async function syncPolicies(branchId: string): Promise<number> {
   }
 }
 
+// --- Sync Knowledge Documents ---
+async function syncKnowledge(branchId: string): Promise<number> {
+  try {
+    const db = initFirebase();
+    const snap = await get(ref(db, `branches/${branchId}/knowledge`));
+    if (!snap.exists()) return 0;
+
+    const knowledge = snap.val() as Record<string, any>;
+    const docs: Document[] = [];
+
+    for (const [id, doc] of Object.entries(knowledge)) {
+      if (!doc.content?.trim()) continue;
+
+      docs.push({
+        id: `knowledge-${id}`,
+        content: doc.content,
+        source: doc.source || 'knowledge',
+        metadata: {
+          title: doc.title || id,
+          category: doc.category || 'General',
+          ...(doc.metadata || {}),
+        },
+      });
+    }
+
+    await vectorStore.bulkUpsert(docs);
+    return docs.length;
+  } catch (e) {
+    logger.error('syncKnowledge error:', e);
+    return 0;
+  }
+}
+
 // --- Full Sync ---
 export async function syncBranchKnowledge(branchId: string) {
   logger.info(`🔄 Syncing knowledge for branch ${branchId}...`);
@@ -108,8 +141,9 @@ export async function syncBranchKnowledge(branchId: string) {
   // Sync
   const menuCount = await syncMenu(branchId);
   const policyCount = await syncPolicies(branchId);
-  const total = menuCount + policyCount;
+  const knowledgeCount = await syncKnowledge(branchId);
+  const total = menuCount + policyCount + knowledgeCount;
 
-  logger.info(`✅ Synced ${total} documents (menu: ${menuCount}, policies: ${policyCount})`);
-  return { menuCount, policyCount, total };
+  logger.info(`✅ Synced ${total} documents (menu: ${menuCount}, policies: ${policyCount}, knowledge: ${knowledgeCount})`);
+  return { menuCount, policyCount, knowledgeCount, total };
 }
