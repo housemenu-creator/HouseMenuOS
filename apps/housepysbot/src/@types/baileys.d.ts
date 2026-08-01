@@ -43,6 +43,7 @@ declare module "@whiskeysockets/baileys" {
     printQRInTerminal?: boolean;
     logger?: any;
     browser?: string[];
+    version?: [number, number, number];
     fireInitQueries?: boolean;
     syncFullHistory?: boolean;
     generateHighQualityLinkPreview?: boolean;
@@ -52,6 +53,11 @@ declare module "@whiskeysockets/baileys" {
     shouldIgnoreJid?: (jid: string) => boolean;
     getMessage: (key: any) => Promise<any>;
   }
+
+  export function fetchLatestBaileysVersion(options?: any): Promise<{
+    version: [number, number, number];
+    isLatest: boolean;
+  }>;
 
   export interface WASocket {
     user?: { id: string };
