@@ -36,7 +36,7 @@ export async function reportHeartbeat(
       toolsExecuted: metrics.toolsExecuted,
       version: "0.1.0",
     };
-    await set(child(ref(db), `${BASE}/agents/${agentId}`), payload);
+    await set(child(ref(db), `${BASE}/telemetry/agents/${agentId}`), payload);
   } catch (e) {
     logger.warn(`telemetry.heartbeat error (${agentId}):`, e);
   }
