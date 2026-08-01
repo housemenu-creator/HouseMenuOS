@@ -4,13 +4,13 @@
       "users": {
         "$uid": {
           ".read": "auth != null && auth.uid === $uid",
-          ".write": "auth != null && auth.uid === $uid"
+          ".write": "auth != null && (auth.uid === $uid || root.child('global/users').child(auth.uid).child('role').val() === 'superadmin')"
         }
       },
       "emails_to_uid": {
         ".read": "auth != null",
         "$email": {
-          ".write": "auth != null"
+          ".write": "auth != null && (auth.uid === root.child('global/emails_to_uid').child($email).val() || root.child('global/users').child(auth.uid).child('role').val() === 'superadmin')"
         }
       },
       "slugs": {
@@ -75,6 +75,12 @@
           ".read": "auth != null",
           "$cuentaId": {
             ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'vendedor' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'cajero'"
+          }
+        },
+        "workflows": {
+          "$workflowId": {
+            ".read": "auth != null",
+            ".write": "auth != null"
           }
         }
       }
@@ -224,6 +230,10 @@
         ".validate": "newData.hasChildren(['instruccion', 'activa'])"
       }
     },
+    "agent_audit": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
     "_public": {
       ".read": true,
       "has_tenants": {
@@ -233,6 +243,49 @@
         ".write": "auth != null"
       }
     },
+    "events": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$tenantId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$status": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+    },
+    "suppliers": {
+      ".read": "auth != null",
+      "$supplierId": {
+        ".write": "auth != null && (root.child('branches').child('monteverde').child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child('monteverde').child('_role_cache').child(auth.uid).val() === 'superadmin')"
+      }
+    },
+    "automation": {
+      ".read": "auth != null",
+      "rules": {
+        "$ruleId": {
+          ".write": "auth != null && (root.child('branches').child('monteverde').child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child('monteverde').child('_role_cache').child(auth.uid).val() === 'superadmin')"
+        }
+      }
+    },
+    "purchaseOrders": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$branchId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "admin_audit": {
+      ".read": "auth != null",
+      "logs": {
+        "$date": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+    },
     "audit": {
       ".read": "auth != null",
       "logs": {
@@ -240,6 +293,13 @@
           ".read": "auth != null",
           ".write": "auth != null"
         }
+      }
+    },
+    "wa_session": {
+      ".read": "auth != null",
+      "$branchId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     }
   }
