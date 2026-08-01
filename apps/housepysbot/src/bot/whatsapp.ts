@@ -1,4 +1,4 @@
-import { makeWASocket, useMultiFileAuthState, DisconnectReason } from "@whiskeysockets/baileys";
+import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from "@whiskeysockets/baileys";
 import pino from "pino";
 import { cpSync, existsSync, mkdirSync, readdirSync, statSync, rmSync } from "fs";
 import { join } from "path";
@@ -101,6 +101,7 @@ export async function startWhatsApp(branchId: string): Promise<void> {
   }
 
   sock = makeWASocket({
+    version: (await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3000, 0] }))).version,
     auth: state,
     logger: pino({ level: "silent" }), // Baileys internal noise disabled — we handle errors explicitly
     browser: ["HousePySbot", "Chrome", "1.0"],
@@ -117,6 +118,7 @@ export async function startWhatsApp(branchId: string): Promise<void> {
       const code = (lastDisconnect?.error as any)?.output?.statusCode;
       const reason = (lastDisconnect?.error as any)?.message || (lastDisconnect?.error as any)?.toString() || "desconocido";
       const shouldReconnect = code !== DisconnectReason.loggedOut;
+      logger.warn({ code, reason }, "❌ WhatsApp desconectado:");
       if (!shouldReconnect) {
         logger.info("❌ WhatsApp: sesión cerrada. Escanea el QR de nuevo.");
         resetWatchdog();
