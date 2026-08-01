@@ -100,8 +100,16 @@ export async function startWhatsApp(branchId: string): Promise<void> {
     throw e;
   }
 
+  // Latest known-good WA Web version (verified working 2026-08-01).
+  // fetchLatestBaileysVersion() can fail in sandboxed/cloud networks → fall back to this.
+  const WA_VERSION: [number, number, number] = [2, 3000, 1043857760];
+  const { version } = await fetchLatestBaileysVersion()
+    .then((v) => ({ version: v.version }))
+    .catch(() => ({ version: WA_VERSION }));
+  logger.info(`📱 WhatsApp: usando versión ${version.join(".")}`);
+
   sock = makeWASocket({
-    version: (await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3000, 0] }))).version,
+    version,
     auth: state,
     logger: pino({ level: "silent" }), // Baileys internal noise disabled — we handle errors explicitly
     browser: ["HousePySbot", "Chrome", "1.0"],
