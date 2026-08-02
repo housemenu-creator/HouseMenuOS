@@ -72,7 +72,12 @@ async function agentLoop(
     }
 
     // Execute tools
-    msgs.push(choice.message as any);
+    // ponytail: only keep role/content/tool_calls — Groq 8b rejects `reasoning` fields
+    msgs.push({
+      role: choice.message.role,
+      content: choice.message.content,
+      tool_calls: choice.message.tool_calls,
+    } as any);
 
     for (const call of choice.message.tool_calls) {
       const t0 = Date.now();
