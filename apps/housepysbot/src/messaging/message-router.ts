@@ -81,7 +81,7 @@ export async function handleNormalizedMessage(msg: NormalizedMessage): Promise<v
   try {
     const history = await getHistory(key);
     const branchId = process.env.HOUSEPYSBOT_BRANCH_ID || "monteverde";
-    const response = await processMessage(msg.text, branchId, history.slice(-10), agentId, senderInfo);
+    const response = await processMessage(msg.text, branchId, history.slice(-4), agentId, senderInfo);
 
     // Telegram: detectar marcador de confirmación de pedido y agregar botones inline
     if (msg.channel === "telegram" && response.includes("[CONFIRMAR_PEDIDO]")) {

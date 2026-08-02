@@ -229,7 +229,7 @@ export async function buildSystemPrompt(
 
   // ── RAG: inject relevant menu/policy knowledge ──
   try {
-    const ragContext = await getRelevantContext(message, 3);
+    const ragContext = await getRelevantContext(message, 2);
     if (ragContext) {
       prompt += "\n\n" + ragContext;
     }
