@@ -34,7 +34,7 @@ export async function callWithFallback(
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000);
+        const timeout = setTimeout(() => controller.abort(), 30000);
         const res = await client.chat.completions.create(
           { ...params, model, stream: false },
           { signal: controller.signal },
