@@ -390,6 +390,10 @@ export async function createPurchaseOrder(branchId, data, actor) {
     orderedAt: nowISO(),
     receivedAt: null,
   };
+  // Campos aditivos de voucher (no-op si no vienen)
+  if (data.voucherUrl) order.voucherUrl = data.voucherUrl;
+  if (data.voucherFileName) order.voucherFileName = data.voucherFileName;
+  if (data.uploadedAt) order.uploadedAt = data.uploadedAt;
   await set(newRef, order);
   auditLog('logistics.purchase_order.created', { branchId, orderId: newRef.key, supplierName: order.supplierName, total: order.total, itemCount: Object.keys(items).length }, actor);
   return { success: true, id: newRef.key };
@@ -438,14 +442,19 @@ export async function updatePurchaseOrder(branchId, orderId, data, actor) {
     return { success: false, error: 'Solo se pueden editar órdenes pendientes' };
   }
   const { items, total } = buildOrderItems(data.items);
-  await update(ref(db, `${LOG(branchId)}/purchase_orders/${orderId}`), {
+  const updates = {
     supplierId: data.supplierId || existing.supplierId,
     supplierName: data.supplierName || existing.supplierName,
     items,
     total,
     notes: data.notes ?? existing.notes,
     updatedAt: nowISO(),
-  });
+  };
+  // Campos aditivos de voucher (no-op si no vienen)
+  if (data.voucherUrl) updates.voucherUrl = data.voucherUrl;
+  if (data.voucherFileName) updates.voucherFileName = data.voucherFileName;
+  if (data.uploadedAt) updates.uploadedAt = data.uploadedAt;
+  await update(ref(db, `${LOG(branchId)}/purchase_orders/${orderId}`), updates);
   auditLog('logistics.purchase_order.updated', { branchId, orderId, supplierName: data.supplierName || existing.supplierName, total }, actor);
   return { success: true };
 }
@@ -514,6 +523,19 @@ export async function receivePurchaseOrder(branchId, orderId, actor, quantities)
   auditLog('logistics.purchase_order.received', { branchId, orderId, supplierName: order.supplierName, total: order.total, priceChanges: priceChanges.length }, actor);
 
   return { success: true, priceChanges };
+}
+
+export async function attachVoucher(branchId, orderId, voucherData) {
+  const updates = {
+    voucherUrl: voucherData.voucherUrl,
+    voucherFileName: voucherData.voucherFileName,
+    uploadedAt: voucherData.uploadedAt || nowISO(),
+    updatedAt: nowISO(),
+  };
+  // update() = merge — no sobreescribe items/status del PO
+  await update(ref(db, `${LOG(branchId)}/purchase_orders/${orderId}`), updates);
+  auditLog('logistics.purchase_order.voucher_attached', { branchId, orderId, fileName: voucherData.voucherFileName }, 'system');
+  return { success: true };
 }
 
 export async function cancelPurchaseOrder(branchId, orderId, actor, reason) {

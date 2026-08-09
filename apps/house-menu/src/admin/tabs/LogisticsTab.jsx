@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Plus, Edit3, Trash2, Search, ClipboardList, Truck, TrendingUp,
   ArrowUpDown, AlertTriangle, CheckCircle, X, Loader2, Save, History, DollarSign, Store,
-  BarChart3, Clock, MessageCircle, ShoppingCart, Copy, Download, Settings2,
+  BarChart3, Clock, MessageCircle, ShoppingCart, Copy, Download, Settings2, Upload,
 } from 'lucide-react';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
@@ -15,11 +15,13 @@ import {
   subscribeSuppliers, createSupplier, updateSupplier, deleteSupplier,
   subscribeCategories, createCategory, renameCategory, deleteCategory,
   subscribePurchaseOrders, createPurchaseOrder, updatePurchaseOrder, receivePurchaseOrder, cancelPurchaseOrder,
-  createPreOrder, confirmPreOrder,
+  createPreOrder, confirmPreOrder, attachVoucher,
   subscribeMovements, registerMovement,
 } from '../../lib/logisticsService';
 import { setIngredientPrice } from '../../lib/pricingService';
 import { subscribeWaste, createWaste, approveWaste } from '../../lib/wasteService';
+import { storageService, validateVoucherFile } from '../../lib/storageService';
+import { nowISO } from '../../lib/format';
 import InlineEdit from '../components/InlineEdit';
 
 const SECTIONS = [
@@ -33,6 +35,15 @@ const SECTIONS = [
 ];
 
 function fmtCurrency(n) { return `S/ ${Number(n).toFixed(2)}`; }
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 // Fallback categories while DB config loads (kept in sync by migration)
 const DEFAULT_CATEGORIES = [
@@ -1401,6 +1412,14 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
   const [receiveOrder, setReceiveOrder] = useState(null);
   const [receiveQtys, setReceiveQtys] = useState({});
   const [receiving, setReceiving] = useState(false);
+  // ── Voucher upload state ──
+  const [voucherFile, setVoucherFile] = useState(null); // data URL listo para extracción OCR
+  const [voucherUploading, setVoucherUploading] = useState(false);
+  const [voucherUploadProgress, setVoucherUploadProgress] = useState(0);
+  const [voucherUrl, setVoucherUrl] = useState(null);
+  const [voucherFileName, setVoucherFileName] = useState(null);
+  const [voucherUploadedAt, setVoucherUploadedAt] = useState(null);
+  const [voucherError, setVoucherError] = useState(null);
 
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -1596,13 +1615,61 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
     setEditingOrderId(null);
   };
 
+  // 2.5 — Limpia el estado del voucher al cerrar/reabrir el modal
+  const resetVoucherState = () => {
+    setVoucherFile(null);
+    setVoucherUploading(false);
+    setVoucherUploadProgress(0);
+    setVoucherUrl(null);
+    setVoucherFileName(null);
+    setVoucherUploadedAt(null);
+    setVoucherError(null);
+  };
+
   const openReceive = (o) => {
+    resetVoucherState();
     const qtys = {};
     for (const [id, item] of Object.entries(o.items || {})) {
       qtys[id] = String(item.quantity);
     }
     setReceiveQtys(qtys);
     setReceiveOrder(o);
+  };
+
+  // 2.3 — Valida (tipo/size) y sube el voucher; persiste en el PO; deja la imagen en base64
+  const handleVoucherSelect = (file) => {
+    if (!file) return;
+    const validationError = validateVoucherFile(file);
+    if (validationError) {
+      setVoucherError(validationError);
+      return;
+    }
+    setVoucherError(null);
+    setVoucherFile(file);
+    setVoucherUploading(true);
+    setVoucherUploadProgress(0);
+    const { id: orderId } = receiveOrder || {};
+    storageService.uploadVoucher(branchId, orderId, file, setVoucherUploadProgress)
+      .then(async (result) => {
+        const uploadedAt = nowISO();
+        await attachVoucher(branchId, orderId, {
+          voucherUrl: result.url,
+          voucherFileName: file.name,
+          uploadedAt,
+        });
+        // data URL listo para el paso de extracción OCR (Phase 3)
+        const dataUrl = await fileToDataURL(file);
+        setVoucherFile(dataUrl);
+        setVoucherUrl(result.url);
+        setVoucherFileName(file.name);
+        setVoucherUploadedAt(uploadedAt);
+      })
+      .catch(() => {
+        setVoucherError('No se pudo subir el voucher.');
+      })
+      .finally(() => {
+        setVoucherUploading(false);
+      });
   };
 
   const handleReceive = async () => {
@@ -1623,6 +1690,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
     const orderId = receiveOrder.id;
     setReceiveOrder(null);
     setReceiveQtys({});
+    resetVoucherState();
     if (result?.priceChanges?.length > 0) {
       setPriceChanges(result.priceChanges);
       setPriceChangeOrderId(orderId);
@@ -2129,7 +2197,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
       </div>
 
       {receiveOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { if (!receiving) setReceiveOrder(null); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-label="Recibir orden" onClick={() => { if (!receiving) { setReceiveOrder(null); resetVoucherState(); } }}>
           <div className="bg-cm-surface rounded-xl shadow-cm-lg p-6 w-full max-w-md mx-4 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-bold text-cm-text mb-1">Recibir orden</h3>
             <p className="text-xs text-cm-text-secondary mb-3">{receiveOrder.supplierName || '—'} · {fmtCurrency(receiveOrder.total || 0)}</p>
@@ -2149,6 +2217,47 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
                 </div>
               ))}
             </div>
+            {/* Voucher upload */}
+            <div className="space-y-2">
+              <div
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); handleVoucherSelect(e.dataTransfer.files?.[0]); }}
+                className="relative flex flex-col items-center justify-center gap-1 border border-dashed border-cm-border rounded-lg px-3 py-3 text-center">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Subir voucher"
+                  onChange={e => handleVoucherSelect(e.target.files?.[0])}
+                  disabled={voucherUploading || receiving}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <Upload className="w-4 h-4 text-cm-text-secondary" />
+                <span className="text-[0.6rem] text-cm-text-secondary">
+                  {voucherUploading ? 'Subiendo...' : 'Subir voucher (JPG/PNG/WebP, máx 5MB)'}
+                </span>
+                {voucherUploading && (
+                  <>
+                    <span className="text-[0.6rem] font-semibold text-cm-accent">{Math.round(voucherUploadProgress)}%</span>
+                    <div className="w-full h-1.5 bg-cm-bg-alt rounded-full overflow-hidden">
+                      <div className="h-full bg-cm-accent rounded-full transition-all" style={{ width: `${voucherUploadProgress}%` }} />
+                    </div>
+                  </>
+                )}
+              </div>
+              {voucherError && (
+                <p role="alert" className="text-[0.6rem] text-cm-error">{voucherError}</p>
+              )}
+              {voucherUrl && (
+                <div className="flex items-center gap-3 bg-cm-bg-alt rounded-lg px-3 py-2">
+                  <img src={voucherUrl} alt="Voucher" className="w-16 h-16 object-cover rounded-lg" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium text-cm-text truncate">{voucherFileName}</div>
+                    <div className="text-[0.6rem] text-cm-text-secondary">
+                      Subido {voucherUploadedAt ? new Date(voucherUploadedAt).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-cm-text-secondary">Total a recibir</span>
               <span className="text-sm font-bold text-cm-text">
@@ -2159,7 +2268,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
               </span>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { if (!receiving) setReceiveOrder(null); }}
+              <button onClick={() => { if (!receiving) { setReceiveOrder(null); resetVoucherState(); } }}
                 className="flex-1 py-2 border border-cm-border text-xs font-semibold text-cm-text rounded-lg hover:bg-cm-bg-alt transition-colors">
                 Cancelar
               </button>

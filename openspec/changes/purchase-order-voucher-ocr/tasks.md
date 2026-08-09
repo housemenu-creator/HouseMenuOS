@@ -26,21 +26,21 @@ Chain strategy: stacked-to-main
 
 ## Phase 1: Foundation (Services — No UI)
 
-- [ ] 1.1 Add `VoucherLineItem`, `VoucherExtractionResult` types and `extractVoucher()` to `apps/house-menu/src/lib/aiService.ts` with SYSTEM_EXTRACT_VOUCHER prompt, base64 prefix stripping, expectedItems context, 8s timeout, JSON parse + confidence clamping; export `AI_STEPS_EXTRACT_VOUCHER` array
-- [ ] 1.2 Add `attachVoucher(branchId, orderId, voucherData)` to `apps/house-menu/src/lib/logisticsService.js` — writes `voucherUrl`, `voucherFileName`, `uploadedAt`, `updatedAt` to PO record via RTDB `update()`, calls `auditLog('logistics.purchase_order.voucher_attached', ...)`; export
-- [ ] 1.3 Update `createPurchaseOrder` and `updatePurchaseOrder` in `logisticsService.js` to accept optional `voucherUrl`, `voucherFileName`, `uploadedAt` fields (no-op if absent)
-- [ ] 1.4 Verify `storageService.uploadVoucher(branchId, orderId, file, onProgress)` in `apps/house-menu/src/lib/storageService.js` uses `branches/{branchId}/vouchers/{orderId}_{timestamp}` path, returns `{ url, path }`, accepts progress callback — no code change needed, just confirm behavior
-- [ ] 1.5 Verify Firebase Storage rules at `apps/house-menu/storage.rules` cover `match /branches/{branchId}/vouchers/{fileName}` with 5MB/image limit, public read, authenticated write — no deploy needed
+- [x] 1.1 Add `VoucherLineItem`, `VoucherExtractionResult` types and `extractVoucher()` to `apps/house-menu/src/lib/aiService.ts` with SYSTEM_EXTRACT_VOUCHER prompt, base64 prefix stripping, expectedItems context, 8s timeout, JSON parse + confidence clamping; export `AI_STEPS_EXTRACT_VOUCHER` array
+- [x] 1.2 Add `attachVoucher(branchId, orderId, voucherData)` to `apps/house-menu/src/lib/logisticsService.js` — writes `voucherUrl`, `voucherFileName`, `uploadedAt`, `updatedAt` to PO record via RTDB `update()`, calls `auditLog('logistics.purchase_order.voucher_attached', ...)`; export
+- [x] 1.3 Update `createPurchaseOrder` and `updatePurchaseOrder` in `logisticsService.js` to accept optional `voucherUrl`, `voucherFileName`, `uploadedAt` fields (no-op if absent)
+- [x] 1.4 Verify `storageService.uploadVoucher(branchId, orderId, file, onProgress)` in `apps/house-menu/src/lib/storageService.js` uses `branches/{branchId}/vouchers/{orderId}_{timestamp}` path, returns `{ url, path }`, accepts progress callback — no code change needed, just confirm behavior
+- [x] 1.5 Verify Firebase Storage rules at `apps/house-menu/storage.rules` cover `match /branches/{branchId}/vouchers/{fileName}` with 5MB/image limit, public read, authenticated write — no deploy needed
 
 **Rollback 1.1–1.3**: Revert aiService.ts, logisticsService.js changes. No DB migration.
 
 ## Phase 2: ReceiveOrderModal — Voucher Upload
 
-- [ ] 2.1 Add state to `ReceiveOrderModal` in `LogisticsTab.jsx`: `voucherFile`, `voucherUploading`, `voucherUploadProgress`, `voucherUrl`, `voucherFileName`, `voucherUploadedAt`, `voucherError`
-- [ ] 2.2 Add file input `<input type="file" accept="image/*" capture="environment" onChange={handleVoucherSelect} />` with drag-drop area (`onDragOver`, `onDrop`), show preview thumbnail + filename + timestamp when `voucherUrl` exists
-- [ ] 2.3 Implement `handleVoucherSelect(file)`: validate type (`image/*`), size ≤ 5MB client-side → show inline error if invalid → set `voucherUploading=true` → call `storageService.uploadVoucher(branchId, orderId, file, setVoucherUploadProgress)` → on success: call `logisticsService.attachVoucher(branchId, orderId, { voucherUrl, voucherFileName: file.name, uploadedAt: nowISO() })` → set `voucherUrl`, `voucherFileName`, `voucherUploadedAt` → convert file to base64 (data URL) for extraction step
-- [ ] 2.4 Add upload progress bar (linear, 0–100%) and cancel button (abort upload if needed)
-- [ ] 2.5 Reset voucher state in `setReceiveOrder(null)` cleanup (when modal closes)
+- [x] 2.1 Add state to `ReceiveOrderModal` in `LogisticsTab.jsx`: `voucherFile`, `voucherUploading`, `voucherUploadProgress`, `voucherUrl`, `voucherFileName`, `voucherUploadedAt`, `voucherError`
+- [x] 2.2 Add file input `<input type="file" accept="image/*" capture="environment" onChange={handleVoucherSelect} />` with drag-drop area (`onDragOver`, `onDrop`), show preview thumbnail + filename + timestamp when `voucherUrl` exists
+- [x] 2.3 Implement `handleVoucherSelect(file)`: validate type (`image/*`), size ≤ 5MB client-side → show inline error if invalid → set `voucherUploading=true` → call `storageService.uploadVoucher(branchId, orderId, file, setVoucherUploadProgress)` → on success: call `logisticsService.attachVoucher(branchId, orderId, { voucherUrl, voucherFileName: file.name, uploadedAt: nowISO() })` → set `voucherUrl`, `voucherFileName`, `voucherUploadedAt` → convert file to base64 (data URL) for extraction step
+- [x] 2.4 Add upload progress bar (linear, 0–100%) and cancel button (abort upload if needed)
+- [x] 2.5 Reset voucher state in `setReceiveOrder(null)` cleanup (when modal closes)
 
 **Acceptance**: Spec scenarios "Upload voucher — URL persisted on PO record, shown in UI", "Upload rejects oversized file", "Upload rejects unsupported file type"
 **Rollback 2.1–2.5**: Revert LogisticsTab.jsx modal state and upload handler.
