@@ -22,6 +22,9 @@ import { setIngredientPrice } from '../../lib/pricingService';
 import { subscribeWaste, createWaste, approveWaste } from '../../lib/wasteService';
 import { storageService, validateVoucherFile } from '../../lib/storageService';
 import { nowISO } from '../../lib/format';
+import { extractVoucher, AI_STEPS_EXTRACT_VOUCHER } from '../../lib/aiService';
+import { fuzzyMatch } from '../../lib/voucherMatch';
+import { downscaleImage } from '../../lib/imageUtils';
 import InlineEdit from '../components/InlineEdit';
 
 const SECTIONS = [
@@ -1411,6 +1414,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
   const [sortDir, setSortDir] = useState('asc');
   const [receiveOrder, setReceiveOrder] = useState(null);
   const [receiveQtys, setReceiveQtys] = useState({});
+  const [receiveCosts, setReceiveCosts] = useState({}); // costos editables por línea (prefill OCR / manual)
   const [receiving, setReceiving] = useState(false);
   // ── Voucher upload state ──
   const [voucherFile, setVoucherFile] = useState(null); // data URL listo para extracción OCR
@@ -1420,6 +1424,16 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
   const [voucherFileName, setVoucherFileName] = useState(null);
   const [voucherUploadedAt, setVoucherUploadedAt] = useState(null);
   const [voucherError, setVoucherError] = useState(null);
+  // ── OCR extraction state (Phase 3 + 4) ──
+  const [extractionState, setExtractionState] = useState('idle'); // idle | extracting | done | error
+  const [extractedItems, setExtractedItems] = useState([]);
+  const [extractionError, setExtractionError] = useState(null);
+  const [extractionMeta, setExtractionMeta] = useState(null); // { total, ruc, serie } si la IA los devuelve
+  const [matchedItems, setMatchedItems] = useState([]);
+  const [unmatchedItems, setUnmatchedItems] = useState([]);
+  const [unmatchedEdits, setUnmatchedEdits] = useState({}); // drafts de qty/costo de items sin match
+  // Ediciones manuales del usuario: "ganan" sobre cualquier prefill posterior (4.7)
+  const touchedRef = useRef(new Set()); // claves "id:qty" | "id:cost"
 
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -1626,8 +1640,107 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
     setVoucherError(null);
   };
 
+  // 3.x/4.x — Limpia TODO el estado OCR (cierre/apertura del modal)
+  const clearExtraction = () => {
+    setExtractionState('idle');
+    setExtractedItems([]);
+    setExtractionError(null);
+    setExtractionMeta(null);
+    setMatchedItems([]);
+    setUnmatchedItems([]);
+    setUnmatchedEdits({});
+    setReceiveCosts({});
+    touchedRef.current = new Set();
+  };
+
+  // Mapea el error de extractVoucher al mensaje del matrix de diseño (Phase 6)
+  const extractionErrorMessage = (e) => {
+    const msg = String(e?.message || e || '');
+    const name = e?.name || '';
+    if (msg.includes('VITE_GEMINI_API_KEY')) return 'IA no configurada. Ingresa cantidades manualmente.';
+    if (name === 'TimeoutError' || name === 'AbortError' || /timeout|abort/i.test(msg)) return 'Tiempo agotado. Verifica tu conexión.';
+    if (e instanceof SyntaxError || /^Unexpected|Respuesta vacía/.test(msg)) return 'Respuesta inválida de IA. Intenta de nuevo.';
+    if (msg.includes('Gemini API error')) return 'Error al procesar la boleta. Intenta de nuevo.';
+    return `OCR extraction failed: ${msg}`;
+  };
+
+  // 3.3 — Ejecuta la extracción OCR y aplica el fuzzy match + prefill
+  const handleExtractVoucher = async () => {
+    if (!receiveOrder || !voucherFile || extractionState === 'extracting') return;
+    setExtractionState('extracting');
+    setExtractionError(null);
+    setMatchedItems([]);
+    setUnmatchedItems([]);
+    setUnmatchedEdits({});
+
+    // Items esperados del PO para guiar a la IA (3.3)
+    const expectedItems = Object.values(receiveOrder.items || {}).map(it => ({
+      name: it.name || '',
+      quantity: Number(it.quantity) || 0,
+      unit: it.unit || 'unidad',
+      unitCost: Number(it.unitCost) || 0,
+    }));
+
+    try {
+      const result = await extractVoucher(voucherFile, expectedItems);
+      setExtractedItems(result.items || []);
+      setExtractionMeta(result.total || result.ruc || result.serie
+        ? { total: result.total, ruc: result.ruc, serie: result.serie }
+        : null);
+
+      if (!result.items || result.items.length === 0) {
+        setExtractionState('done');
+        toast('No se detectaron productos. Revisa la foto.');
+        return;
+      }
+
+      // 4.3 — fuzzy match contra los items del PO (one-to-one greedy)
+      const { matched, unmatched } = fuzzyMatch(result.items, receiveOrder.items || {});
+      setMatchedItems(matched);
+      setUnmatchedItems(unmatched);
+
+      // 4.4/4.7 — Prefill solo los campos que el usuario NO editó a mano
+      setReceiveQtys(prev => {
+        const next = { ...prev };
+        for (const m of matched) {
+          if (!touchedRef.current.has(`${m.poIngredientId}:qty`)) next[m.poIngredientId] = String(m.quantity);
+        }
+        return next;
+      });
+      setReceiveCosts(prev => {
+        const next = { ...prev };
+        for (const m of matched) {
+          if (!touchedRef.current.has(`${m.poIngredientId}:cost`)) next[m.poIngredientId] = m.unitCost;
+        }
+        return next;
+      });
+
+      setExtractionState('done');
+    } catch (e) {
+      // 3.3/6.2 — Error: toast + estado error; el modal sigue usable manualmente
+      const reason = extractionErrorMessage(e);
+      setExtractionError(reason);
+      setExtractionState('error');
+      toast(reason);
+      console.error('[voucher-ocr] falló la extracción:', e);
+    }
+  };
+
+  // 4.8 — Re-escanear / Reintentar: limpia resultados y vuelve a extraer
+  const rescanVoucher = () => {
+    setExtractionState('idle');
+    setExtractedItems([]);
+    setExtractionError(null);
+    setExtractionMeta(null);
+    setMatchedItems([]);
+    setUnmatchedItems([]);
+    setUnmatchedEdits({});
+    handleExtractVoucher();
+  };
+
   const openReceive = (o) => {
     resetVoucherState();
+    clearExtraction();
     const qtys = {};
     for (const [id, item] of Object.entries(o.items || {})) {
       qtys[id] = String(item.quantity);
@@ -1657,9 +1770,10 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
           voucherFileName: file.name,
           uploadedAt,
         });
-        // data URL listo para el paso de extracción OCR (Phase 3)
+        // data URL listo para el paso de extracción OCR, downscale ≤ 2048px (3.5, NFR-2)
         const dataUrl = await fileToDataURL(file);
-        setVoucherFile(dataUrl);
+        const processed = await downscaleImage(dataUrl, 2048);
+        setVoucherFile(processed);
         setVoucherUrl(result.url);
         setVoucherFileName(file.name);
         setVoucherUploadedAt(uploadedAt);
@@ -1691,6 +1805,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
     setReceiveOrder(null);
     setReceiveQtys({});
     resetVoucherState();
+    clearExtraction();
     if (result?.priceChanges?.length > 0) {
       setPriceChanges(result.priceChanges);
       setPriceChangeOrderId(orderId);
@@ -2197,25 +2312,86 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
       </div>
 
       {receiveOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-label="Recibir orden" onClick={() => { if (!receiving) { setReceiveOrder(null); resetVoucherState(); } }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" role="dialog" aria-label="Recibir orden" onClick={() => { if (!receiving) { setReceiveOrder(null); resetVoucherState(); clearExtraction(); } }}>
           <div className="bg-cm-surface rounded-xl shadow-cm-lg p-6 w-full max-w-md mx-4 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <h3 className="text-sm font-bold text-cm-text mb-1">Recibir orden</h3>
             <p className="text-xs text-cm-text-secondary mb-3">{receiveOrder.supplierName || '—'} · {fmtCurrency(receiveOrder.total || 0)}</p>
             <div className="overflow-y-auto flex-1 space-y-2 mb-4">
-              {Object.entries(receiveOrder.items || {}).map(([id, item]) => (
-                <div key={id} className="flex items-center gap-2 bg-cm-bg-alt rounded-lg px-3 py-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-cm-text truncate">{item.name}</div>
-                    <div className="text-[0.6rem] text-cm-text-secondary">Pedido: {item.quantity} {item.unit} · {fmtCurrency(item.unitCost)}</div>
-                  </div>
-                  <input
-                    type="number" min="0" step="1" value={receiveQtys[id] ?? item.quantity}
-                    onChange={e => setReceiveQtys(prev => ({ ...prev, [id]: e.target.value }))}
-                    disabled={receiving}
-                    className="w-20 px-2 py-1 rounded border text-right text-xs font-medium bg-cm-surface border-cm-border text-cm-text focus:border-cm-accent focus:ring-1 focus:ring-cm-accent/30" />
-                  <span className="text-[0.6rem] text-cm-text-secondary w-8 shrink-0">{item.unit}</span>
-                </div>
-              ))}
+              {(() => {
+                const matchedIds = new Set(matchedItems.map(m => m.poIngredientId));
+                return (
+                  <>
+                    {Object.entries(receiveOrder.items || {}).map(([id, item]) => {
+                      const isMatched = matchedIds.has(id);
+                      return (
+                        <div key={id} className={`flex items-center gap-2 bg-cm-bg-alt rounded-lg px-3 py-2 ${isMatched ? 'ring-1 ring-cm-success/50' : ''}`}>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-cm-text truncate flex items-center gap-1.5">
+                              {item.name}
+                              {isMatched && (
+                                <span className="inline-flex items-center gap-0.5 text-[0.55rem] font-bold text-cm-success bg-cm-success/10 px-1.5 py-0.5 rounded-full shrink-0">
+                                  <CheckCircle className="w-2.5 h-2.5" /> Emparejado
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[0.6rem] text-cm-text-secondary">Pedido: {item.quantity} {item.unit} · {fmtCurrency(item.unitCost)}</div>
+                          </div>
+                          <input
+                            type="number" min="0" step="1" value={receiveQtys[id] ?? item.quantity}
+                            aria-label={`Cantidad ${item.name}`}
+                            onChange={e => { touchedRef.current.add(`${id}:qty`); setReceiveQtys(prev => ({ ...prev, [id]: e.target.value })); }}
+                            disabled={receiving}
+                            className="w-16 px-2 py-1 rounded border text-right text-xs font-medium bg-cm-surface border-cm-border text-cm-text focus:border-cm-accent focus:ring-1 focus:ring-cm-accent/30" />
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <span className="text-[0.6rem] text-cm-text-secondary">S/</span>
+                            <input
+                              type="number" min="0" step="0.01" value={receiveCosts[id] ?? item.unitCost}
+                              aria-label={`Costo ${item.name}`}
+                              onChange={e => { touchedRef.current.add(`${id}:cost`); setReceiveCosts(prev => ({ ...prev, [id]: e.target.value })); }}
+                              disabled={receiving}
+                              className="w-16 px-1.5 py-1 rounded border text-right text-[0.6rem] font-medium bg-cm-surface border-cm-border text-cm-text focus:border-cm-accent focus:ring-1 focus:ring-cm-accent/30" />
+                          </div>
+                          <span className="text-[0.6rem] text-cm-text-secondary w-8 shrink-0">{item.unit}</span>
+                        </div>
+                      );
+                    })}
+                    {/* 4.5 — Items de la boleta sin match: revisión manual editable */}
+                    {unmatchedItems.length > 0 && (
+                      <div className="bg-cm-warning/5 border border-cm-warning/20 rounded-lg px-3 py-2 space-y-2">
+                        <div className="text-[0.6rem] font-bold text-cm-warning flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Revisar manualmente
+                        </div>
+                        {unmatchedItems.map((it, idx) => {
+                          const draft = unmatchedEdits[idx] || {};
+                          return (
+                            <div key={idx} className="flex items-center gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-medium text-cm-text truncate">{it.name}</div>
+                                <div className="text-[0.6rem] text-cm-text-secondary">Boleta: {fmtCurrency((Number(draft.quantity ?? it.quantity) || 0) * (Number(draft.unitCost ?? it.unitCost) || 0))}</div>
+                              </div>
+                              <input
+                                type="number" min="0" step="1" value={draft.quantity ?? it.quantity}
+                                aria-label={`Cantidad ${it.name}`}
+                                onChange={e => setUnmatchedEdits(prev => ({ ...prev, [idx]: { ...prev[idx], quantity: e.target.value } }))}
+                                disabled={receiving}
+                                className="w-16 px-2 py-1 rounded border text-right text-xs font-medium bg-cm-surface border-cm-border text-cm-text focus:border-cm-accent focus:ring-1 focus:ring-cm-accent/30" />
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <span className="text-[0.6rem] text-cm-text-secondary">S/</span>
+                                <input
+                                  type="number" min="0" step="0.01" value={draft.unitCost ?? it.unitCost}
+                                  aria-label={`Costo ${it.name}`}
+                                  onChange={e => setUnmatchedEdits(prev => ({ ...prev, [idx]: { ...prev[idx], unitCost: e.target.value } }))}
+                                  disabled={receiving}
+                                  className="w-16 px-1.5 py-1 rounded border text-right text-[0.6rem] font-medium bg-cm-surface border-cm-border text-cm-text focus:border-cm-accent focus:ring-1 focus:ring-cm-accent/30" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
             {/* Voucher upload */}
             <div className="space-y-2">
@@ -2257,18 +2433,65 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
                   </div>
                 </div>
               )}
+              {/* 3.2/3.4/4.8 — Extracción OCR: Analizar / Reintentar / Re-escanear */}
+              {voucherUrl && (
+                <div className="space-y-1.5">
+                  <button
+                    onClick={extractionState === 'extracting' ? undefined : rescanVoucher}
+                    disabled={extractionState === 'extracting' || receiving || voucherUploading}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-cm-accent text-white text-xs font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {extractionState === 'extracting' ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analizando boleta...</>
+                    ) : extractionState === 'done' ? (
+                      'Re-escanear'
+                    ) : extractionState === 'error' ? (
+                      'Reintentar extracción'
+                    ) : (
+                      'Analizar boleta'
+                    )}
+                  </button>
+                  {extractionState === 'extracting' && (
+                    <div className="space-y-1 px-1">
+                      {AI_STEPS_EXTRACT_VOUCHER.map((step, i) => {
+                        const status = i === 0 ? 'done' : i === 1 ? 'current' : 'pending';
+                        return (
+                          <div key={step.label} className="flex items-center gap-1.5 text-[0.6rem]">
+                            {status === 'current' ? (
+                              <Loader2 className="w-3 h-3 animate-spin text-cm-accent shrink-0" />
+                            ) : status === 'done' ? (
+                              <CheckCircle className="w-3 h-3 text-cm-success shrink-0" />
+                            ) : (
+                              <div className="w-3 h-3 rounded-full border border-cm-border shrink-0" />
+                            )}
+                            <span className={status === 'pending' ? 'text-cm-text-tertiary' : 'text-cm-text-secondary'}>{step.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {extractionState === 'done' && (
+                    <p className="text-[0.6rem] font-semibold text-cm-success flex items-center gap-1 px-1">
+                      <CheckCircle className="w-3 h-3 shrink-0" /> Extracción completada · {matchedItems.length} emparejado(s), {unmatchedItems.length} sin coincidir
+                    </p>
+                  )}
+                  {extractionState === 'error' && (
+                    <p role="alert" className="text-[0.6rem] text-cm-error px-1">{extractionError}</p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-cm-text-secondary">Total a recibir</span>
               <span className="text-sm font-bold text-cm-text">
                 {fmtCurrency(Object.entries(receiveOrder.items || {}).reduce((s, [id, item]) => {
                   const n = Number(receiveQtys[id] ?? item.quantity);
-                  return s + (isNaN(n) || n < 0 ? 0 : n) * Number(item.unitCost || 0);
+                  const c = Number(receiveCosts[id] ?? (item.unitCost || 0));
+                  return s + (isNaN(n) || n < 0 ? 0 : n) * (isNaN(c) ? 0 : c);
                 }, 0))}
               </span>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { if (!receiving) { setReceiveOrder(null); resetVoucherState(); } }}
+              <button onClick={() => { if (!receiving) { setReceiveOrder(null); resetVoucherState(); clearExtraction(); } }}
                 className="flex-1 py-2 border border-cm-border text-xs font-semibold text-cm-text rounded-lg hover:bg-cm-bg-alt transition-colors">
                 Cancelar
               </button>

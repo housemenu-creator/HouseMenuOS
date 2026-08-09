@@ -518,10 +518,10 @@ describe('PurchaseOrdersSection', () => {
     fireEvent.click(screen.getByText('Recibir'));
     await waitFor(() => { expect(screen.getByText('Confirmar recepción')).toBeDefined(); });
 
-    // Editar: Papa se recibe 8 (no 10), Carne se recibe completo
-    const qtyInputs = screen.getAllByRole('spinbutton');
-    expect(qtyInputs.length).toBe(2);
-    fireEvent.change(qtyInputs[0], { target: { value: '8' } });
+    // Editar: Papa se recibe 8 (no 10), Carne se recibe completo.
+    // El modal expone qty + costo editable por línea (prefill OCR/manual).
+    expect(screen.getAllByRole('spinbutton').length).toBe(4); // 2 cantidades + 2 costos
+    fireEvent.change(screen.getByLabelText('Cantidad Papa'), { target: { value: '8' } });
 
     fireEvent.click(screen.getByText('Confirmar recepción'));
     await waitFor(() => {

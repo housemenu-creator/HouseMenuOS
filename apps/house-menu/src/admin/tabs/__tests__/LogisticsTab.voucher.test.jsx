@@ -32,6 +32,7 @@ const { mocks } = vi.hoisted(() => ({
     fbRef: vi.fn((_db, _path) => ({})),
     fbOnValue: vi.fn((_ref, cb) => { cb({ val: () => null }); return () => {}; }),
     uploadVoucher: vi.fn(),
+    extractVoucher: vi.fn(),
   },
 }));
 
@@ -91,6 +92,17 @@ vi.mock('../../../lib/logisticsService', () => ({
   attachVoucher: mocks.attachVoucher,
   subscribeMovements: mocks.subscribeMovements,
   registerMovement: mocks.registerMovement,
+}));
+
+// ── AI service mock (extraction) ──
+vi.mock('../../../lib/aiService', () => ({
+  extractVoucher: mocks.extractVoucher,
+  AI_STEPS_EXTRACT_VOUCHER: [
+    { label: 'Subiendo imagen...', status: 'pending' },
+    { label: 'Analizando boleta con IA...', status: 'current' },
+    { label: 'Extrayendo líneas de productos', status: 'pending' },
+    { label: 'Emparejando con tu orden', status: 'pending' },
+  ],
 }));
 
 // ── Storage service: real module (validateVoucherFile real), uploadVoucher mockeado ──
@@ -236,5 +248,178 @@ describe('ReceiveOrderModal — voucher upload', () => {
     await waitFor(() => { expect(screen.getByRole('alert')).toHaveTextContent(/No se pudo subir el voucher/); });
     expect(mocks.attachVoucher).not.toHaveBeenCalled();
     expect(screen.getByText('Confirmar recepción')).toBeDefined();
+  });
+});
+
+// ── OCR Extraction + Fuzzy Match + Prefill (Phase 3 + 4) ──
+const pendingPo2 = {
+  id: 'po-2',
+  supplierId: 'sup-1',
+  supplierName: 'Distribuidora Norte',
+  status: 'pendiente',
+  orderedAt: '2026-08-08T10:00:00.000Z',
+  total: 40,
+  items: {
+    'ing-papa': { ingredientId: 'ing-papa', name: 'Papa', quantity: 10, unit: 'kg', unitCost: 2 },
+    'ing-tomate': { ingredientId: 'ing-tomate', name: 'Tomate', quantity: 5, unit: 'kg', unitCost: 4 },
+  },
+};
+
+const extractedItems = [
+  { name: 'PAPA', quantity: 12, unit: 'kg', unitCost: 2.5, confidence: 0.9 },
+  { name: 'LECHUGA KG', quantity: 3, unit: 'kg', unitCost: 1.5, confidence: 0.8 },
+];
+
+async function uploadVoucherForExtraction() {
+  await openReceiveModal();
+  const file = new File(['data'], 'boleta.jpg', { type: 'image/jpeg' });
+  selectFile(file);
+  await waitFor(() => { expect(screen.getByText('boleta.jpg')).toBeDefined(); });
+}
+
+describe('ReceiveOrderModal — OCR extraction + fuzzy match + prefill', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.subscribeIngredients.mockImplementation((_b, cb) => { cb([]); return () => {}; });
+    mocks.subscribeRecipes.mockImplementation((_b, cb) => { cb([]); return () => {}; });
+    mocks.subscribeSuppliers.mockImplementation((_b, cb) => { cb(mockSuppliers); return () => {}; });
+    mocks.subscribePurchaseOrders.mockImplementation((_b, cb) => { cb([pendingPo2]); return () => {}; });
+    mocks.subscribeMovements.mockImplementation((_b, cb) => { cb([]); return () => {}; });
+    mocks.uploadVoucher.mockResolvedValue({ url: 'https://download.url/voucher.jpg', path: 'branches/branch-1/vouchers/po-2_123' });
+    mocks.attachVoucher.mockResolvedValue({ success: true });
+  });
+
+  it('extrae, empareja por fuzzy match, prefill qty+costo y recalcula totales', async () => {
+    mocks.extractVoucher.mockResolvedValue({ items: extractedItems });
+    await uploadVoucherForExtraction();
+
+    // el botón aparece al existir voucherUrl y pasa los items esperados del PO
+    fireEvent.click(screen.getByText('Analizar boleta'));
+
+    await waitFor(() => {
+      expect(mocks.extractVoucher).toHaveBeenCalledWith(
+        expect.stringContaining('data:image'),
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'Papa', quantity: 10, unit: 'kg', unitCost: 2 }),
+          expect.objectContaining({ name: 'Tomate', quantity: 5, unit: 'kg', unitCost: 4 }),
+        ])
+      );
+    });
+
+    // Papa emparejada → prefill qty 12 y costo 2.5 + badge verde
+    await waitFor(() => {
+      expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(12);
+    });
+    expect(screen.getByLabelText('Costo Papa')).toHaveValue(2.5);
+    expect(screen.getByText('Emparejado')).toBeDefined();
+    expect(screen.getByText(/Extracción completada/)).toBeDefined();
+
+    // LECHUGA sin match → sección "Revisar manualmente" con qty/costo editables
+    expect(screen.getByText('LECHUGA KG')).toBeDefined();
+    expect(screen.getByText('Revisar manualmente')).toBeDefined();
+    expect(screen.getByLabelText('Cantidad LECHUGA KG')).toHaveValue(3);
+
+    // Tomate sin match → conserva el valor pedido (entrada manual)
+    expect(screen.getByLabelText('Cantidad Tomate')).toHaveValue(5);
+
+    // Total en tiempo real: 12×2.5 + 5×4 = 50.00
+    expect(screen.getByText('S/ 50.00')).toBeDefined();
+  });
+
+  it('los edits del usuario ganan ante una re-extracción (userTouched por campo)', async () => {
+    mocks.extractVoucher.mockResolvedValue({ items: [{ name: 'PAPA', quantity: 12, unitCost: 2.5 }] });
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+    await waitFor(() => { expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(12); });
+
+    // El usuario edita qty y costo de Papa
+    fireEvent.change(screen.getByLabelText('Cantidad Papa'), { target: { value: '15' } });
+    fireEvent.change(screen.getByLabelText('Costo Papa'), { target: { value: '2.0' } });
+    expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(15);
+    expect(screen.getByLabelText('Costo Papa')).toHaveValue(2);
+
+    // Re-escanear devuelve otros valores → los edits del usuario se conservan
+    mocks.extractVoucher.mockResolvedValue({ items: [{ name: 'PAPA', quantity: 20, unitCost: 3 }] });
+    fireEvent.click(screen.getByText('Re-escanear'));
+
+    await waitFor(() => { expect(mocks.extractVoucher).toHaveBeenCalledTimes(2); });
+    expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(15);
+    expect(screen.getByLabelText('Costo Papa')).toHaveValue(2);
+  });
+
+  it('fallo de extracción sin API key → toast + Reintentar extracción; el modal sigue usable', async () => {
+    mocks.extractVoucher.mockRejectedValue(new Error('VITE_GEMINI_API_KEY no configurada'));
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('IA no configurada. Ingresa cantidades manualmente.').length).toBeGreaterThan(0);
+    });
+    // Modal abierto y usable manualmente
+    expect(screen.getByText('Confirmar recepción')).toBeDefined();
+    expect(screen.getByLabelText('Cantidad Tomate')).toHaveValue(5);
+
+    // Reintentar con la key ya configurada → extracción exitosa
+    mocks.extractVoucher.mockResolvedValue({ items: [{ name: 'PAPA', quantity: 12, unitCost: 2.5 }] });
+    fireEvent.click(screen.getByText('Reintentar extracción'));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(12);
+    });
+    expect(screen.getByText(/Extracción completada/)).toBeDefined();
+  });
+
+  it('API error → toast con motivo y estado error', async () => {
+    mocks.extractVoucher.mockRejectedValue(new Error('Gemini API error: 429 Too Many Requests'));
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Error al procesar la boleta. Intenta de nuevo.').length).toBeGreaterThan(0);
+    });
+    expect(screen.getByText('Reintentar extracción')).toBeDefined();
+    expect(screen.getByText('Confirmar recepción')).toBeDefined();
+  });
+
+  it('sin items detectados → toast informativo y botón Re-escanear', async () => {
+    mocks.extractVoucher.mockResolvedValue({ items: [] });
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+
+    await waitFor(() => {
+      expect(screen.getByText('No se detectaron productos. Revisa la foto.')).toBeDefined();
+    });
+    expect(screen.getByText('Re-escanear')).toBeDefined();
+    // Sin prefill: Papa conserva el valor pedido
+    expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(10);
+  });
+
+  it('confirma recepción con las cantidades prefill+editadas y resetea el estado OCR', async () => {
+    mocks.extractVoucher.mockResolvedValue({ items: extractedItems });
+    mocks.receivePurchaseOrder.mockResolvedValue({ success: true, priceChanges: [] });
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+    await waitFor(() => { expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(12); });
+
+    fireEvent.change(screen.getByLabelText('Cantidad Papa'), { target: { value: '15' } });
+    fireEvent.click(screen.getByText('Confirmar recepción'));
+
+    await waitFor(() => {
+      expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-2', 'admin@house.com', {
+        'ing-papa': 15,
+        'ing-tomate': 5,
+      });
+    });
+
+    // Modal cerrado → reabrir limpia el estado OCR
+    fireEvent.click(screen.getByText('Recibir'));
+    await waitFor(() => { expect(screen.getByText('Confirmar recepción')).toBeDefined(); });
+    expect(screen.queryByText('Analizar boleta')).toBeNull();
+    expect(screen.queryByText('Emparejado')).toBeNull();
+    expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(10);
   });
 });

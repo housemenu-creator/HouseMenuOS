@@ -47,25 +47,25 @@ Chain strategy: stacked-to-main
 
 ## Phase 3: ReceiveOrderModal — OCR Extraction
 
-- [ ] 3.1 Add extraction state: `extractionState` (`idle`|`extracting`|`done`|`error`), `extractedItems`, `extractionError`, `extractionSteps` (from `AI_STEPS_EXTRACT_VOUCHER`)
-- [ ] 3.2 Add "Extraer datos" button (enabled when `voucherUrl` exists, disabled during extraction) → calls `handleExtractVoucher()`
-- [ ] 3.3 Implement `handleExtractVoucher()`: set `extractionState='extracting'`, step through `AI_STEPS_EXTRACT_VOUCHER` → call `aiService.extractVoucher(base64Image, expectedItems)` where `expectedItems` = PO lines mapped to `{ name, quantity, unit, unitCost }` → on success: set `extractedItems`, `extractionState='done'` → on error: set `extractionError`, `extractionState='error'`, show toast per error matrix (missing key, API error, timeout, malformed JSON, empty items)
-- [ ] 3.4 Add extraction UI: while extracting show step labels with spinner; on done show "Extracción completada" badge; on error show toast + "Reintentar extracción" button that re-runs extraction
-- [ ] 3.5 Downscale image client-side to ≤ 2048px longest edge before base64 (use `canvas.drawImage` + `toDataURL('image/jpeg', 0.85)`) — NFR-2
+- [x] 3.1 Add extraction state: `extractionState` (`idle`|`extracting`|`done`|`error`), `extractedItems`, `extractionError`, `extractionSteps` (from `AI_STEPS_EXTRACT_VOUCHER`)
+- [x] 3.2 Add "Extraer datos" button (enabled when `voucherUrl` exists, disabled during extraction) → calls `handleExtractVoucher()`
+- [x] 3.3 Implement `handleExtractVoucher()`: set `extractionState='extracting'`, step through `AI_STEPS_EXTRACT_VOUCHER` → call `aiService.extractVoucher(base64Image, expectedItems)` where `expectedItems` = PO lines mapped to `{ name, quantity, unit, unitCost }` → on success: set `extractedItems`, `extractionState='done'` → on error: set `extractionError`, `extractionState='error'`, show toast per error matrix (missing key, API error, timeout, malformed JSON, empty items)
+- [x] 3.4 Add extraction UI: while extracting show step labels with spinner; on done show "Extracción completada" badge; on error show toast + "Reintentar extracción" button that re-runs extraction
+- [x] 3.5 Downscale image client-side to ≤ 2048px longest edge before base64 (use `canvas.drawImage` + `toDataURL('image/jpeg', 0.85)`) — NFR-2
 
 **Acceptance**: Spec scenarios "Extraction succeeds — structured items returned", "Extraction fails — missing API key", "Extraction fails — API error or malformed response", NFR-1 (<3s), NFR-2 (downscale)
 **Rollback 3.1–3.5**: Revert extraction state, handler, UI.
 
 ## Phase 4: ReceiveOrderModal — Fuzzy Match + Prefill
 
-- [ ] 4.1 Add `normalizeForMatch(str)` helper (lowercase, NFD strip accents, strip unit tokens `kg|gr|g|litro|l|ml|unidad|und|un|docena|doc`, remove non-alphanumeric, collapse whitespace, trim) — pure function, export for testing
-- [ ] 4.2 Add `fuzzyMatch(extracted, poItems)` helper: for each extracted item, normalize name → find PO item with substring containment either direction (`extNorm.includes(poNorm) || poNorm.includes(extNorm)`) → score = max length → greedy one-to-one by highest score → return `{ matched: [{ poItemId, extractedItem, score }], unmatched: [extractedItem] }` — pure function, export for testing
-- [ ] 4.3 Add state: `matchedItems`, `unmatchedItems`; after extraction success, run `fuzzyMatch(extractedItems, poItems)` → set both
-- [ ] 4.4 Render matched PO lines: prefill `receiveQtys[poItemId] = extractedItem.quantity`, show green check badge "✓ Emparejado", unit cost prefilled from `extractedItem.unitCost`
-- [ ] 4.5 Render unmatched section "⚠️ Revisar manualmente": list unmatched extracted items with name, qty, unitCost as editable inputs (not mapped to PO lines)
-- [ ] 4.6 Ensure real-time totals recalculation: `receiveQtys` changes + unit cost changes → update line totals + order total immediately
-- [ ] 4.7 User edits win: if user changes a prefilled qty/cost, keep edited value; do not re-apply OCR values on re-render
-- [ ] 4.8 Add "Re-escanear" button: clears `extractedItems`, `matchedItems`, `unmatchedItems`, `extractionState='idle'` → user can re-run extraction
+- [x] 4.1 Add `normalizeForMatch(str)` helper (lowercase, NFD strip accents, strip unit tokens `kg|gr|g|litro|l|ml|unidad|und|un|docena|doc`, remove non-alphanumeric, collapse whitespace, trim) — pure function, export for testing
+- [x] 4.2 Add `fuzzyMatch(extracted, poItems)` helper: for each extracted item, normalize name → find PO item with substring containment either direction (`extNorm.includes(poNorm) || poNorm.includes(extNorm)`) → score = max length → greedy one-to-one by highest score → return `{ matched: [{ poItemId, extractedItem, score }], unmatched: [extractedItem] }` — pure function, export for testing
+- [x] 4.3 Add state: `matchedItems`, `unmatchedItems`; after extraction success, run `fuzzyMatch(extractedItems, poItems)` → set both
+- [x] 4.4 Render matched PO lines: prefill `receiveQtys[poItemId] = extractedItem.quantity`, show green check badge "✓ Emparejado", unit cost prefilled from `extractedItem.unitCost`
+- [x] 4.5 Render unmatched section "⚠️ Revisar manualmente": list unmatched extracted items with name, qty, unitCost as editable inputs (not mapped to PO lines)
+- [x] 4.6 Ensure real-time totals recalculation: `receiveQtys` changes + unit cost changes → update line totals + order total immediately
+- [x] 4.7 User edits win: if user changes a prefilled qty/cost, keep edited value; do not re-apply OCR values on re-render
+- [x] 4.8 Add "Re-escanear" button: clears `extractedItems`, `matchedItems`, `unmatchedItems`, `extractionState='idle'` → user can re-run extraction
 
 **Acceptance**: Spec scenarios "Fuzzy match — supplier name vs ingredient name matched", "Fuzzy match — no match found, item shown as unmatched", "User edits prefilled values — edited values win"
 **Rollback 4.1–4.8**: Revert helpers, match state, prefill logic, unmatched UI.
