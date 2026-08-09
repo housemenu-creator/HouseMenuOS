@@ -53,12 +53,10 @@ vi.mock('firebase/database', () => ({
     store.set(ref.path, nextValue);
     return { snapshot: { val: () => nextValue } };
   }),
+  serverTimestamp: vi.fn(() => ({ '.sv': 'timestamp' })),
 }));
 
-vi.mock('../../lib/tenantService', () => ({
-  tenantRef: (path: string) => ({ path: `tenants/default/${path}` }),
-  tenantPath: (path: string) => `tenants/default/${path}`,
-}));
+const BRANCH = 'b1';
 
 describe('empleados employeeService', () => {
   beforeEach(() => {
@@ -74,16 +72,16 @@ describe('empleados employeeService', () => {
 
   it('getEmployee returns null for non-existent uid', async () => {
     const { getEmployee } = await import('./employeeService');
-    const result = await getEmployee('nonexistent-uid');
+    const result = await getEmployee(BRANCH, 'nonexistent-uid');
     expect(result).toBeNull();
   });
 
   it('getEmployee returns employee data for existing uid', async () => {
     const employeeData = { name: 'Test User', role: 'admin', active: true };
-    store.set('tenants/default/employees/test-uid', employeeData);
+    store.set(`branches/${BRANCH}/employees/test-uid`, employeeData);
 
     const { getEmployee } = await import('./employeeService');
-    const result = await getEmployee('test-uid');
+    const result = await getEmployee(BRANCH, 'test-uid');
 
     expect(result).toBeDefined();
     expect(result).toMatchObject({ uid: 'test-uid', ...employeeData });
@@ -94,7 +92,7 @@ describe('empleados employeeService', () => {
 
   it('subscribeEmployee returns unsubscribe function', async () => {
     const { subscribeEmployee } = await import('./employeeService');
-    const unsub = subscribeEmployee('test-uid', () => {});
+    const unsub = subscribeEmployee(BRANCH, 'test-uid', () => {});
     expect(typeof unsub).toBe('function');
   });
 
@@ -104,9 +102,9 @@ describe('empleados employeeService', () => {
     vi.setSystemTime(new Date('2026-06-15T14:30:00.000Z'));
     const { clockIn } = await import('./employeeService');
 
-    await clockIn('uid-123');
+    await clockIn(BRANCH, 'uid-123');
 
-    const record = store.get('tenants/default/employees/uid-123/attendance/2026-06-15');
+    const record = store.get(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`);
     expect(record).toBeDefined();
     expect((record as Record<string, unknown>).date).toBe('2026-06-15');
     expect(typeof (record as Record<string, unknown>).clockIn).toBe('number');
@@ -116,12 +114,12 @@ describe('empleados employeeService', () => {
   it('clockIn does not overwrite existing attendance record', async () => {
     vi.setSystemTime(new Date('2026-06-15T14:30:00.000Z'));
     const existing = { clockIn: 1000, clockOut: null, date: '2026-06-15' };
-    store.set('tenants/default/employees/uid-123/attendance/2026-06-15', existing);
+    store.set(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`, existing);
 
     const { clockIn } = await import('./employeeService');
-    const result = await clockIn('uid-123');
+    const result = await clockIn(BRANCH, 'uid-123');
 
-    const record = store.get('tenants/default/employees/uid-123/attendance/2026-06-15') as Record<string, unknown>;
+    const record = store.get(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`) as Record<string, unknown>;
     expect(record.clockIn).toBe(1000); // unchanged
   });
 
@@ -129,15 +127,15 @@ describe('empleados employeeService', () => {
 
   it('clockOut sets clockOut on existing attendance record', async () => {
     vi.setSystemTime(new Date('2026-06-15T14:30:00.000Z'));
-    store.set('tenants/default/employees/uid-123/attendance/2026-06-15', {
+    store.set(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`, {
       clockIn: 1000, clockOut: null, date: '2026-06-15',
     });
 
     vi.setSystemTime(new Date('2026-06-15T22:30:00.000Z'));
     const { clockOut } = await import('./employeeService');
-    await clockOut('uid-123');
+    await clockOut(BRANCH, 'uid-123');
 
-    const record = store.get('tenants/default/employees/uid-123/attendance/2026-06-15') as Record<string, unknown>;
+    const record = store.get(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`) as Record<string, unknown>;
     expect(record.clockOut).toBe(Date.now());
   });
 
@@ -145,7 +143,7 @@ describe('empleados employeeService', () => {
 
   it('subscribeAttendance returns unsubscribe function', async () => {
     const { subscribeAttendance } = await import('./employeeService');
-    const unsub = subscribeAttendance('uid-123', () => {});
+    const unsub = subscribeAttendance(BRANCH, 'uid-123', () => {});
     expect(typeof unsub).toBe('function');
   });
 
@@ -153,7 +151,7 @@ describe('empleados employeeService', () => {
 
   it('getSchedule returns null for uid with no schedule', async () => {
     const { getSchedule } = await import('./employeeService');
-    const result = await getSchedule('no-schedule-uid');
+    const result = await getSchedule(BRANCH, 'no-schedule-uid');
     expect(result).toBeNull();
   });
 
@@ -162,10 +160,10 @@ describe('empleados employeeService', () => {
       lunes: { start: '09:00', end: '18:00', active: true },
       martes: { start: '09:00', end: '18:00', active: true },
     };
-    store.set('tenants/default/employees/scheduled-uid/schedule', scheduleData);
+    store.set(`branches/${BRANCH}/employees/scheduled-uid/schedule`, scheduleData);
 
     const { getSchedule } = await import('./employeeService');
-    const result = await getSchedule('scheduled-uid');
+    const result = await getSchedule(BRANCH, 'scheduled-uid');
 
     expect(result).toBeDefined();
     expect((result as Record<string, unknown>).lunes).toMatchObject({ start: '09:00', end: '18:00', active: true });
@@ -175,14 +173,14 @@ describe('empleados employeeService', () => {
 
   it('subscribeGoals returns unsubscribe function', async () => {
     const { subscribeGoals } = await import('./employeeService');
-    const unsub = subscribeGoals('uid-123', () => {});
+    const unsub = subscribeGoals(BRANCH, 'uid-123', () => {});
     expect(typeof unsub).toBe('function');
   });
 
   it('subscribeGoals calls callback with empty array when no goals exist', async () => {
     const { subscribeGoals } = await import('./employeeService');
     const callback = vi.fn();
-    subscribeGoals('no-goals-uid', callback);
+    subscribeGoals(BRANCH, 'no-goals-uid', callback);
 
     const callbacks = (vi.mocked(await import('firebase/database')).onValue as ReturnType<typeof vi.fn>).mock.calls;
     // The onValue mock calls the callback immediately
@@ -193,21 +191,21 @@ describe('empleados employeeService', () => {
 
   it('subscribeAttendanceHistory returns unsubscribe function', async () => {
     const { subscribeAttendanceHistory } = await import('./employeeService');
-    const unsub = subscribeAttendanceHistory('uid-123', () => {});
+    const unsub = subscribeAttendanceHistory(BRANCH, 'uid-123', () => {});
     expect(typeof unsub).toBe('function');
   });
 
-  // ── Data path verification ───────────────────────────
+  // ── Data path verification (unified model) ───────────
 
-  it('uses tenants/{tenant}/employees/{uid} paths (not branches/{branch})', async () => {
+  it('uses branches/{branch}/employees/{uid} paths (not tenants)', async () => {
     const { getEmployee } = await import('./employeeService');
-    store.set('tenants/default/employees/uid-456', { name: 'Tenant User' });
+    store.set(`branches/${BRANCH}/employees/uid-456`, { name: 'Branch User' });
 
-    const result = await getEmployee('uid-456');
-    expect(result).toMatchObject({ uid: 'uid-456', name: 'Tenant User' });
+    const result = await getEmployee(BRANCH, 'uid-456');
+    expect(result).toMatchObject({ uid: 'uid-456', name: 'Branch User' });
 
-    // Verify branches path is NOT used
-    const branchesData = store.get('branches');
-    expect(branchesData).toBeUndefined();
+    // Verify tenants path is NOT used
+    const tenantsData = store.get('tenants');
+    expect(tenantsData).toBeUndefined();
   });
 });

@@ -16,7 +16,7 @@ export default function ProfileView({ uid, branchId }: ProfileViewProps) {
   useEffect(() => {
     if (!uid) { setState('error'); return; }
 
-    const unsub = subscribeEmployee(uid, (data) => {
+    const unsub = subscribeEmployee(branchId!, uid, (data) => {
       if (data) {
         setProfile(data);
         setState('populated');
@@ -26,7 +26,7 @@ export default function ProfileView({ uid, branchId }: ProfileViewProps) {
     });
 
     return unsub;
-  }, [uid]);
+  }, [uid, branchId]);
 
   // ── Loading ──
   if (state === 'loading') {

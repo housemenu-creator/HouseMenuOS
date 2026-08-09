@@ -24,6 +24,18 @@ vi.mock('@house/db', () => ({
 }));
 
 // ── Context mocks ──────────────────────────────────────────
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: () => ({ user: null, isAuthenticated: false, logout: vi.fn() }),
+}));
+
+vi.mock('../../context/CustomerAuthContext', () => ({
+  useCustomerAuth: () => ({ isAuthenticated: false, points: 0 }),
+}));
+
+vi.mock('../../context/TenantContext', () => ({
+  useTenant: () => ({ slug: null, isPublicView: false }),
+}));
+
 vi.mock('../../context/BranchContext', () => ({
   useBranch: () => ({
     activeBranchId: 'branch-1',
@@ -106,6 +118,14 @@ vi.mock('../../customer/components/ProductSkeleton', () => ({
 }));
 
 vi.mock('../../customer/components/HeroBanner', () => ({
+  default: () => null,
+}));
+
+vi.mock('../../customer/components/CampaignBanner', () => ({
+  default: () => null,
+}));
+
+vi.mock('../../components/CustomerAuthModal', () => ({
   default: () => null,
 }));
 

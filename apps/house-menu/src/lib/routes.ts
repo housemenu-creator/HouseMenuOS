@@ -34,6 +34,7 @@ export const STAFF_ROUTES = {
   VENDEDOR: '/staff/vendedor',
   CAJA: '/staff/caja',
   EMPLEADOS: '/staff/empleados',
+  PREPEDIDOS: '/staff/prepedidos',
 } as const;
 
 // ── Helpers ──

@@ -52,10 +52,10 @@ export default function EmpleadosDashboard({ uid, branchId }) {
   // Subscribe
   useEffect(() => {
     if (!uid) { setState('error'); return; }
-    const unsubEmp = subscribeEmployee(uid, (data) => {
+    const unsubEmp = subscribeEmployee(branchId, uid, (data) => {
       if (data) setEmployee(data);
     });
-    const unsubAtt = subscribeAttendance(uid, (data) => {
+    const unsubAtt = subscribeAttendance(branchId, uid, (data) => {
       setAttendance(data);
       setState(data ? 'populated' : 'empty');
       setError('');
@@ -106,7 +106,7 @@ export default function EmpleadosDashboard({ uid, branchId }) {
     setActionLoading(true);
     setError('');
     try {
-      await clockIn(uid, area, station, template);
+      await clockIn(branchId, uid, area, station, template);
       setShowClockInFlow(false);
       setSelectedArea('');
       setSelectedStation('');
@@ -138,7 +138,7 @@ export default function EmpleadosDashboard({ uid, branchId }) {
   const handleStartBreak = useCallback(async () => {
     setBreakLoading(true);
     try {
-      await startBreak(uid);
+      await startBreak(branchId, uid);
     } catch (e) {
       console.error('startBreak error:', e);
     } finally {
@@ -149,7 +149,7 @@ export default function EmpleadosDashboard({ uid, branchId }) {
   const handleEndBreak = useCallback(async () => {
     setBreakLoading(true);
     try {
-      await endBreak(uid);
+      await endBreak(branchId, uid);
     } catch (e) {
       console.error('endBreak error:', e);
     } finally {
@@ -162,9 +162,9 @@ export default function EmpleadosDashboard({ uid, branchId }) {
     setError('');
     try {
       if (handoverNotes.trim()) {
-        await saveHandoverNotes(uid, handoverNotes);
+        await saveHandoverNotes(branchId, uid, handoverNotes);
       }
-      await clockOut(uid);
+      await clockOut(branchId, uid);
       setShowClockOutFlow(false);
       setHandoverNotes('');
     } catch (e) {
@@ -178,7 +178,7 @@ export default function EmpleadosDashboard({ uid, branchId }) {
   // ── Checklist toggle ──────────────────────────────────
   const handleToggleItem = async (phase, itemId) => {
     try {
-      await toggleChecklistItem(uid, phase, itemId);
+      await toggleChecklistItem(branchId, uid, phase, itemId);
     } catch (e) {
       console.error('toggle checklist error:', e);
     }
@@ -189,7 +189,7 @@ export default function EmpleadosDashboard({ uid, branchId }) {
   const [incidentDesc, setIncidentDesc] = useState('');
   const handleReportIncident = async () => {
     if (!incidentDesc.trim()) return;
-    await reportIncident(uid, { type: 'other', description: incidentDesc });
+    await reportIncident(branchId, uid, { type: 'other', description: incidentDesc });
     setIncidentDesc('');
     setShowIncidentForm(false);
   };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { useAuth } from '../../context/AuthContext';
@@ -7,7 +8,10 @@ import { useBranch } from '../../context/BranchContext';
 import useOrderStore from '../store/orderStore';
 import { ACTIVE_STATUSES } from '../workerTypes';
 import { computeEmployeeKPI } from '../../lib/employeeService';
-import { ClipboardList, ChefHat, Truck, Bike, CircleDollarSign, Coins, ArrowRight, Zap } from 'lucide-react';
+import { ClipboardList, ChefHat, Truck, Bike, CircleDollarSign, Coins, ArrowRight, Zap, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
+const iv = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } };
 import { STAFF_ROUTES } from '../../lib/routes';
 import WelcomeHeader from './sections/WelcomeHeader';
 import AnnouncementBanner from './sections/AnnouncementBanner';
@@ -137,11 +141,17 @@ export default function WorkerDashboard() {
 
   // ── Anuncios ──
   const [announcement, setAnnouncement] = useState<string | null>(null);
+  const [annError, setAnnError] = useState<string | null>(null);
   useEffect(() => {
     if (!activeBranchId) return;
-    const annRef = ref(db, `branches_config/${activeBranchId}/announcement`);
-    const unsubAnn = onValue(annRef, (snap) => setAnnouncement(snap.val()));
-    return () => unsubAnn();
+    setAnnError(null);
+    try {
+      const annRef = ref(db, `branches_config/${activeBranchId}/announcement`);
+      const unsubAnn = onValue(annRef, (snap) => setAnnouncement(snap.val()), (err) => setAnnError(err.message));
+      return () => unsubAnn();
+    } catch (err: any) {
+      setAnnError(err.message || 'Error al cargar anuncios');
+    }
   }, [activeBranchId]);
 
   // ── KPIs ──
@@ -174,36 +184,59 @@ export default function WorkerDashboard() {
   const visible = VISIBLE_SECTIONS[userRole] || VISIBLE_SECTIONS.mozo;
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-cm-bg pb-6">
+    <motion.div
+      variants={cv}
+      initial="hidden"
+      animate="show"
+      className="flex-1 min-h-0 overflow-y-auto bg-cm-bg pb-6"
+    >
+      {annError && (
+        <div className="px-6 pt-4">
+          <div className="flex items-center gap-2 p-3 bg-cm-error/10 border border-cm-error/20 rounded-xl text-xs text-cm-error font-semibold">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            {annError}
+            <button onClick={() => window.location.reload()} className="ml-auto flex items-center gap-1 text-cm-accent hover:underline">
+              <RefreshCw className="w-3 h-3" /> Reintentar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full px-6 pt-5 space-y-5">
 
         {visible.includes('welcome') && (
-          <WelcomeHeader
-            currentTime={currentTime}
-            user={user}
-            activeBranchName={activeBranchName}
-          />
+          <motion.div variants={iv}>
+            <WelcomeHeader
+              currentTime={currentTime}
+              user={user}
+              activeBranchName={activeBranchName}
+            />
+          </motion.div>
         )}
 
         {visible.includes('announcement') && (
-          <AnnouncementBanner
-            announcement={announcement}
-            defaultPhrase={defaultPhrase}
-          />
+          <motion.div variants={iv}>
+            <AnnouncementBanner
+              announcement={announcement}
+              defaultPhrase={defaultPhrase}
+            />
+          </motion.div>
         )}
 
         {visible.includes('attendance') && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <motion.div variants={iv} className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <AttendanceCard currentTime={currentTime} />
-          </div>
+          </motion.div>
         )}
 
         {visible.includes('quick') && (
-          <QuickAccess userRole={userRole} />
+          <motion.div variants={iv}>
+            <QuickAccess userRole={userRole} />
+          </motion.div>
         )}
 
         {visible.includes('modules') && userRoles.filter(r => r in ROLE_CONFIG).length > 0 && (
-          <div>
+          <motion.div variants={iv}>
             <p className="text-[10px] font-black text-cm-muted uppercase tracking-widest mb-3">Tus Módulos de Trabajo</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {userRoles.map((role) => {
@@ -236,24 +269,28 @@ export default function WorkerDashboard() {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {visible.includes('pipeline') && (
-          <OrderMetricsPanel
-            statusCounts={statusCounts}
-            activeOrders={activeOrders}
-          />
+          <motion.div variants={iv}>
+            <OrderMetricsPanel
+              statusCounts={statusCounts}
+              activeOrders={activeOrders}
+            />
+          </motion.div>
         )}
 
         {visible.includes('kpi') && (
-          <KPISection
-            kpis={kpis}
-            currentTime={currentTime}
-          />
+          <motion.div variants={iv}>
+            <KPISection
+              kpis={kpis}
+              currentTime={currentTime}
+            />
+          </motion.div>
         )}
 
       </div>
-    </div>
+    </motion.div>
   );
 }

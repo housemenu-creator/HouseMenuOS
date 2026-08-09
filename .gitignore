@@ -82,3 +82,9 @@ test-*.mjs
 docker/nginx-dist/
 
 
+
+# Sensitive / operational data
+logs/
+apps/housepysbot/data/
+apps/housepysbot/backup-orders-*.json
+ruvector.db

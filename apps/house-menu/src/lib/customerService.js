@@ -1,6 +1,5 @@
-import { ref, get, set, push, update, runTransaction, onValue } from 'firebase/database';
+import { ref, get, set, push, update, runTransaction, onValue, serverTimestamp } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { nowISO } from './format';
 
 const CUSTOMERS_PATH = 'customers';
 
@@ -72,7 +71,7 @@ export async function findOrCreateCustomer({ uid, email, phone, name, branchId, 
       const newOrderCount = (existing.orderCount || 0) + 1;
       const newTotalSpent = (existing.totalSpent || 0) + (orderTotal || 0);
       const updates = {
-        lastOrderAt: nowISO(),
+        lastOrderAt: serverTimestamp(),
         orderCount: newOrderCount,
         totalSpent: newTotalSpent,
         avgTicket: newOrderCount > 0 ? newTotalSpent / newOrderCount : 0,
@@ -92,8 +91,8 @@ export async function findOrCreateCustomer({ uid, email, phone, name, branchId, 
       name: name || '',
       phone: phone || '',
       email: email || '',
-      createdAt: nowISO(),
-      lastOrderAt: nowISO(),
+      createdAt: serverTimestamp(),
+      lastOrderAt: serverTimestamp(),
       orderCount: 1,
       totalSpent: orderTotal || 0,
       avgTicket: orderTotal || 0,
@@ -124,7 +123,7 @@ export async function findOrCreateCustomer({ uid, email, phone, name, branchId, 
           const updates = {
             name: name || c.name,
             phone: phone || c.phone,
-            lastOrderAt: nowISO(),
+            lastOrderAt: serverTimestamp(),
             orderCount: newOrderCount,
             totalSpent: newTotalSpent,
             avgTicket: newOrderCount > 0 ? newTotalSpent / newOrderCount : 0,
@@ -152,7 +151,7 @@ export async function findOrCreateCustomer({ uid, email, phone, name, branchId, 
           const updates = {
             name: name || c.name,
             email: mergedEmail,
-            lastOrderAt: nowISO(),
+            lastOrderAt: serverTimestamp(),
             orderCount: newOrderCount,
             totalSpent: newTotalSpent,
             avgTicket: newOrderCount > 0 ? newTotalSpent / newOrderCount : 0,
@@ -175,8 +174,8 @@ export async function findOrCreateCustomer({ uid, email, phone, name, branchId, 
     name: name || '',
     phone: phone || '',
     email: email || '',
-    createdAt: nowISO(),
-    lastOrderAt: nowISO(),
+    createdAt: serverTimestamp(),
+    lastOrderAt: serverTimestamp(),
     orderCount: 1,
     totalSpent: orderTotal || 0,
     avgTicket: orderTotal || 0,
@@ -313,4 +312,42 @@ export function prepareReorder(items) {
     categoryId: categoryId || '',
   }));
   localStorage.setItem('cm_reorder_items', JSON.stringify(clean));
+}
+
+/** Filtra clientes por criterios desde RTDB (batch read) */
+export async function getCustomersBySegment({ tier, minSpent, maxSpent, minOrders, recencyDays } = {}) {
+  const snap = await get(ref(db, CUSTOMERS_PATH));
+  const all = snap.val();
+  if (!all) return [];
+
+  const now = Date.now();
+  return Object.entries(all)
+    .map(([id, c]) => ({ id, ...c }))
+    .filter((c) => {
+      if (tier && c.tier !== tier) return false;
+      if (minSpent != null && (c.totalSpent || 0) < minSpent) return false;
+      if (maxSpent != null && (c.totalSpent || 0) > maxSpent) return false;
+      if (minOrders != null && (c.orderCount || 0) < minOrders) return false;
+      if (recencyDays != null) {
+        if (!c.lastOrderAt) return true;
+        const daysSince = Math.floor((now - new Date(c.lastOrderAt).getTime()) / 86400000);
+        if (daysSince < recencyDays) return false;
+      }
+      return true;
+    });
+}
+
+/** Agrega puntos en lote a múltiples clientes */
+export async function addPointsBatch(updates) {
+  const results = { success: 0, failed: 0, errors: [] };
+  for (const { customerId, points } of updates) {
+    try {
+      await addCustomerPoints(customerId, points);
+      results.success++;
+    } catch (e) {
+      results.failed++;
+      results.errors.push(`${customerId}: ${e.message}`);
+    }
+  }
+  return results;
 }

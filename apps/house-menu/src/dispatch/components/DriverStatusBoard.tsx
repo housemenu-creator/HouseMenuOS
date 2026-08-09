@@ -1,22 +1,27 @@
 import { motion } from 'framer-motion';
-import { Bike, Car, Footprints, Phone, Navigation, Loader2, FilterX } from 'lucide-react';
+import { Bike, Car, Footprints, Phone, Navigation, Loader2, FilterX, AlertCircle } from 'lucide-react';
 import type { DeliveryDriver } from '../../worker/workerTypes';
 
 interface DriverStatusBoardProps {
   drivers: DeliveryDriver[];
   driverFilter: 'todos' | 'disponibles' | 'en_ruta';
   loading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   onFilterChange: (f: 'todos' | 'disponibles' | 'en_ruta') => void;
 }
 
 const VEHICLE_ICONS: Record<string, any> = { Moto: Bike, Auto: Car, Bicicleta: Bike, 'A Pie': Footprints, Car };
+
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const iv = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 22 } } };
 
 function DriverDot({ available, active }: { available: boolean; active: boolean }) {
   if (!active) return <span className="w-2 h-2 rounded-full bg-cm-muted/40" />;
   return <span className={`w-2 h-2 rounded-full ${available ? 'bg-cm-success shadow-[0_0_6px] shadow-cm-success/60' : 'bg-cm-info shadow-[0_0_6px] shadow-cm-info/60'}`} />;
 }
 
-export default function DriverStatusBoard({ drivers, driverFilter, loading, onFilterChange }: DriverStatusBoardProps) {
+export default function DriverStatusBoard({ drivers, driverFilter, loading, error, onRetry, onFilterChange }: DriverStatusBoardProps) {
   const activeDrivers = drivers.filter((d) => d.active !== false);
   const available = activeDrivers.filter((d) => d.available !== false);
   const onRoute = activeDrivers.filter((d) => d.available === false);
@@ -30,6 +35,23 @@ export default function DriverStatusBoard({ drivers, driverFilter, loading, onFi
       <div className="bg-cm-surface border border-cm-border rounded-xl p-4">
         <div className="flex items-center gap-2 text-sm text-cm-text-secondary">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando repartidores...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-cm-surface border border-cm-border rounded-xl p-4">
+        <div className="flex flex-col items-center gap-2 py-4 text-center">
+          <AlertCircle className="w-6 h-6 text-cm-error" />
+          <p className="text-xs font-bold text-cm-error">{error}</p>
+          {onRetry && (
+            <button onClick={onRetry}
+              className="px-3 py-1.5 text-xs font-bold bg-cm-accent text-white rounded-lg hover:brightness-110 transition-all">
+              Reintentar
+            </button>
+          )}
         </div>
       </div>
     );
@@ -58,14 +80,14 @@ export default function DriverStatusBoard({ drivers, driverFilter, loading, onFi
       {displayDrivers.length === 0 ? (
         <div className="flex items-center gap-2 text-xs text-cm-text-tertiary py-3">
           <FilterX className="w-3.5 h-3.5" />
-          {driverFilter === 'disponibles' ? 'No hay repartidores disponibles' : 'No hay repartidores en ruta'}
+          {driverFilter === 'disponibles' ? 'No hay repartidores disponibles' : driverFilter === 'en_ruta' ? 'No hay repartidores en ruta' : 'No hay repartidores registrados'}
         </div>
       ) : (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <motion.div variants={cv} initial="hidden" animate="show" className="flex gap-2 overflow-x-auto pb-1">
           {displayDrivers.map((d) => {
             const VIcon = VEHICLE_ICONS[d.vehicle] || Bike;
             return (
-              <motion.div key={d.id} layout
+              <motion.div key={d.id} layout variants={iv}
                 className="flex items-center gap-2 bg-cm-bg-alt border border-cm-border rounded-lg px-3 py-2 min-w-[140px] flex-shrink-0">
                 <div className="relative">
                   <div className="w-8 h-8 bg-cm-accent/10 rounded-full flex items-center justify-center">
@@ -89,7 +111,7 @@ export default function DriverStatusBoard({ drivers, driverFilter, loading, onFi
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
     </div>
   );

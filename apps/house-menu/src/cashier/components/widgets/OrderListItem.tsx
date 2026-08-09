@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, Smartphone, ArrowRightLeft, Users } from 'lucide-react';
+import { CheckCircle, XCircle, Smartphone, ArrowRightLeft, Users, Pencil, Printer } from 'lucide-react';
 import type { Order } from '../../types';
 
 interface OrderListItemProps {
@@ -9,6 +9,8 @@ interface OrderListItemProps {
   onTransfer: () => void;
   onVerify: () => void;
   onSplit?: () => void;
+  onEdit?: () => void;
+  onReceipt?: () => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -27,7 +29,7 @@ const statusLabels: Record<string, string> = {
   reembolsado: 'Reembolsado',
 };
 
-export function OrderListItem({ order, onQuickPay, onCancel, onTransfer, onVerify, onSplit }: OrderListItemProps) {
+export function OrderListItem({ order, onQuickPay, onCancel, onTransfer, onVerify, onSplit, onEdit, onReceipt }: OrderListItemProps) {
   const borderColor = statusColors[order.payment_status] || 'var(--cashier-border)';
   const statusLabel = statusLabels[order.payment_status] || order.payment_status;
 
@@ -96,6 +98,19 @@ export function OrderListItem({ order, onQuickPay, onCancel, onTransfer, onVerif
             <button onClick={onSplit}
               className="flex items-center justify-center gap-1 px-2.5 py-2 border border-[var(--cashier-accent)]/30 text-[var(--cashier-accent)] text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-[var(--cashier-accent)]/10 transition-all">
               <Users size={12} />
+            </button>
+          )}
+          {onEdit && order.payment_status !== 'pagado' && order.payment_status !== 'cancelado' && (
+            <button onClick={onEdit}
+              className="flex items-center justify-center gap-1 px-2.5 py-2 border border-[var(--cashier-border)] text-[var(--cashier-text-secondary)] text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-[var(--cashier-bg)] transition-all">
+              <Pencil size={12} />
+            </button>
+          )}
+          {onReceipt && order.payment_status === 'pagado' && (
+            <button onClick={onReceipt}
+              className="flex items-center justify-center gap-1 px-2.5 py-2 border border-[var(--cashier-border)] text-[var(--cashier-text-secondary)] text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-[var(--cashier-bg)] transition-all"
+              title="Reimprimir boleta">
+              <Printer size={12} />
             </button>
           )}
           <button onClick={onCancel}

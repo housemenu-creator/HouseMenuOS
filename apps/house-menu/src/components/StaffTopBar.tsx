@@ -4,7 +4,7 @@ import { motion, LayoutGroup } from 'framer-motion';
 import BranchSwitcher from './BranchSwitcher';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import { useAuth } from '../context/AuthContext';
-import { ChefHat, ClipboardList, Truck, Bike, TrendingUp, LogOut, LayoutDashboard, Users } from 'lucide-react';
+import { ChefHat, ClipboardList, Truck, Bike, TrendingUp, LogOut, LayoutDashboard, Users, ShoppingCart } from 'lucide-react';
 import { ROUTES, STAFF_ROUTES } from '../lib/routes';
 import logo from '../assets/logo.jpg';
 
@@ -19,6 +19,7 @@ const ROLE_LINKS: RoleLink[] = [
   { path: STAFF_ROUTES.ROOT, label: 'Panel', icon: <LayoutDashboard className="w-3.5 h-3.5" />, roles: ['kitchen', 'mozo', 'dispatch', 'delivery', 'vendedor', 'admin', 'cajero'] },
   { path: STAFF_ROUTES.MOZO, label: 'Mozo', icon: <ClipboardList className="w-3.5 h-3.5" />, roles: ['mozo'] },
   { path: STAFF_ROUTES.COCINA, label: 'Cocina', icon: <ChefHat className="w-3.5 h-3.5" />, roles: ['kitchen'] },
+  { path: STAFF_ROUTES.PREPEDIDOS, label: 'Pre-pedidos', icon: <ShoppingCart className="w-3.5 h-3.5" />, roles: ['kitchen'] },
   { path: STAFF_ROUTES.DESPACHO, label: 'Despacho', icon: <Truck className="w-3.5 h-3.5" />, roles: ['dispatch'] },
   { path: STAFF_ROUTES.DELIVERY, label: 'Delivery', icon: <Bike className="w-3.5 h-3.5" />, roles: ['delivery'] },
   { path: STAFF_ROUTES.VENDEDOR, label: 'Ventas', icon: <TrendingUp className="w-3.5 h-3.5" />, roles: ['vendedor', 'cajero'] },

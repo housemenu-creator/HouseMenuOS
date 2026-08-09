@@ -29,14 +29,14 @@ describe('ScheduleView', () => {
 
   it('shows loading skeleton on mount', () => {
     mockGetSchedule.mockReturnValue(new Promise(() => {})); // never resolves
-    render(<ScheduleView uid={UID} />);
+    render(<ScheduleView uid={UID} branchId="b1" />);
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('renders populated schedule with all days', async () => {
     mockGetSchedule.mockResolvedValue(mockSchedule);
-    render(<ScheduleView uid={UID} />);
+    render(<ScheduleView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Lun')).toBeDefined();
@@ -66,7 +66,7 @@ describe('ScheduleView', () => {
 
   it('shows empty state when schedule is null', async () => {
     mockGetSchedule.mockResolvedValue(null);
-    render(<ScheduleView uid={UID} />);
+    render(<ScheduleView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Sin horario asignado')).toBeDefined();
@@ -74,13 +74,13 @@ describe('ScheduleView', () => {
   });
 
   it('shows error state when uid is empty', () => {
-    render(<ScheduleView uid="" />);
+    render(<ScheduleView uid="" branchId="b1" />);
     expect(screen.getByText('Error al cargar')).toBeDefined();
   });
 
   it('shows error state when getSchedule rejects', async () => {
     mockGetSchedule.mockRejectedValue(new Error('fail'));
-    render(<ScheduleView uid={UID} />);
+    render(<ScheduleView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Error al cargar')).toBeDefined();

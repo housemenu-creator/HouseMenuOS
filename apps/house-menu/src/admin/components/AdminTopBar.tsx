@@ -166,7 +166,7 @@ export default function AdminTopBar({
                         }`}
                       >
                         <Store className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{b.name}</span>
+                        <span className="truncate">{b.name?.trim() || b.id}</span>
                         {b.id === activeBranchId && (
                           <span className="ml-auto w-1.5 h-1.5 rounded-full bg-cm-accent shrink-0" />
                         )}

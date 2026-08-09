@@ -1,0 +1,3004 @@
+{
+    "-Oxg-Agu82k6I_47_7GJ":  {
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "description":  "Descripci??n del plato...",
+                                 "isWizard":  false,
+                                 "stock":  3,
+                                 "name":  "ENCHILADAS",
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  0,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "category":  "PIQUEOS",
+                                 "status":  "published",
+                                 "available":  false
+                             },
+    "-OxlpYShUiLUfiR7zCVk":  {
+                                 "base_price":  2.5,
+                                 "trackStock":  true,
+                                 "description":  "Chicha morada tradicional",
+                                 "createdAt":  1784321290935,
+                                 "name":  "Chicha Morada 500ml",
+                                 "recipe":  {
+                                                "293da38d-4b66-4ddb-a6bb-c7012f9b679b":  0.1,
+                                                "88b0f8c2-73b4-47f5-a768-506116392012":  0.05,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02,
+                                                "bfddaa22-c880-4b95-af30-b3327d24ede1":  0.002
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  54,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  19,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321290935,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxfzrCrClKzdJIKjhm6":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "HAMBURGUESAS",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  7,
+                                 "available":  false
+                             },
+    "-Ow9QMKll8MfSFMNNgqk":  {
+                                 "base_price":  20,
+                                 "trackStock":  true,
+                                 "description":  "Con frejoles, tamal verde y sarsa criolla",
+                                 "stock":  3,
+                                 "name":  "Seco de Cabrito",
+                                 "recipe":  {
+                                                "173e5512-092f-4a8e-99c1-c30ae33c5524":  0.2,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "4d4fa001-daab-4ccf-98dd-c03c282c4764":  0.1,
+                                                "6f346470-467e-4349-a6ee-2eaa96de1d3f":  0.005,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.15,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "d5c58a0e-c452-4466-9bb5-a0a67a34a1fe":  0.002,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.05
+                                            },
+                                 "minStock":  10,
+                                 "image":  "",
+                                 "category":  "Promos del D??a",
+                                 "isWizard":  false,
+                                 "supplierId":  "sup-proveedor-local",
+                                 "available":  true
+                             },
+    "-Ow9SFdPFTKLlMKyYacW":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "Tu Almuerzo Fit",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  41,
+                                 "available":  false
+                             },
+    "-Oxg-GdnPlHXLG6ktVJn":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "JUGOS",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  12,
+                                 "available":  false
+                             },
+    "-OxlpYVuOPnFyn3e4BKP":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Chicha morada tradicional",
+                                 "createdAt":  1784321291140,
+                                 "name":  "Chicha Morada 1L",
+                                 "recipe":  {
+                                                "293da38d-4b66-4ddb-a6bb-c7012f9b679b":  0.2,
+                                                "88b0f8c2-73b4-47f5-a768-506116392012":  0.1,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.04,
+                                                "bfddaa22-c880-4b95-af30-b3327d24ede1":  0.005
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  55,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  12,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321291140,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYku2BAhaNNvBpFg":  {
+                                 "base_price":  2.5,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de manzana",
+                                 "createdAt":  1784321292164,
+                                 "name":  "Manzana 500ml",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02,
+                                                "ad8097f3-7bf4-4a13-a3c0-0c555f9a213d":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  60,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  49,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321292164,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpW4hs1cR7ZdPVrBB":  {
+                                 "base_price":  19,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y menestra + papas fritas y ensalada",
+                                 "createdAt":  1784321281207,
+                                 "name":  "Bisteck a lo Pobre",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "2034baad-2eec-45dd-ae92-5f86dca604a6":  0.15,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.1,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.03
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  7,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  18,
+                                 "category":  "Carnes y Saltados",
+                                 "updatedAt":  1784321281207,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYrI1vRjYGbGnK--":  {
+                                 "base_price":  2,
+                                 "trackStock":  true,
+                                 "description":  "Adicional de huevo frito",
+                                 "createdAt":  1784321292573,
+                                 "name":  "Huevo Frito",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.01,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  62,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Adicionales",
+                                 "updatedAt":  1784321292573,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWcgR7VBJNGgIk8N":  {
+                                 "base_price":  16,
+                                 "trackStock":  true,
+                                 "description":  "200gr de chicharr??n de pollo con papas fritas y cremas",
+                                 "createdAt":  1784321283446,
+                                 "name":  "Chicharr??n de Pollo 200gr",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.05,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  1,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.2
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  18,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  31,
+                                 "category":  "Parrilla y Pollos",
+                                 "updatedAt":  1784321283446,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpVo6QlrcETkMnbOq":  {
+                                 "base_price":  18,
+                                 "trackStock":  true,
+                                 "description":  "Tallarines verdes con papa a la huanca??na, chifles y sarsa criolla + refresco",
+                                 "createdAt":  1784321280081,
+                                 "name":  "Pollo al Horno con Tallarines",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "0efb4970-ee36-4eef-bff5-a0f61eac54d0":  0.02,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "2f410987-b59c-4ba1-b3de-89a1c673f609":  0.02,
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.05,
+                                                "59f40b4e-0f54-4ea6-b74b-b4aa0e0ca732":  0.15,
+                                                "7804eef1-c5ec-441f-8812-44d7bc547ff6":  0.01,
+                                                "827a5aa2-dd0e-4e5c-ab79-044b00ade7af":  0.05,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.15,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.2,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.03
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  2,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  37,
+                                 "category":  "Opciones del D??a",
+                                 "updatedAt":  1784321280081,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXHVyKiFTxDjV4er":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Shot intenso y concentrado de caf?? puro",
+                                 "createdAt":  1784321286122,
+                                 "name":  "Espresso",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.005
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  31,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  7,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321286122,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlxgGHm5zJIsCpMeKJ":  {
+                                 "base_price":  25,
+                                 "trackStock":  true,
+                                 "description":  "Fuente de chicharrones de pollo para compartir",
+                                 "createdAt":  1784323424207,
+                                 "name":  "Fuente de Chicharrones",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.08,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.3,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.005,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.5
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  999,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  44,
+                                 "category":  "Parrilla y Pollos",
+                                 "updatedAt":  1784323424207,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXbEpt8k1hDg4YW8":  {
+                                 "base_price":  8.5,
+                                 "trackStock":  true,
+                                 "description":  "Caf?? largo e intenso, mayor extracci??n",
+                                 "createdAt":  1784321287449,
+                                 "name":  "Long Coffee",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.005
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  37,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  38,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321287449,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXo6KLO_lwRY8v0_":  {
+                                 "base_price":  9,
+                                 "trackStock":  true,
+                                 "description":  "Caf?? helado licuado con hielo y leche",
+                                 "createdAt":  1784321288273,
+                                 "name":  "Frappuccino",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.15,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  41,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  17,
+                                 "category":  "Bebidas Fr??as",
+                                 "updatedAt":  1784321288273,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpZ-ulOXOGMJ_2vMv":  {
+                                 "base_price":  5,
+                                 "trackStock":  true,
+                                 "description":  "Adicional de ensalada fresca",
+                                 "createdAt":  1784321293187,
+                                 "name":  "Ensalada Fresca",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.05,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.1,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  0.5,
+                                                "ab1d3c89-7434-4c7d-a6df-e024ee932fa6":  0.05
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  65,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  25,
+                                 "category":  "Adicionales",
+                                 "updatedAt":  1784321293187,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ow9QyybS3aAHHj53ESo":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "con sarsa y chifles",
+                                 "category":  "Promos del D??a",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Tallarines con Pollo al Horno ",
+                                 "stock":  39,
+                                 "available":  true
+                             },
+    "-OxlxgPtagLokT4g2Lkj":  {
+                                 "base_price":  12,
+                                 "trackStock":  true,
+                                 "description":  "Club sandwich cl??sico con papas fritas",
+                                 "createdAt":  1784323424822,
+                                 "name":  "Club Sandwich Cl??sico",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.05,
+                                                "12ba06a2-d6b9-4de1-a1f3-f26d32b02710":  0.05,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "1fa3bb4a-af92-4b45-9aaf-33dd0731337b":  0.1,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.15,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1,
+                                                "ffde0625-5990-4b5f-832f-d9ebab3be03f":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  999,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  33,
+                                 "category":  "Especiales",
+                                 "updatedAt":  1784323424822,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYJ5llg9Kt-1TSRp":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Limonada natural",
+                                 "createdAt":  1784321290320,
+                                 "name":  "Limonada 1L",
+                                 "recipe":  {
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  5,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.04
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  51,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  43,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321290320,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxfzztNLhKW67H8RI20":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "PIQUEOS",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "ALITAS ",
+                                 "stock":  39,
+                                 "available":  false
+                             },
+    "-OvwYuQSnKF32STPGRG6":  {
+                                 "image":  "https://firebasestorage.googleapis.com/v0/b/house-menuapp.firebasestorage.app/o/branches%2Fmonteverde%2Fproduct-images%2F-OvwYuQSnKF32STPGRG6_1782354895721?alt=media\u0026token=f5b619da-7ac2-434d-8356-6dc4ccece3b1",
+                                 "isWizard":  true,
+                                 "description":  "acomp????ala con tus favoritos",
+                                 "category":  "Nuestras Expiencias",
+                                 "base_price":  10,
+                                 "trackStock":  true,
+                                 "name":  "Arma tu Causa",
+                                 "steps":  [
+                                               {
+                                                   "id":  "step_1782354228550_15",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354238020_16",
+                                                                       "name":  "Papa + palta",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354243196_17",
+                                                                       "name":  "Camote + palta",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Elige tu base",
+                                                   "type":  "single"
+                                               },
+                                               {
+                                                   "id":  "step_1782354258949_19",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354268069_20",
+                                                                       "name":  "Pollo delilachado",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354294604_21",
+                                                                       "name":  "Trozos de atun",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Elige tu proteina",
+                                                   "type":  "single"
+                                               },
+                                               {
+                                                   "id":  "step_1782354304414_22",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354324653_23",
+                                                                       "name":  "Mayonesa Clasica",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354344981_24",
+                                                                       "name":  "Vinagreta",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354351206_25",
+                                                                       "name":  "Mayonesa Proteica",
+                                                                       "price":  3,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Elije tu salsa",
+                                                   "type":  "single"
+                                               },
+                                               {
+                                                   "id":  "step_1782354364397_26",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354387109_27",
+                                                                       "name":  "Pollo saltado",
+                                                                       "price":  4,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354398636_28",
+                                                                       "name":  "Ceviche de pota",
+                                                                       "price":  4,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354408148_29",
+                                                                       "name":  "Ceviche de filete",
+                                                                       "price":  7,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782354414861_30",
+                                                                       "name":  "Lomo Saltado",
+                                                                       "price":  7,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Agr??gale tu topping",
+                                                   "type":  "single"
+                                               }
+                                           ],
+                                 "stock":  44,
+                                 "channels":  {
+                                                  "landing":  false
+                                              },
+                                 "available":  true
+                             },
+    "-OxlpXNt8dD_hUvRio0X":  {
+                                 "base_price":  7.5,
+                                 "trackStock":  true,
+                                 "description":  "Espresso con un toque de leche espumada",
+                                 "createdAt":  1784321286531,
+                                 "name":  "Caf?? Macchiato",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.05
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  33,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  3,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321286531,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYChJhlmSDCixOIe":  {
+                                 "base_price":  15,
+                                 "trackStock":  true,
+                                 "description":  "Cremoso, dulce y helado",
+                                 "createdAt":  1784321289911,
+                                 "name":  "Milkshake de Oreo",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.2,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  49,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  7,
+                                 "category":  "Milkshakes",
+                                 "updatedAt":  1784321289911,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYuVLYRgrNY-40BK":  {
+                                 "base_price":  2,
+                                 "trackStock":  true,
+                                 "description":  "Adicional de pl??tanos fritos",
+                                 "createdAt":  1784321292778,
+                                 "name":  "Pl??tanos Fritos",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "827a5aa2-dd0e-4e5c-ab79-044b00ade7af":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  63,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  35,
+                                 "category":  "Adicionales",
+                                 "updatedAt":  1784321292778,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Oxg-3bAzTZeNMnvLASx":  {
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "description":  "Descripci??n del plato...",
+                                 "isWizard":  false,
+                                 "stock":  33,
+                                 "name":  "SALCHIPAPAS",
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  0,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "category":  "PIQUEOS",
+                                 "status":  "published",
+                                 "available":  false
+                             },
+    "-OxlpWR5y-uwKT3uPtt4":  {
+                                 "base_price":  16,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y menestra + papas fritas y ensalada",
+                                 "createdAt":  1784321282640,
+                                 "name":  "Pollo Saltado",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.1,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.15,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.005,
+                                                "d2ba30c4-5ada-4260-ac4a-e3e3272029d7":  0.01,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.15,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.05
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  14,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  16,
+                                 "category":  "Parrilla y Pollos",
+                                 "updatedAt":  1784321282640,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpY9VBXswi8dCOn8r":  {
+                                 "base_price":  15,
+                                 "trackStock":  true,
+                                 "description":  "Cremoso, dulce y helado",
+                                 "createdAt":  1784321289706,
+                                 "name":  "Milkshake de Fresa",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.2,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02,
+                                                "c15ad52a-813e-4575-9790-0dced32295d3":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  48,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  43,
+                                 "category":  "Milkshakes",
+                                 "updatedAt":  1784321289706,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYPWUm-n_92ml_4V":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de maracuy??",
+                                 "createdAt":  1784321290730,
+                                 "name":  "Maracuy?? 1L",
+                                 "recipe":  {
+                                                "3a6bfe2d-17b6-4c56-8d29-85f505cdd32b":  0.2,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.04
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  53,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321290730,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWEISyl7nz8mTAWx":  {
+                                 "base_price":  21,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y menestra + papas fritas y ensalada",
+                                 "createdAt":  1784321281821,
+                                 "name":  "Apanado de Res",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "39b75b6c-ed07-41d4-b29d-d65aa49336a4":  0.05,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.1,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "b1de9417-9cdf-415b-9016-2789c5b36770":  0.15,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  10,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  12,
+                                 "category":  "Carnes y Saltados",
+                                 "updatedAt":  1784321281821,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OvcCecc2OM2yLzppqQT":  {
+                                 "image":  "https://firebasestorage.googleapis.com/v0/b/house-menuapp.firebasestorage.app/o/branches%2Fmonteverde%2Fproduct-images%2F-OvcCecc2OM2yLzppqQT_1782012366671?alt=media\u0026token=45f5dbb1-200a-4181-9f1b-ae8dcddf15d8",
+                                 "isWizard":  true,
+                                 "description":  "arma, combina, disfruta!",
+                                 "category":  "Nuestras Expiencias",
+                                 "base_price":  13.5,
+                                 "trackStock":  true,
+                                 "name":  "Arma tu Men??",
+                                 "stock":  34,
+                                 "steps":  [
+                                               {
+                                                   "id":  "step_1782165121243_1",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782165125875_2",
+                                                                       "name":  "Ceviche de pota",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782165127088_3",
+                                                                       "name":  "Ensalada Fresca",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782165128017_4",
+                                                                       "name":  "Teque??os con queso",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353423869_1",
+                                                                       "name":  "Sopa de Pollo",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353429197_2",
+                                                                       "name":  "A lo pobre",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Entradas",
+                                                   "type":  "single"
+                                               },
+                                               {
+                                                   "id":  "step_1782165135095_5",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782165138483_6",
+                                                                       "name":  "Papas fritas",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782165139024_7",
+                                                                       "name":  "Menestra del d??a",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353508381_3",
+                                                                       "name":  "Camote sancochado",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353527237_4",
+                                                                       "name":  "Ensalada Fresca",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353538269_5",
+                                                                       "name":  "A lo pobre",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Acompa??amiento (inc. arroz)",
+                                                   "type":  "single"
+                                               },
+                                               {
+                                                   "id":  "step_1782353549678_7",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353559749_8",
+                                                                       "name":  "Pollo Plancha",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353568452_9",
+                                                                       "name":  "Pollo Saltado",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353575133_10",
+                                                                       "name":  "Chicharr??n de pollo",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353588740_11",
+                                                                       "name":  "Lomo Saltado",
+                                                                       "price":  3,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353608685_12",
+                                                                       "name":  "Chuleta de Cerdo",
+                                                                       "price":  3,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353622437_13",
+                                                                       "name":  "Milanesa de pollo",
+                                                                       "price":  3,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1782353634564_14",
+                                                                       "name":  "Chicharr??n de pescado",
+                                                                       "price":  3,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Proteina",
+                                                   "type":  "single"
+                                               }
+                                           ],
+                                 "available":  true
+                             },
+    "-OxYsriKqSHMwsqrRWvr":  {
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "description":  "Descripci??n del plato...",
+                                 "isWizard":  false,
+                                 "stock":  6,
+                                 "name":  "Nuevo Plato",
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  0,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "category":  "Nuestras Expiencias",
+                                 "status":  "published",
+                                 "available":  false
+                             },
+    "-OxlpXuWenGPkfCLSVCR":  {
+                                 "base_price":  5,
+                                 "trackStock":  true,
+                                 "description":  "Ligero y cremoso, naturalmente dulce",
+                                 "createdAt":  1784321288683,
+                                 "name":  "Jugo de Papaya 8oz",
+                                 "recipe":  {
+                                                "87117920-9569-4a01-839e-4830be7485b6":  0.2,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  43,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Jugos Naturales",
+                                 "updatedAt":  1784321288683,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlxgCtTnIeV9iTfnBX":  {
+                                 "base_price":  18,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y menestra + papas fritas y ensalada",
+                                 "createdAt":  1784323423989,
+                                 "name":  "Pollo Personal",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.1,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.15,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  999,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  39,
+                                 "category":  "Parrilla y Pollos",
+                                 "updatedAt":  1784323423989,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYeV-Th2JUx2_8j9":  {
+                                 "base_price":  2.5,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de jamaica",
+                                 "createdAt":  1784321291754,
+                                 "name":  "Jamaica 500ml",
+                                 "recipe":  {
+                                                "71aefb8d-2841-4601-8b13-4f114fe3c4c1":  0.03,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  58,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  1,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321291754,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpX7t6M2PaZ_UMJ6I":  {
+                                 "base_price":  30,
+                                 "trackStock":  true,
+                                 "description":  "Pescado frito con frejoles y sarsa criolla",
+                                 "createdAt":  1784321285507,
+                                 "name":  "Pescado Frito",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.05,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  1,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.15,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.005,
+                                                "a99cb490-c658-4409-9b0b-0fe6d1648123":  0.25,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.05
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  28,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  23,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321285507,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWNu7Ef-4rFgZu4T":  {
+                                 "base_price":  20,
+                                 "trackStock":  true,
+                                 "description":  "Arroz, papas fritas, huevo frito, pl??tanos fritos y bebida refrescante",
+                                 "createdAt":  1784321282436,
+                                 "name":  "Pechuga a la Plancha",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "1fa3bb4a-af92-4b45-9aaf-33dd0731337b":  0.2,
+                                                "7dc8ee1f-ab8f-4395-89fb-acf2afa373f5":  0.002,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "827a5aa2-dd0e-4e5c-ab79-044b00ade7af":  0.1,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  13,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  4,
+                                 "category":  "Parrilla y Pollos",
+                                 "updatedAt":  1784321282436,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ow9RXJRSf6DjufpwaoW":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "con arroz y menestra",
+                                 "category":  "Promos del D??a",
+                                 "stock":  26,
+                                 "base_price":  20,
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "1fa3bb4a-af92-4b45-9aaf-33dd0731337b":  0.15,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "39b75b6c-ed07-41d4-b29d-d65aa49336a4":  0.05,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.1,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.15,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1,
+                                                "ffde0625-5990-4b5f-832f-d9ebab3be03f":  0.05
+                                            },
+                                 "name":  "Milanesa de Pollo",
+                                 "trackStock":  true,
+                                 "available":  true
+                             },
+    "-OxlpVuVKTSoq5X5mqBa":  {
+                                 "base_price":  19,
+                                 "trackStock":  true,
+                                 "description":  "Ensalada fresca, papa, camote y huevo sancochado + refresco sin az??car",
+                                 "createdAt":  1784321280490,
+                                 "name":  "Pollo a la Plancha Fit",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "1fa3bb4a-af92-4b45-9aaf-33dd0731337b":  0.15,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "2155014c-316e-4425-9fba-7da52dfaaf1e":  0.01,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  0.5,
+                                                "60f48345-3270-43d9-8937-6ed46770c1f2":  0.15,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "ab1d3c89-7434-4c7d-a6df-e024ee932fa6":  0.03,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.002,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  4,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  40,
+                                 "category":  "Almuerzo Fit",
+                                 "updatedAt":  1784321280490,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Oxg-FP2vlsPO-P3dauV":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "CAFE",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  10,
+                                 "available":  false
+                             },
+    "-OxlpXeVYMoFLnTUQHWy":  {
+                                 "base_price":  10,
+                                 "trackStock":  true,
+                                 "description":  "2 caf??s pasados (promo)",
+                                 "createdAt":  1784321287658,
+                                 "name":  "2 Caf??s Pasados",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  38,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  4,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321287658,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXkuVCyAtcoZ0kLo":  {
+                                 "base_price":  9,
+                                 "trackStock":  true,
+                                 "description":  "Espresso con leche fr??a y hielo",
+                                 "createdAt":  1784321288068,
+                                 "name":  "Iced Latte",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  40,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  17,
+                                 "category":  "Bebidas Fr??as",
+                                 "updatedAt":  1784321288068,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYxhQuU-Ia4a8lUD":  {
+                                 "base_price":  3,
+                                 "trackStock":  true,
+                                 "description":  "Adicional de huevo y pl??tanos fritos",
+                                 "createdAt":  1784321292983,
+                                 "name":  "Huevo y Pl??tanos Fritos",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "827a5aa2-dd0e-4e5c-ab79-044b00ade7af":  0.15,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  64,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  46,
+                                 "category":  "Adicionales",
+                                 "updatedAt":  1784321292983,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpW_d7-3KEI4OWXNq":  {
+                                 "base_price":  16,
+                                 "trackStock":  true,
+                                 "description":  "100gr de chicharr??n de pollo con papas fritas y cremas",
+                                 "createdAt":  1784321283251,
+                                 "name":  "Chicharr??n de Pollo 100gr",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  0.5,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.002,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  17,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  30,
+                                 "category":  "Parrilla y Pollos",
+                                 "updatedAt":  1784321283251,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpY-tTB6o5-w7MNjN":  {
+                                 "base_price":  5,
+                                 "trackStock":  true,
+                                 "description":  "Suave, ligero y refrescante",
+                                 "createdAt":  1784321289091,
+                                 "name":  "Jugo de Mel??n 8oz",
+                                 "recipe":  {
+                                                "284d9415-792e-4b9d-b4df-9369e8ce7406":  0.25,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  45,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  44,
+                                 "category":  "Jugos Naturales",
+                                 "updatedAt":  1784321289091,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYFtW6QROH4-M8Vf":  {
+                                 "base_price":  2.5,
+                                 "trackStock":  true,
+                                 "description":  "Limonada natural",
+                                 "createdAt":  1784321290115,
+                                 "name":  "Limonada 500ml",
+                                 "recipe":  {
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  50,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321290115,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Oxg-N4ppm7hw3W6Kotx":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "BEBIDAS",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  36,
+                                 "available":  false
+                             },
+    "-OxlpYhhvjPwmmEQESgW":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de jamaica",
+                                 "createdAt":  1784321291959,
+                                 "name":  "Jamaica 1L",
+                                 "recipe":  {
+                                                "71aefb8d-2841-4601-8b13-4f114fe3c4c1":  0.06,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.04
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  59,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  5,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321291959,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ow9SKTfIpssT2lfMQdN":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "Trio de Pastas",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  17,
+                                 "available":  false
+                             },
+    "-OxlpXB6Yjf3qYQnyLhF":  {
+                                 "base_price":  5.5,
+                                 "trackStock":  true,
+                                 "description":  "Tradicional caf?? filtrado, arom??tico y ligero",
+                                 "createdAt":  1784321285713,
+                                 "name":  "Caf?? Pasado 8oz",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  29,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  1,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321285713,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpZ2sHhiLisX_bw0T":  {
+                                 "base_price":  2,
+                                 "trackStock":  true,
+                                 "description":  "Envase descartable para llevar",
+                                 "isWizard":  false,
+                                 "createdAt":  1784321293378,
+                                 "name":  "Descarte",
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  66,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  22,
+                                 "category":  "Adicionales",
+                                 "updatedAt":  1784321293378,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpY6ENEqc3LGspiLK":  {
+                                 "base_price":  8,
+                                 "trackStock":  true,
+                                 "description":  "Elige 3 sabores y crea tu combinaci??n",
+                                 "createdAt":  1784321289497,
+                                 "name":  "Jugo Surtido 8oz",
+                                 "recipe":  {
+                                                "284d9415-792e-4b9d-b4df-9369e8ce7406":  0.1,
+                                                "87117920-9569-4a01-839e-4830be7485b6":  0.1,
+                                                "88b0f8c2-73b4-47f5-a768-506116392012":  0.1,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  47,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  18,
+                                 "category":  "Jugos Naturales",
+                                 "updatedAt":  1784321289497,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWHVQbtKLFwcfy0D":  {
+                                 "base_price":  21,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y menestra + papas fritas y ensalada",
+                                 "createdAt":  1784321282026,
+                                 "name":  "Bisteck Frito",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "2034baad-2eec-45dd-ae92-5f86dca604a6":  0.15,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.1,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  11,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  27,
+                                 "category":  "Carnes y Saltados",
+                                 "updatedAt":  1784321282026,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ows7e7cpzlDYr5qV3HR":  {
+                                 "base_price":  30,
+                                 "status":  "published",
+                                 "description":  "Prueba del fix de save",
+                                 "createdAt":  1783353222877,
+                                 "name":  "Lomo Saltado E2E v2",
+                                 "minStock":  10,
+                                 "spicy":  false,
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  0,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  5,
+                                 "trackStock":  true,
+                                 "category":  "Sandwichs",
+                                 "updatedAt":  1783353222877,
+                                 "isWizard":  false,
+                                 "supplierId":  "sup-proveedor-local",
+                                 "glutenFree":  false,
+                                 "vegan":  false,
+                                 "available":  true
+                             },
+    "-OxlpXEJ3rnCsE72FqYO":  {
+                                 "base_price":  8,
+                                 "trackStock":  true,
+                                 "description":  "Tradicional caf?? filtrado, arom??tico y ligero",
+                                 "createdAt":  1784321285918,
+                                 "name":  "Caf?? Pasado 16oz",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  30,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  4,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321285918,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYZ5uC3VVbWhDI3j":  {
+                                 "base_price":  2.5,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de cebada",
+                                 "createdAt":  1784321291344,
+                                 "name":  "Cebada 500ml",
+                                 "recipe":  {
+                                                "31841d51-402c-4ef9-b44c-a988c53de0aa":  0.05,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  56,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  22,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321291344,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ow9SP4Iy6o-pIb3Agn7":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "Pollos",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  8,
+                                 "available":  false
+                             },
+    "-OxlpWstqL3OWmYUsL6-":  {
+                                 "base_price":  30,
+                                 "trackStock":  true,
+                                 "description":  "Ceviche mixto",
+                                 "createdAt":  1784321284483,
+                                 "name":  "Ceviche Mixto",
+                                 "recipe":  {
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "a99cb490-c658-4409-9b0b-0fe6d1648123":  0.1,
+                                                "acac92dd-bd60-4aaa-8dfb-c7353efa87b7":  0.1,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  23,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  38,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321284483,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXUIh5n-OmT2cT1Q":  {
+                                 "base_price":  8.5,
+                                 "trackStock":  true,
+                                 "description":  "Cl??sico italiano con espresso, leche vaporizada y espuma",
+                                 "createdAt":  1784321286941,
+                                 "name":  "Cappuccino",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  35,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  16,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321286941,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlxgMfzYtqYd9PORFd":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de carambola",
+                                 "createdAt":  1784323424616,
+                                 "name":  "Karambola 1L",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.04,
+                                                "d231419f-4dfc-4351-ba91-86baf689c038":  0.3
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  999,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  5,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784323424616,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpVktiUpafWx_K8JQ":  {
+                                 "base_price":  18,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y menestra del d??a + refresco",
+                                 "createdAt":  1784321279875,
+                                 "name":  "Pollo al Horno",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "7dc8ee1f-ab8f-4395-89fb-acf2afa373f5":  0.002,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "d5c58a0e-c452-4466-9bb5-a0a67a34a1fe":  0.002,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.005,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.2
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  1,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Opciones del D??a",
+                                 "updatedAt":  1784321279875,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ow9SN6ur9EeKNRQg903":  {
+                                 "base_price":  20,
+                                 "trackStock":  true,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "stock":  10,
+                                 "name":  "Ceviches",
+                                 "recipe":  {
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "a99cb490-c658-4409-9b0b-0fe6d1648123":  0.15,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "minStock":  10,
+                                 "steps":  [
+                                               {
+                                                   "id":  "step_1783274887993_1",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783274941330_2",
+                                                                       "name":  "Pota",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783274948018_3",
+                                                                       "name":  "Filete",
+                                                                       "price":  5,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783274952674_4",
+                                                                       "name":  "Congrio",
+                                                                       "price":  10,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783274957778_5",
+                                                                       "name":  "Mixto",
+                                                                       "price":  20,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Producto base",
+                                                   "type":  "single"
+                                               },
+                                               {
+                                                   "id":  "step_1783275068269_6",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783275129184_7",
+                                                                       "name":  "Mediano",
+                                                                       "price":  10,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783275136495_8",
+                                                                       "name":  "Grande",
+                                                                       "price":  10,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Tama??o",
+                                                   "type":  "single"
+                                               }
+                                           ],
+                                 "image":  "",
+                                 "category":  "Pescados",
+                                 "isWizard":  true,
+                                 "supplierId":  "sup-proveedor-local",
+                                 "available":  true
+                             },
+    "-OxlpWphBAS5pczd60RW":  {
+                                 "base_price":  30,
+                                 "trackStock":  true,
+                                 "description":  "Ceviche de congrio",
+                                 "createdAt":  1784321284279,
+                                 "name":  "Ceviche de Congrio",
+                                 "recipe":  {
+                                                "22fd301d-15e4-4fad-80b4-7a6901503df5":  0.2,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  22,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  10,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321284279,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXKhbgHQNKh9HCMb":  {
+                                 "base_price":  7,
+                                 "trackStock":  true,
+                                 "description":  "Espresso suavizado con agua caliente",
+                                 "createdAt":  1784321286327,
+                                 "name":  "Americano",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.005
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  32,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321286327,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpW1VSfbAv6Z64yqf":  {
+                                 "base_price":  24,
+                                 "trackStock":  true,
+                                 "description":  "Arroz, papas fritas, ensalada fresca, huevo frito, pl??tanos fritos y bebida refrescante",
+                                 "createdAt":  1784321281002,
+                                 "name":  "Chuleta de Chancho",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "7dc8ee1f-ab8f-4395-89fb-acf2afa373f5":  0.002,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "827a5aa2-dd0e-4e5c-ab79-044b00ade7af":  0.1,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "f829cb2c-d4c2-480f-84ba-59166d8b8c68":  0.2,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  6,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  31,
+                                 "category":  "Carnes y Saltados",
+                                 "updatedAt":  1784321281002,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYo67SwLINTD8f1c":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de manzana",
+                                 "createdAt":  1784321292369,
+                                 "name":  "Manzana 1L",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.04,
+                                                "ad8097f3-7bf4-4a13-a3c0-0c555f9a213d":  0.3
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  61,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  49,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321292369,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ow9Qf5wjd203yPe4TpB":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "con papa a la huancaina",
+                                 "category":  "Promos del D??a",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "supplierId":  "sup-proveedor-local",
+                                 "name":  "Tallarines Verdes con Pollo al Horno",
+                                 "minStock":  10,
+                                 "stock":  8,
+                                 "available":  true
+                             },
+    "-OxlpXhh3DsBVXzhAL8-":  {
+                                 "base_price":  6.5,
+                                 "trackStock":  true,
+                                 "description":  "Caf?? fr??o refrescante",
+                                 "createdAt":  1784321287863,
+                                 "name":  "Iced Coffee",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  39,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  7,
+                                 "category":  "Bebidas Fr??as",
+                                 "updatedAt":  1784321287863,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Oxg-PirfzP_T-A5S1Jz":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "CREMAS",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  1,
+                                 "available":  false
+                             },
+    "-OxlpYMI3u6PInOzqNm9":  {
+                                 "base_price":  2.5,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de maracuy??",
+                                 "createdAt":  1784321290525,
+                                 "name":  "Maracuy?? 500ml",
+                                 "recipe":  {
+                                                "3a6bfe2d-17b6-4c56-8d29-85f505cdd32b":  0.1,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  52,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  30,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321290525,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-Ow9STrii5xICln2qeI0":  {
+                                 "image":  "",
+                                 "isWizard":  false,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "category":  "Res",
+                                 "base_price":  0,
+                                 "trackStock":  true,
+                                 "name":  "Plato de Ejemplo",
+                                 "stock":  12,
+                                 "available":  false
+                             },
+    "-OxlpXR55NEOSujIQy2P":  {
+                                 "base_price":  8.5,
+                                 "trackStock":  true,
+                                 "description":  "Espresso con abundante leche cremosa",
+                                 "createdAt":  1784321286736,
+                                 "name":  "Caf?? Latte",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  34,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  6,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321286736,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpY35uDVJTQgbNHpq":  {
+                                 "base_price":  7,
+                                 "trackStock":  true,
+                                 "description":  "Suave, dulce y refrescante",
+                                 "createdAt":  1784321289296,
+                                 "name":  "Jugo de Fresa 8oz",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01,
+                                                "c15ad52a-813e-4575-9790-0dced32295d3":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  46,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  3,
+                                 "category":  "Jugos Naturales",
+                                 "updatedAt":  1784321289296,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWw53fy7WmTIaxG9":  {
+                                 "base_price":  35,
+                                 "trackStock":  true,
+                                 "description":  "Ceviche de filete + chicharr??n",
+                                 "createdAt":  1784321284688,
+                                 "name":  "Ceviche + Chicharr??n (Filete)",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "a99cb490-c658-4409-9b0b-0fe6d1648123":  0.15,
+                                                "acac92dd-bd60-4aaa-8dfb-c7353efa87b7":  0.1,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  24,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321284688,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWKh9ixEPqLqV99P":  {
+                                 "base_price":  24,
+                                 "trackStock":  true,
+                                 "description":  "Lomo saltado con adicionales",
+                                 "createdAt":  1784321282230,
+                                 "name":  "Lomo Saltado a lo Pobre",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.05,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "2034baad-2eec-45dd-ae92-5f86dca604a6":  0.2,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "827a5aa2-dd0e-4e5c-ab79-044b00ade7af":  0.1,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.005,
+                                                "d2ba30c4-5ada-4260-ac4a-e3e3272029d7":  0.01,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.05
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  12,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  6,
+                                 "category":  "Carnes y Saltados",
+                                 "updatedAt":  1784321282230,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpX1Vd_l4UjGHbUN7":  {
+                                 "base_price":  40,
+                                 "trackStock":  true,
+                                 "description":  "Ceviche mixto + chicharr??n",
+                                 "createdAt":  1784321285098,
+                                 "name":  "Ceviche + Chicharr??n (Mixto)",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "22fd301d-15e4-4fad-80b4-7a6901503df5":  0.1,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "a99cb490-c658-4409-9b0b-0fe6d1648123":  0.1,
+                                                "acac92dd-bd60-4aaa-8dfb-c7353efa87b7":  0.1,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  26,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  49,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321285098,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlxgT40VrVtsxoCf62":  {
+                                 "base_price":  40,
+                                 "trackStock":  true,
+                                 "description":  "Club Sandwich Cl??sico + Papas Fritas + 2 Milkshakes",
+                                 "createdAt":  1784323425026,
+                                 "name":  "Combo Club Sandwich",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.05,
+                                                "12ba06a2-d6b9-4de1-a1f3-f26d32b02710":  0.05,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "1fa3bb4a-af92-4b45-9aaf-33dd0731337b":  0.1,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.15,
+                                                "c15ad52a-813e-4575-9790-0dced32295d3":  0.15,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1,
+                                                "ffde0625-5990-4b5f-832f-d9ebab3be03f":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  999,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  28,
+                                 "category":  "Especiales",
+                                 "updatedAt":  1784323425026,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWzApJNXZ0-AVgAq":  {
+                                 "base_price":  40,
+                                 "trackStock":  true,
+                                 "description":  "Ceviche de congrio + chicharr??n",
+                                 "createdAt":  1784321284885,
+                                 "name":  "Ceviche + Chicharr??n (Congrio)",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.03,
+                                                "22fd301d-15e4-4fad-80b4-7a6901503df5":  0.15,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "acac92dd-bd60-4aaa-8dfb-c7353efa87b7":  0.1,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  25,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  22,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321284885,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXXD1tQum_0eAUq2":  {
+                                 "base_price":  9,
+                                 "trackStock":  true,
+                                 "description":  "Mezcla de caf??, chocolate y leche vaporizada",
+                                 "createdAt":  1784321287128,
+                                 "name":  "Caf?? Mocha",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.1,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  36,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  4,
+                                 "category":  "Bebidas Calientes",
+                                 "updatedAt":  1784321287128,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OwnW-hU2Vxp8KcHtHVs":  {
+                                 "base_price":  20,
+                                 "trackStock":  true,
+                                 "description":  "Edita o elimina este plato de ejemplo.",
+                                 "stock":  9,
+                                 "name":  "Chicharrones",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.05,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  1,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.2
+                                            },
+                                 "minStock":  10,
+                                 "steps":  [
+                                               {
+                                                   "id":  "step_1783274887993_1",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783274941330_2",
+                                                                       "name":  "Pota",
+                                                                       "price":  0,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783274948018_3",
+                                                                       "name":  "Filete",
+                                                                       "price":  5,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783274957778_5",
+                                                                       "name":  "Mixto",
+                                                                       "price":  10,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Producto base",
+                                                   "type":  "single"
+                                               },
+                                               {
+                                                   "id":  "step_1783275068269_6",
+                                                   "options":  [
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783275129184_7",
+                                                                       "name":  "Mediano",
+                                                                       "price":  10,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   },
+                                                                   {
+                                                                       "icon":  "????",
+                                                                       "id":  "opt_1783275136495_8",
+                                                                       "name":  "Grande",
+                                                                       "price":  10,
+                                                                       "stock":  0,
+                                                                       "trackStock":  false
+                                                                   }
+                                                               ],
+                                                   "title":  "Tama??o",
+                                                   "type":  "single"
+                                               }
+                                           ],
+                                 "image":  "",
+                                 "category":  "Pescados",
+                                 "isWizard":  true,
+                                 "supplierId":  "sup-proveedor-local",
+                                 "available":  true
+                             },
+    "-OxlpXxhau_oBRyadNh8":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante y ligeramente ??cido",
+                                 "createdAt":  1784321288887,
+                                 "name":  "Jugo de Pi??a 8oz",
+                                 "recipe":  {
+                                                "88b0f8c2-73b4-47f5-a768-506116392012":  0.2,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  44,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  40,
+                                 "category":  "Jugos Naturales",
+                                 "updatedAt":  1784321288887,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWg5nXGBMy70DNaN":  {
+                                 "base_price":  17,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y papas fritas",
+                                 "createdAt":  1784321283664,
+                                 "name":  "Pollo Saltado a lo Pobre",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "827a5aa2-dd0e-4e5c-ab79-044b00ade7af":  0.1,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "d2ba30c4-5ada-4260-ac4a-e3e3272029d7":  0.01,
+                                                "ede24418-9ebe-44e7-a817-74dfea953c65":  0.15,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.05
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  19,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  6,
+                                 "category":  "Parrilla y Pollos",
+                                 "updatedAt":  1784321283664,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpYbFyvyzh-OPjpr_":  {
+                                 "base_price":  6,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de cebada",
+                                 "createdAt":  1784321291546,
+                                 "name":  "Cebada 1L",
+                                 "recipe":  {
+                                                "31841d51-402c-4ef9-b44c-a988c53de0aa":  0.1,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.04
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  57,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  12,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784321291546,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpVxhfvgoswX8LZ2S":  {
+                                 "base_price":  19,
+                                 "trackStock":  true,
+                                 "description":  "Ensalada fresca, papa, camote y huevo sancochado + refresco sin az??car",
+                                 "createdAt":  1784321280695,
+                                 "name":  "Bisteck Frito Fit",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "2034baad-2eec-45dd-ae92-5f86dca604a6":  0.15,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "60f48345-3270-43d9-8937-6ed46770c1f2":  0.15,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "ab1d3c89-7434-4c7d-a6df-e024ee932fa6":  0.03,
+                                                "f8637c14-30a1-4034-bf43-c4c9e5310884":  1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  5,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  23,
+                                 "category":  "Almuerzo Fit",
+                                 "updatedAt":  1784321280695,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlxgJUxpCJ3jPhQF3j":  {
+                                 "base_price":  2.5,
+                                 "trackStock":  true,
+                                 "description":  "Refrescante de carambola",
+                                 "createdAt":  1784323424412,
+                                 "name":  "Karambola 500ml",
+                                 "recipe":  {
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.02,
+                                                "d231419f-4dfc-4351-ba91-86baf689c038":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  999,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  26,
+                                 "category":  "Bebidas Refrescantes",
+                                 "updatedAt":  1784323424412,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWmVDQO1mHm2_ufI":  {
+                                 "base_price":  25,
+                                 "trackStock":  true,
+                                 "description":  "Ceviche de filete de pescado",
+                                 "createdAt":  1784321284074,
+                                 "name":  "Ceviche de Filete",
+                                 "recipe":  {
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "a99cb490-c658-4409-9b0b-0fe6d1648123":  0.2,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  21,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  2,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321284074,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpVrJD9HUl3f_Afwo":  {
+                                 "base_price":  18,
+                                 "trackStock":  true,
+                                 "description":  "Papas fritas y arroz + refresco",
+                                 "createdAt":  1784321280286,
+                                 "name":  "Lomo Saltado",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.05,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "2034baad-2eec-45dd-ae92-5f86dca604a6":  0.15,
+                                                "72231f62-5da0-46ff-b880-41b7e3bcacce":  0.005,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.15,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.005,
+                                                "d2ba30c4-5ada-4260-ac4a-e3e3272029d7":  0.01,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.05
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  3,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  27,
+                                 "category":  "Opciones del D??a",
+                                 "updatedAt":  1784321280286,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWjIRLYgr5eVORYv":  {
+                                 "base_price":  20,
+                                 "trackStock":  true,
+                                 "description":  "Ceviche de pota",
+                                 "createdAt":  1784321283869,
+                                 "name":  "Ceviche de Pota",
+                                 "recipe":  {
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  3,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.01,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.02,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.01,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.15,
+                                                "acac92dd-bd60-4aaa-8dfb-c7353efa87b7":  0.2,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.003,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.1
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  20,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  23,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321283869,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpXrIVMRGrOF7VJY8":  {
+                                 "base_price":  9,
+                                 "trackStock":  true,
+                                 "description":  "Espresso caliente servido sobre helado",
+                                 "createdAt":  1784321288477,
+                                 "name":  "Affogato",
+                                 "recipe":  {
+                                                "3a648323-5aaa-4b6b-a1f9-005f50940216":  0.05,
+                                                "abc6e245-9dc2-4bed-8393-1b178a2e1edd":  0.01
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  42,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  4,
+                                 "category":  "Bebidas Fr??as",
+                                 "updatedAt":  1784321288477,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpWB5KogTiasOvU9M":  {
+                                 "base_price":  19,
+                                 "trackStock":  true,
+                                 "description":  "Arroz y menestra + papas fritas y ensalada",
+                                 "createdAt":  1784321281616,
+                                 "name":  "Filete de Chancho",
+                                 "recipe":  {
+                                                "050dab36-53ec-4c05-96e4-0aab8dbbe2bd":  0.03,
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.02,
+                                                "20d7ddf4-e357-4657-8595-cdb323947f31":  0.05,
+                                                "72362731-0c33-4d14-9aec-88fa3b0663b0":  0.1,
+                                                "8172720c-b557-42ec-98b9-d1de044ed964":  0.2,
+                                                "90aa31ce-1c3a-442c-87b4-175441235663":  0.2,
+                                                "f829cb2c-d4c2-480f-84ba-59166d8b8c68":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  9,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  5,
+                                 "category":  "Carnes y Saltados",
+                                 "updatedAt":  1784321281616,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             },
+    "-OxlpX4dLKFdof6ROXCd":  {
+                                 "base_price":  45,
+                                 "trackStock":  true,
+                                 "description":  "Combo especial ceviche + chicharr??n",
+                                 "createdAt":  1784321285299,
+                                 "name":  "Combo Ceviche + Chicharr??n",
+                                 "recipe":  {
+                                                "18ab448a-2fc5-4a2d-b18c-fdd8ed96d8f8":  0.05,
+                                                "22fd301d-15e4-4fad-80b4-7a6901503df5":  0.15,
+                                                "2331adcc-95c4-42a5-9dcf-8a7ee489e590":  4,
+                                                "2f8b6d8a-ac56-4a0d-9ed9-efa9d86ccfc9":  0.02,
+                                                "5c5083de-b569-4285-844e-534b1f17901a":  0.03,
+                                                "92b45e11-1ff2-4721-9905-18eb6f58a764":  0.02,
+                                                "92d040a7-c372-421d-a25a-deab648bd245":  0.2,
+                                                "a99cb490-c658-4409-9b0b-0fe6d1648123":  0.15,
+                                                "acac92dd-bd60-4aaa-8dfb-c7353efa87b7":  0.1,
+                                                "ea94c7a2-a165-4040-b633-a8e9ed858806":  0.005,
+                                                "fbe42114-464e-482d-94ee-7096586bd750":  0.15
+                                            },
+                                 "schedule":  {
+                                                  "enabled":  false,
+                                                  "end":  "22:00",
+                                                  "start":  "12:00"
+                                              },
+                                 "image":  "",
+                                 "sortOrder":  27,
+                                 "channels":  {
+                                                  "carta":  true,
+                                                  "delivery":  true,
+                                                  "kiosko":  true,
+                                                  "landing":  false
+                                              },
+                                 "stock":  35,
+                                 "category":  "Ceviches",
+                                 "updatedAt":  1784321285299,
+                                 "isWizard":  false,
+                                 "status":  "published",
+                                 "available":  true
+                             }
+}

@@ -12,6 +12,7 @@ function todayDayName(): string {
 
 interface ScheduleViewProps {
   uid: string;
+  branchId: string;
 }
 
 function formatMinutes(min: number) {
@@ -34,14 +35,14 @@ function weeklyTotal(schedule: Record<string, unknown> | null): number {
   return total;
 }
 
-export default function ScheduleView({ uid }: ScheduleViewProps) {
+export default function ScheduleView({ uid, branchId }: ScheduleViewProps) {
   const [state, setState] = useState<'loading' | 'empty' | 'error' | 'populated'>('loading');
   const [schedule, setSchedule] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!uid) { setState('error'); return; }
 
-    getSchedule(uid)
+    getSchedule(branchId, uid)
       .then((data) => {
         if (data) {
           setSchedule(data);

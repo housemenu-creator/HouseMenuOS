@@ -50,12 +50,16 @@ export default function AttendanceCard({ currentTime }: Props) {
   useEffect(() => {
     if (!activeBranchId || !user?.id) return;
     const today = todayISO();
-    const attRef = tenantRef(`employees/${user.id}/attendance/${today}`);
-    const unsubAtt = onValue(attRef, (snap) => setTodayAttendance(snap.val()));
-    getAttendanceHistory(activeBranchId, user.id)
-      .then((h) => setAttendanceHistory(h.slice(0, 5)))
-      .catch(() => {});
-    return () => { unsubAtt(); };
+    try {
+      const attRef = tenantRef(`employees/${user.id}/attendance/${today}`);
+      const unsubAtt = onValue(attRef, (snap) => setTodayAttendance(snap.val()), (err) => showToast('Error al cargar asistencia: ' + err.message, false));
+      getAttendanceHistory(activeBranchId, user.id)
+        .then((h) => setAttendanceHistory(h.slice(0, 5)))
+        .catch(() => {});
+      return () => { unsubAtt(); };
+    } catch (err: any) {
+      showToast('Error al conectar con asistencia', false);
+    }
   }, [activeBranchId, user?.id]);
 
   // ── Clock In / Out ──

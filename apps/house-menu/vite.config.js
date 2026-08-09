@@ -43,10 +43,16 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/firebase')) return 'firebase';
-          if (id.includes('node_modules/framer-motion')) return 'framer';
-          if (id.includes('node_modules/lucide-react')) return 'icons';
+          // These must share a chunk with React to prevent duplicate
+          // ReactSharedInternals. Vite/Rolldown inlines React source when
+          // these are in separate chunks, causing React error #310.
+          if (id.includes('framer-motion') || id.includes('lucide-react')) return 'vendor';
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) return 'vendor';
-          if (id.includes('kds/')) return 'kds';
+
+          // kds must share the SAME React instance as vendor. DO NOT create a
+          // separate kds chunk — Rolldown inlines ReactSharedInternals into
+          // each chunk, causing duplicate React instances and error #310.
+          // if (id.includes('kds/') && !id.includes('KioskMode')) return 'kds';
         }
       }
     }

@@ -4,18 +4,69 @@
 .cashier-theme {
   /* ── Core palette ── */
   --cashier-bg: #121212;
+  --cashier-bg-alt: #1E1E1E;
   --cashier-surface: #1B1B1B;
+  --cashier-surface-hover: #252525;
   --cashier-border: #343434;
+  --cashier-border-hover: #4A4A4A;
   --cashier-text: #F2F2F2;
   --cashier-text-secondary: #B8B8B8;
   --cashier-text-muted: #6B6B6B;
 
-  /* ── Status accents (only as accents, never full backgrounds) ── */
+  /* ── Status accents ── */
   --cashier-info: #3B82F6;
+  --cashier-info-soft: rgba(59, 130, 246, 0.12);
   --cashier-success: #22C55E;
+  --cashier-success-soft: rgba(34, 197, 94, 0.12);
   --cashier-warning: #F59E0B;
+  --cashier-warning-soft: rgba(245, 158, 11, 0.12);
   --cashier-error: #EF4444;
+  --cashier-error-soft: rgba(239, 68, 68, 0.12);
   --cashier-accent: #A855F7;
+  --cashier-accent-light: rgba(168, 85, 247, 0.15);
+  --cashier-accent-hover: #9333EA;
+
+  /* ── Shadows ── */
+  --cashier-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --cashier-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --cashier-shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+
+  /* ── Radii ── */
+  --cashier-radius-sm: 6px;
+  --cashier-radius-md: 8px;
+  --cashier-radius-lg: 12px;
+  --cashier-radius-xl: 16px;
+
+  /* ── Override cm-* CSS variables so Tailwind utility classes
+         (bg-cm-surface, text-cm-text, etc.) use cashier colors ── */
+  --cm-bg: var(--cashier-bg);
+  --cm-bg-alt: var(--cashier-bg-alt);
+  --cm-surface: var(--cashier-surface);
+  --cm-surface-hover: var(--cashier-surface-hover);
+  --cm-border: var(--cashier-border);
+  --cm-border-hover: var(--cashier-border-hover);
+  --cm-text: var(--cashier-text);
+  --cm-text-secondary: var(--cashier-text-secondary);
+  --cm-text-tertiary: var(--cashier-text-muted);
+  --cm-text-muted: var(--cashier-text-muted);
+  --cm-accent: var(--cashier-accent);
+  --cm-accent-light: var(--cashier-accent-light);
+  --cm-accent-hover: var(--cashier-accent-hover);
+  --cm-error: var(--cashier-error);
+  --cm-error-soft: var(--cashier-error-soft);
+  --cm-success: var(--cashier-success);
+  --cm-success-soft: var(--cashier-success-soft);
+  --cm-warning: var(--cashier-warning);
+  --cm-warning-soft: var(--cashier-warning-soft);
+  --cm-info: var(--cashier-info);
+  --cm-info-soft: var(--cashier-info-soft);
+  --cm-shadow-sm: var(--cashier-shadow-sm);
+  --cm-shadow-md: var(--cashier-shadow-md);
+  --cm-shadow-lg: var(--cashier-shadow-lg);
+  --cm-radius-sm: var(--cashier-radius-sm);
+  --cm-radius-md: var(--cashier-radius-md);
+  --cm-radius-lg: var(--cashier-radius-lg);
+  --cm-radius-xl: var(--cashier-radius-xl);
 
   /* ── LED Display ── */
   --cashier-display-bg: #0A0A0A;

@@ -21,7 +21,7 @@ export async function setIngredientPrice(branchId, ingredientId, supplierId, cos
   const ingRef = ref(db, `${LOG(branchId)}/ingredients/${ingredientId}`);
   const ingSnap = await get(ingRef);
   const ing = ingSnap.val();
-  if (ing && ing.supplierId === supplierId) {
+  if (ing && (ing.supplierIds?.includes(supplierId) || ing.supplierId === supplierId)) {
     await update(ingRef, { cost: Number(cost), updatedAt: nowISO() });
   }
 

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   LayoutDashboard, ClipboardList, UtensilsCrossed, Package, Store, Users,
   DollarSign, Truck, Receipt, TrendingUp, Megaphone, BarChart3, UserCircle,
-  Warehouse, LogOut, ChevronRight, Boxes, ShoppingBag, X
+  Warehouse, LogOut, ChevronRight, Boxes, ShoppingBag, X, Activity,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -49,6 +49,7 @@ const NAV_GROUPS = [
       { key: 'delivery',   label: 'Delivery',     icon: Truck },
       { key: 'fiscal',     label: 'Facturación',  icon: Receipt },
       { key: 'employees',  label: 'Personal',     icon: Package },
+      { key: 'pipeline',   label: 'Pipeline',     icon: Activity },
     ],
   },
 ];

@@ -1,0 +1,14 @@
+{
+  "eventType": "purchase_order.confirmed",
+  "description": "Proveedor confirma la OC",
+  "payload": {
+    "purchaseOrderId": "po_test_001",
+    "supplierId": "prov_dist_001",
+    "confirmedAt": "2026-07-12T16:00:00.000Z"
+  },
+  "context": {
+    "branchId": "test-branch",
+    "userEmail": "proveedor@distribuidora.com",
+    "userRole": "supplier"
+  }
+}

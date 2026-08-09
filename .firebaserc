@@ -1,0 +1,20 @@
+{
+  "projects": {
+    "default": "house-menuapp"
+  },
+  "targets": {
+    "house-menuapp": {
+      "hosting": {
+        "landing": [
+          "houseportalos"
+        ],
+        "house-menu": [
+          "house-menuapp"
+        ],
+        "portal-hub": [
+          "portal-hub-house-menuapp"
+        ]
+      }
+    }
+  }
+}

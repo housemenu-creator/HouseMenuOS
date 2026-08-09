@@ -4,7 +4,7 @@ import {
   X, Trash2, ShoppingCart, MapPin, Clock, CheckCircle, AlertTriangle,
   Navigation, User, Phone, Utensils, Coffee, Smartphone, Banknote,
   CreditCard, FileText, ChevronLeft, Package, ChevronDown, ChevronUp,
-  ArrowRight, Tag, Heart, Copy, Image, Clock4, Star,
+  ArrowRight, Tag, Heart, Copy, Image, Clock4, Star, Truck,
 } from 'lucide-react';
 import { useAppStore, appStore } from '@house/store';
 import { ordersService } from '../lib/ordersService';
@@ -18,6 +18,7 @@ import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { isEmail, isPhone, isTime, isRequired } from '@house/validation';
 import { marketingService } from '../lib/marketingService';
 import { getSessionId } from '@house/db';
+import { printOrderTicket, printReceipt } from '../lib/printTicket';
 
 /* ───────── Subcomponentes ───────── */
 
@@ -162,11 +163,12 @@ function PaymentSelector({ paymentMethod, setPaymentMethod }) {
     { key: 'yape_plin', label: 'Yape/Plin', icon: Smartphone },
     { key: 'efectivo', label: 'Efectivo', icon: Banknote },
     { key: 'pos', label: 'Tarjeta', icon: CreditCard },
+    { key: 'contraentrega', label: 'Contraentrega', icon: Truck },
   ];
   return (
     <div className="space-y-2">
       <label className="text-[10px] font-bold tracking-widest text-cm-text-secondary uppercase">3. Método de Pago</label>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {methods.map(method => {
           const Icon = method.icon;
           const isActive = paymentMethod === method.key;
@@ -714,7 +716,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
     const deliveryDate = cart[0]?.deliveryDate || new Date().toISOString().split('T')[0];
     const foodPackagingTotal = subtotalWithDiscount + totalPackaging;
     const foodPackagingIgvExcluded = foodPackagingTotal / 1.18;
-    const PM_LABELS = { yape_plin: 'Yape/Plin', efectivo: 'Efectivo', pos: 'Tarjeta (POS)', pendiente: 'Pendiente' };
+    const PM_LABELS = { yape_plin: 'Yape/Plin', efectivo: 'Efectivo', pos: 'Tarjeta (POS)', pendiente: 'Pendiente', contraentrega: 'Contraentrega' };
     const OT_LABELS = { mesa: 'Mesa', llevar: 'Para Llevar', delivery: 'Delivery' };
 
     const orderData = {
@@ -741,7 +743,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
         total: Number(total.toFixed(2)),
       },
       payment_method: PM_LABELS[paymentMethod] || 'Pendiente',
-      payment_status: paymentMethod === 'yape_plin' ? 'por_verificar' : (paymentMethod === 'pendiente' ? 'pendiente' : 'pagado'),
+      payment_status: paymentMethod === 'yape_plin' ? 'por_verificar' : (paymentMethod === 'pendiente' ? 'pendiente' : (paymentMethod === 'contraentrega' ? 'contraentrega' : 'pagado')),
       payment_details: paymentMethod === 'yape_plin' ? { operation_number: operationNumber.trim(), wallet_type: selectedWallet, voucher_uploaded: !!voucherUploaded, voucher_url: voucherUrl || null } : null,
       order_type: OT_LABELS[orderType] || 'Mesa',
       type: OT_LABELS[orderType] || 'Mesa',
@@ -780,6 +782,20 @@ export default function CartDrawer({ isOpen, onClose, onOrderComplete, initialMe
         console.warn("CRM post-order skipped:", crmErr);
       }
       trackPixel('Purchase', { value: total, currency: 'PEN' });
+
+      // ── Print tickets ──
+      orderData.id = result.orderId;
+      printOrderTicket(orderData, activeBranch?.name || activeBranchId)
+        .then(r => {
+          if (r.engine) console.log('Comanda impresa:', r.bytes, 'bytes');
+          else if (!r.success) console.warn('Print engine no disponible:', r.error);
+        });
+      if (paymentMethod !== 'yape_plin') {
+        printReceipt(orderData, activeBranch?.name || activeBranchId)
+          .then(r => {
+            if (r.engine) console.log('Boleta impresa:', r.bytes, 'bytes');
+          });
+      }
 
       // Save snapshot BEFORE clearing cart (OrderConfirmation needs the items)
       const cartSnapshot = [...cart];

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import KDSTicket from '../KDSTicket';
 import { PRIORITY } from '../../kdsTypes';
 
@@ -19,8 +19,16 @@ vi.mock('../../../lib/printTicket', () => ({
   printTicket: vi.fn(),
 }));
 
+vi.mock('../../../components/ConfirmDialog', () => ({
+  confirmDialog: vi.fn(() => Promise.resolve(true)),
+}));
+
 // Mock useTimerStore — return alertLevels (lo que KDSTicket realmente lee)
 const mockAlertLevels = {};
+vi.mock('../../../context/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'test-user', email: 'test@test.com', displayName: 'Test' } }),
+}));
+
 vi.mock('../../store/timerStore', () => ({
   default: (selector) => {
     const state = { alertLevels: mockAlertLevels, elapsed: {} };
@@ -103,11 +111,13 @@ describe('KDSTicket', () => {
     expect(screen.queryByText(/INICIAR PREPARACIÓN|MARCAR COMO LISTO/)).toBeNull();
   });
 
-  it('calls onUpdateStatus when action button is clicked', () => {
+  it('calls onUpdateStatus when action button is clicked', async () => {
     const onUpdateStatus = vi.fn();
     render(<KDSTicket order={makeOrder()} onUpdateStatus={onUpdateStatus} />);
     fireEvent.click(screen.getByText('INICIAR PREPARACIÓN'));
-    expect(onUpdateStatus).toHaveBeenCalledWith('ord-test-123', 'recibido');
+    await waitFor(() => {
+      expect(onUpdateStatus).toHaveBeenCalledWith('ord-test-123', 'recibido');
+    });
   });
 
   it('shows checkbox in bulk mode', () => {

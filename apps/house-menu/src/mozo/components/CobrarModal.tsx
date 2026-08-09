@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Loader2, DollarSign } from 'lucide-react';
 import { ordersService } from '../../lib/ordersService';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
+import { getMethodsForRole } from '../../lib/paymentMethods';
 import type { Order } from '../../worker/workerTypes';
 
 interface CobrarModalProps {
@@ -11,10 +12,20 @@ interface CobrarModalProps {
   onPaid: () => void;
 }
 
+const MOZO_METHODS = getMethodsForRole('mozo', false); // sin contraentrega — eso es delivery
+
 export default function CobrarModal({ order, onClose, onPaid }: CobrarModalProps) {
   const { activeBranchId } = useBranch();
   const { user } = useAuth();
-  const [method, setMethod] = useState('Efectivo');
+  const initialMethod = useMemo(() => {
+    // Try to match order.payment_method with a known method label
+    const pm = order.payment_method;
+    if (!pm) return MOZO_METHODS[0]?.label || 'Efectivo';
+    // Check if it matches any method's label
+    const match = MOZO_METHODS.find(m => m.label === pm);
+    return match?.label || MOZO_METHODS[0]?.label || 'Efectivo';
+  }, [order.payment_method]);
+  const [method, setMethod] = useState(initialMethod);
   const [loading, setLoading] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
@@ -40,11 +51,11 @@ export default function CobrarModal({ order, onClose, onPaid }: CobrarModalProps
             #{(order.id || '').slice(-4).toUpperCase()} — S/ {(order.financials?.total || 0).toFixed(2)}
           </p>
           <p className="text-xs font-semibold text-cm-text-secondary mb-3 uppercase tracking-wider">Método de pago</p>
-          <div className="grid grid-cols-3 gap-2 mb-5">
-            {['Efectivo', 'Yape/Plin', 'Tarjeta (POS)'].map((m) => (
-              <button key={m} onClick={() => setMethod(m)}
-                className={`py-3 rounded-xl text-xs font-semibold border transition-all ${method === m ? 'bg-cm-accent border-cm-accent text-white' : 'bg-cm-accent/5 border-cm-border text-cm-text-secondary'}`}>
-                {m}
+          <div className="grid grid-cols-2 gap-2 mb-5">
+            {MOZO_METHODS.map((m) => (
+              <button key={m.id} onClick={() => setMethod(m.label)}
+                className={`py-3 rounded-xl text-xs font-semibold border transition-all ${method === m.label ? 'bg-cm-accent border-cm-accent text-white' : 'bg-cm-accent/5 border-cm-border text-cm-text-secondary'}`}>
+                {m.label}
               </button>
             ))}
           </div>

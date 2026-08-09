@@ -7,10 +7,11 @@ const PAYMENT_METHODS = [
   { key: 'Efectivo', label: 'Efectivo' },
   { key: 'Yape/Plin', label: 'Yape / Plin' },
   { key: 'Tarjeta (POS)', label: 'Tarjeta (POS)' },
+  { key: 'Contraentrega', label: 'Contraentrega' },
 ];
 
 export default function CobrarModal({ isOpen, order, onClose, onConfirm, loading = false }) {
-  const [method, setMethod] = useState('Efectivo');
+  const [method, setMethod] = useState(order?.payment_method || 'Efectivo');
 
   const handleConfirm = () => {
     if (order) onConfirm(order.id, method);

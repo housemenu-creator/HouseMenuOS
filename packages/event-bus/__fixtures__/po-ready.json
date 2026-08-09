@@ -1,0 +1,14 @@
+{
+  "eventType": "purchase_order.ready",
+  "description": "Proveedor marca la OC como lista para recoger",
+  "payload": {
+    "purchaseOrderId": "po_test_001",
+    "supplierId": "prov_dist_001",
+    "readyAt": "2026-07-12T17:00:00.000Z"
+  },
+  "context": {
+    "branchId": "test-branch",
+    "userEmail": "proveedor@distribuidora.com",
+    "userRole": "supplier"
+  }
+}

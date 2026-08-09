@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, Globe, Lock, Bell, Bot, History, Activity, Loader2, CheckCircle2, AlertTriangle, Palette } from 'lucide-react';
 import { subscribeConfig, saveConfig } from './configService';
 import GeneralSection from './GeneralSection';
@@ -35,19 +36,26 @@ function Toast({ message, type, onClose }) {
     return () => clearTimeout(t);
   }, [message, onClose]);
 
-  if (!message) return null;
-
   return (
-    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-cm-lg text-xs font-medium animate-slide-up ${
-      type === 'success' ? 'bg-cm-success text-white' :
-      type === 'error' ? 'bg-cm-error text-white' :
-      'bg-cm-warning text-white'
-    }`}>
+    <AnimatePresence>
+      {message && (
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-cm-lg text-xs font-medium ${
+            type === 'success' ? 'bg-cm-success text-white' :
+            type === 'error' ? 'bg-cm-error text-white' :
+            'bg-cm-warning text-white'
+          }`}>
       {type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
        type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
        <AlertTriangle className="w-4 h-4 shrink-0" />}
       {message}
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -134,6 +142,14 @@ export default function SystemConfigTab() {
 
       {/* Content */}
       <div className="bg-cm-surface border border-cm-border rounded-xl p-5">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+          >
         {activeSection === 'general' && (
           <GeneralSection config={config} onSave={handleSave} saving={saving} />
         )}
@@ -152,6 +168,8 @@ export default function SystemConfigTab() {
         {activeSection === 'tasks' && <TasksSection />}
         {activeSection === 'audit' && <AuditSection />}
         {activeSection === 'health' && <HealthSection />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Toast notification */}

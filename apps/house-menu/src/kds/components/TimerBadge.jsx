@@ -42,7 +42,7 @@ export default function TimerBadge({ order, elapsedMs, className = '' }) {
 
   useEffect(() => {
     if (!startTs || order?.status === 'listo' || order?.status === 'entregado') {
-      return;
+      return undefined;
     }
 
     // Actualizar inmediatamente al montar/cambiar de orden

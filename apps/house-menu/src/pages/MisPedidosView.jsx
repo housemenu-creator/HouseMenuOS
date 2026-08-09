@@ -1,10 +1,42 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES, rastreoRoute } from '../lib/routes';
 import { Mail, Search, Clock, ShoppingBag, Store, FileDown, Navigation, RefreshCw, ArrowLeft, Loader2, Calendar, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '@house/store';
 import { findCustomerAndOrders } from '../lib/customerService';
+
+// ── AnimCounter ──────────────────────────────────────
+function AnimCounter({ value, duration = 500 }) {
+  const [display, setDisplay] = useState(0);
+  const prev = useRef(0);
+  const raf = useRef(null);
+
+  useEffect(() => {
+    if (value === prev.current) { setDisplay(value); return; }
+    const start = prev.current;
+    const startTime = performance.now();
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - (1 - progress) * (1 - progress);
+      setDisplay(Math.round(start + (value - start) * eased));
+      if (progress < 1) raf.current = requestAnimationFrame(animate);
+    };
+    raf.current = requestAnimationFrame(animate);
+    prev.current = value;
+    return () => raf.current && cancelAnimationFrame(raf.current);
+  }, [value, duration]);
+
+  return <>{display}</>;
+}
+
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const iv = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 22 } } };
+
+function SkeletonBlock({ className = '' }) {
+  return <div className={`bg-cm-border rounded-lg animate-pulse ${className}`} />;
+}
 
 const STATUS_LABELS = {
   recibido: { label: 'Recibido', class: 'bg-blue-500/10 text-blue-500' },
@@ -202,21 +234,46 @@ export default function MisPedidosView() {
           </div>
         )}
 
-        {/* Loading */}
+        {/* Loading skeleton */}
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
-          </div>
+          <motion.div variants={cv} initial="hidden" animate="show" className="space-y-3">
+            <motion.div variants={iv} className="bg-cm-surface rounded-xl border border-cm-border p-4 space-y-2">
+              <div className="flex justify-between">
+                <div className="space-y-2">
+                  <SkeletonBlock className="h-4 w-32" />
+                  <SkeletonBlock className="h-3 w-44" />
+                </div>
+                <div className="space-y-2 text-right">
+                  <SkeletonBlock className="h-4 w-20 ml-auto" />
+                  <SkeletonBlock className="h-3 w-14 ml-auto" />
+                </div>
+              </div>
+            </motion.div>
+            {[1,2,3].map((i) => (
+              <motion.div key={i} variants={iv} className="bg-cm-surface rounded-xl border border-cm-border p-4 space-y-3">
+                <div className="flex justify-between">
+                  <SkeletonBlock className="h-4 w-24" />
+                  <SkeletonBlock className="h-4 w-20" />
+                </div>
+                <SkeletonBlock className="h-3 w-36" />
+                <div className="flex gap-1">
+                  {[1,2].map(j => <SkeletonBlock key={j} className="h-5 w-16" />)}
+                </div>
+                <div className="flex justify-between pt-1 border-t border-cm-border/50">
+                  <SkeletonBlock className="h-3 w-10" />
+                  <SkeletonBlock className="h-4 w-16" />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         )}
 
         {/* Results */}
         {data && !loading && (
-          <>
+          <motion.div variants={cv} initial="hidden" animate="show" className="space-y-4">
             {/* Customer info */}
             {data.customer && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+              <motion.div variants={iv}
                 className="bg-cm-surface rounded-xl border border-cm-border p-4 space-y-2"
               >
                 <div className="flex items-center justify-between">
@@ -227,7 +284,9 @@ export default function MisPedidosView() {
                     <p className="text-xs text-cm-text-secondary">{data.customer.email}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-cm-accent">{data.orders.length} pedido{data.orders.length !== 1 ? 's' : ''}</p>
+                    <p className="text-xs font-bold text-cm-accent tabular-nums">
+                      <AnimCounter value={data.orders.length} /> pedido{data.orders.length !== 1 ? 's' : ''}
+                    </p>
                     <p className="text-[10px] text-cm-text-tertiary">
                       {data.customer.points || 0} puntos
                     </p>
@@ -239,20 +298,27 @@ export default function MisPedidosView() {
             {/* Order list */}
             {data.orders.length > 0 ? (
               <div className="space-y-3">
-                <h3 className="text-xs font-bold text-cm-text uppercase tracking-wider">
+                <motion.h3 variants={iv}
+                  className="text-xs font-bold text-cm-text uppercase tracking-wider">
                   Historial de pedidos
-                </h3>
+                </motion.h3>
+                <AnimatePresence mode="popLayout">
                 {data.orders.map(order => (
-                  <OrderCard
-                    key={`${order.branchId}-${order.id}`}
-                    order={order}
-                    onReorder={handleReorder}
-                    onTrack={handleTrack}
-                  />
+                  <motion.div key={`${order.branchId}-${order.id}`} layout
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}>
+                    <OrderCard
+                      order={order}
+                      onReorder={handleReorder}
+                      onTrack={handleTrack}
+                    />
+                  </motion.div>
                 ))}
+                </AnimatePresence>
               </div>
             ) : data.customer && (
-              <div className="text-center py-12 text-cm-text-tertiary">
+              <motion.div variants={iv}
+                className="text-center py-12 text-cm-text-tertiary">
                 <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-40" />
                 <p className="text-sm font-semibold">Todavía no tenés pedidos</p>
                 <p className="text-xs mt-1">Hacé tu primer pedido desde la carta</p>
@@ -262,11 +328,9 @@ export default function MisPedidosView() {
                 >
                   Ver Carta
                 </button>
-              </div>
+              </motion.div>
             )}
-
-            {/* Empty state (no customer found) - already handled by error */}
-          </>
+          </motion.div>
         )}
 
         {/* Initial state */}

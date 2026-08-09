@@ -1,0 +1,81 @@
+{
+  "-OxaosJAflOzBG-NRLMF": {
+    "contact": "Julio",
+    "createdAt": "2026-07-15T17:29:27.532Z",
+    "email": "julio@gmail.com",
+    "name": "Julio Sernaque",
+    "notes": "Proveedor de Verduras",
+    "phone": "969 948 803",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "K_vwztDdR3dJ09xa": {
+    "name": "Mercado Mayorista",
+    "contact": "Carlos",
+    "phone": "999 888 777",
+    "email": "mercado@mayorista.pe",
+    "notes": "Verduras, frutas y abarrotes",
+    "active": true,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "PgcXgmw6uVKh-R_V": {
+    "name": "Avícola El Pollón",
+    "contact": "Pedro",
+    "phone": "988 777 666",
+    "email": "pedro@avicola.pe",
+    "notes": "Pollo, huevos y menudencias",
+    "active": true,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "fimRT_tpWglNxUch": {
+    "name": "Carnes Don José",
+    "contact": "José",
+    "phone": "977 666 555",
+    "email": "jose@carnes.pe",
+    "notes": "Res, cerdo y embutidos",
+    "active": true,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "BC8LSEWFRzee50Zx": {
+    "name": "Pescados del Norte",
+    "contact": "Miguel",
+    "phone": "966 555 444",
+    "email": "miguel@pescados.pe",
+    "notes": "Pescados, pota y mariscos",
+    "active": true,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "DyNhTblwHOTOaxgj": {
+    "name": "Distribuidora San Miguel",
+    "contact": "Ana",
+    "phone": "955 444 333",
+    "email": "ana@sanmiguel.pe",
+    "notes": "Abarrotes, lácteos y condimentos",
+    "active": true,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "BOI0sZ-k25cO0JkH": {
+    "name": "Café Selva Alta",
+    "contact": "Juan",
+    "phone": "944 333 222",
+    "email": "juan@cafeselva.pe",
+    "notes": "Café en grano y bebidas calientes",
+    "active": true,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "x3Pms9v2u92ntyB1": {
+    "name": "Bebidas del Valle",
+    "contact": "Luis",
+    "phone": "933 222 111",
+    "email": "luis@bebidas.pe",
+    "notes": "Gaseosas, aguas y bebidas frías",
+    "active": true,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  }
+}

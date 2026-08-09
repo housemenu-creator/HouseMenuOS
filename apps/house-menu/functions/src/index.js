@@ -22,6 +22,14 @@ import { logger, config } from 'firebase-functions';
 import admin from 'firebase-admin';
 import { Resend } from 'resend';
 
+// ── Social Media Module ──────────────────────────────────────
+import {
+  socialPublishInstagram,
+  socialPublishFacebook,
+  socialDisconnect,
+  socialScheduler,
+} from './social/index.js';
+
 admin.initializeApp();
 
 const db = admin.database();

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CashierDisplay } from './CashierDisplay';
 import { OrderListItem } from './widgets';
 import { ShiftSummary } from './widgets';
@@ -6,6 +7,9 @@ import type { Order, CashSession, CatalogState, CatalogProduct, CartItem, OrderP
 import type { KPIs } from '../services/calculator';
 import type { CustomerResult } from '../hooks/useCustomerSearch';
 import { Search, X, Plus, Minus, Loader2, ShoppingCart } from 'lucide-react';
+import { confirmDialog } from '../../components/ConfirmDialog';
+import EditOrderModal from '../../components/EditOrderModal';
+import { ordersService } from '../../lib/ordersService';
 import '../../styles/cashier-theme.css';
 
 /* ── Lazy modals ── */
@@ -44,6 +48,7 @@ interface CashierUIProps {
   onRefund?: (orderId: string, itemIndices: number[], reason: string) => Promise<{ success: boolean }>;
   onTransfer: (orderId: string, targetTable: string) => Promise<void>;
   onVerify: (orderId: string) => Promise<{ success: boolean }>;
+  onPayContraentrega?: (orderId: string) => Promise<void>;
   onSplit: (orderId: string, splits: Array<{ name: string; items: number[]; method: string }>) => Promise<{ success: boolean }>;
   onOpenSession: (data: { openingBalance: number; openedBy: string; notes: string }) => Promise<{ success: boolean }>;
   onCloseSession: (sessionId: string, data: { closingBalance: number; expectedCash: number; closedBy: string; notes: string }) => Promise<{ success: boolean }>;
@@ -96,6 +101,33 @@ const modalFallback = (
   </div>
 );
 
+// ── AnimCounter ──
+function AnimCounter({ value, duration = 600, decimals = 2 }: { value: number; duration?: number; decimals?: number }) {
+  const [display, setDisplay] = useState(value);
+  useEffect(() => {
+    const start = performance.now();
+    const from = display;
+    let raf: number;
+    function tick(now: number) {
+      const t = Math.min((now - start) / duration, 1);
+      setDisplay(Number((from + (value - from) * t).toFixed(decimals)));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration, decimals]); // ponytail: simple rAF counter, no framer dependency
+  return <span>{display}</span>;
+}
+
+const cv = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.08 } },
+};
+const iv = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } },
+};
+
 /* ════════════════════════════════════════ */
 /*  MAIN COMPONENT                          */
 /* ════════════════════════════════════════ */
@@ -103,12 +135,17 @@ export function CashierUI({
   session, allSessions, orders, sessionOrders, filteredOrders, kpis, loading,
   searchQuery, setSearchQuery, userEmail, branchName, branchId, sessionDuration,
   onRefresh, onLogout,
-  modal, onPay, onCancel, onRefund, onTransfer, onVerify, onSplit,
+  modal, onPay, onCancel, onRefund, onTransfer, onVerify, onPayContraentrega, onSplit,
   onOpenSession, onCloseSession,
   catalogState, orderBuilder, handleCreateOrder, onOpenQuickPay,
   orderingMode, setOrderingMode, catalog, customerSearch, onHandleCreateOrder,
 }: CashierUIProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [sellerFilter, setSellerFilter] = useState('');
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -127,19 +164,68 @@ export function CashierUI({
   const handleTransfer = (o: Order) => { setSelectedOrder(o); modal.open('transferTable', { order: o }); };
   const handleVerify = (o: Order) => { setSelectedOrder(o); modal.open('verifyPayment', { order: o }); };
   const handleSplit = (o: Order) => { setSelectedOrder(o); modal.open('splitBill', { order: o }); };
+  const handleReceipt = (o: Order) => { setSelectedOrder(o); modal.open('receipt', { order: o }); };
   const handleOpenSession = () => modal.open('session', { action: 'open' });
   const handleCloseSession = () => modal.open('session', { action: 'close' });
 
+  const handleEditSave = async (items, total) => {
+    if (!editOrder || !branchId) return;
+    setSavingEdit(true);
+    try {
+      const subtotal = items.reduce((s, i) => s + Number(i.price || 0) * Number(i.quantity || 1), 0);
+      await ordersService.updateOrderItems(branchId, editOrder.id, {
+        items,
+        financials: { ...editOrder.financials, subtotal, total },
+        total,
+      }, userEmail);
+      setEditOrder(null);
+    } catch (e) {
+      console.error('Error al editar pedido:', e);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  // Unique sellers from orders
+  const uniqueSellers = useMemo(() => {
+    const names = new Set<string>();
+    orders.forEach(o => {
+      if (o.createdBy) names.add(o.createdBy);
+      if (o.collectedBy) names.add(o.collectedBy);
+      if (o.paidBy) names.add(o.paidBy);
+    });
+    return Array.from(names).sort();
+  }, [orders]);
+
   // Orders
   const displayOrders = useMemo(() => {
-    if (searchQuery) return filteredOrders;
-    if (session?.status === 'open') return sessionOrders;
-    return orders;
-  }, [searchQuery, filteredOrders, session, sessionOrders, orders]);
+    let list = (searchQuery ? filteredOrders : (session?.status === 'open' ? sessionOrders : orders));
+    // Date filter
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      list = list.filter(o => o.createdAt && new Date(o.createdAt) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      list = list.filter(o => o.createdAt && new Date(o.createdAt) <= to);
+    }
+    // Seller filter
+    if (sellerFilter) {
+      list = list.filter(o =>
+        o.createdBy === sellerFilter || o.collectedBy === sellerFilter || o.paidBy === sellerFilter
+      );
+    }
+    return list;
+  }, [searchQuery, filteredOrders, session, sessionOrders, orders, dateFrom, dateTo, sellerFilter]);
 
   const pendingOrders = displayOrders.filter(o =>
     o.status !== 'cancelado' && o.payment_status !== 'pagado' &&
-    o.payment_status !== 'reembolsado' && o.payment_status !== 'por_verificar'
+    o.payment_status !== 'reembolsado' && o.payment_status !== 'por_verificar' &&
+    o.payment_status !== 'contraentrega'
+  );
+  const contraentregaOrders = displayOrders.filter(o =>
+    o.status !== 'cancelado' && o.payment_status === 'contraentrega'
   );
   const paidOrders = displayOrders.filter(o => o.payment_status === 'pagado' && o.status !== 'cancelado');
   const cancelledOrders = displayOrders.filter(o => o.status === 'cancelado');
@@ -160,12 +246,12 @@ export function CashierUI({
   /* ── Loading ── */
   if (loading && orders.length === 0) {
     return (
-      <div className="cashier-theme min-h-screen bg-[var(--cashier-bg)] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="cashier-theme min-h-screen bg-[var(--cashier-bg)] flex items-center justify-center">
+        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }} className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-[var(--cashier-accent)] border-t-transparent rounded-full animate-spin" />
           <p className="text-sm font-bold text-[var(--cashier-text-secondary)] uppercase tracking-widest">Cargando caja...</p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -399,8 +485,34 @@ export function CashierUI({
             />
           ) : (
             <>
-              {/* Search (sticky within right column) */}
-              <div className="sticky top-20 z-30 bg-[var(--cashier-bg)] pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+              {/* Filters bar — date range + seller */}
+              <div className="sticky top-20 z-30 bg-[var(--cashier-bg)] pb-2 -mx-4 px-4 md:mx-0 md:px-0 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <label className="text-[9px] font-bold text-[var(--cashier-text-muted)] uppercase tracking-wider">Desde</label>
+                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                      className="w-32 bg-[var(--cashier-surface)] border border-[var(--cashier-border)] rounded-lg px-2 py-1.5 text-[10px] font-bold text-[var(--cashier-text)] focus:outline-none focus:border-[var(--cashier-accent)] [color-scheme:dark]" />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <label className="text-[9px] font-bold text-[var(--cashier-text-muted)] uppercase tracking-wider">Hasta</label>
+                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                      className="w-32 bg-[var(--cashier-surface)] border border-[var(--cashier-border)] rounded-lg px-2 py-1.5 text-[10px] font-bold text-[var(--cashier-text)] focus:outline-none focus:border-[var(--cashier-accent)] [color-scheme:dark]" />
+                  </div>
+                  {uniqueSellers.length > 0 && (
+                    <select value={sellerFilter} onChange={e => setSellerFilter(e.target.value)}
+                      className="bg-[var(--cashier-surface)] border border-[var(--cashier-border)] rounded-lg px-2 py-1.5 text-[10px] font-bold text-[var(--cashier-text)] focus:outline-none focus:border-[var(--cashier-accent)]">
+                      <option value="">Todos los vendedores</option>
+                      {uniqueSellers.map(s => <option key={s} value={s}>{s.split('@')[0]}</option>)}
+                    </select>
+                  )}
+                  {(dateFrom || dateTo || sellerFilter) && (
+                    <button onClick={() => { setDateFrom(''); setDateTo(''); setSellerFilter(''); }}
+                      className="text-[9px] font-bold text-[var(--cashier-text-muted)] hover:text-[var(--cashier-accent)] underline underline-offset-2">
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+                {/* Search */}
                 <div className="relative">
                   <input
                     type="text"
@@ -415,6 +527,21 @@ export function CashierUI({
                 </div>
               </div>
 
+              {/* Filtered summary */}
+              {(dateFrom || dateTo || sellerFilter) && displayOrders.length > 0 && (
+                <div className="flex items-center gap-3 px-3 py-2 bg-[var(--cashier-surface)] border border-[var(--cashier-border)] rounded-xl">
+                  <span className="text-[10px] font-bold text-[var(--cashier-text-muted)]">
+                    {displayOrders.length} orden{displayOrders.length !== 1 ? 'es' : ''}
+                  </span>
+                  <span className="text-[10px] font-black text-[var(--cashier-text)]">
+                    S/ {displayOrders.reduce((s, o) => s + (o.financials?.total || o.total || 0), 0).toFixed(2)}
+                  </span>
+                  <span className="text-[10px] font-bold text-[var(--cashier-text-muted)]">
+                    · S/ {(displayOrders.reduce((s, o) => s + (o.financials?.total || o.total || 0), 0) / Math.max(displayOrders.length, 1)).toFixed(2)} ticket prom.
+                  </span>
+                </div>
+              )}
+
               {/* Orders */}
               {displayOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-[var(--cashier-text-secondary)]">
@@ -427,10 +554,80 @@ export function CashierUI({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <motion.div variants={cv} initial="hidden" animate="show" className="space-y-4">
+                  {/* Contraentregas Pendientes de Conciliación */}
+                  {contraentregaOrders.length > 0 && (
+                    <motion.div variants={iv}>
+                      <div className="flex items-center justify-between mb-2 px-1">
+                        <h3 className="text-[11px] font-bold text-[var(--cashier-warning)] uppercase tracking-wider flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          Contraentregas · {contraentregaOrders.length}
+                        </h3>
+                        <span className="text-[9px] font-bold text-[var(--cashier-text-muted)]">
+                          S/ {contraentregaOrders.reduce((s, o) => s + (o.financials?.total || 0), 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <AnimatePresence mode="popLayout">
+                      <div className="space-y-2">
+                        {contraentregaOrders.map(order => (
+                          <motion.div key={order.id} layout variants={iv} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.95 }}>
+                          <div className="bg-[var(--cashier-warning)]/10 border border-[var(--cashier-warning)]/30 rounded-xl p-4 space-y-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-[var(--cashier-warning)] uppercase tracking-wider">Contraentrega pendiente</p>
+                                <p className="font-black text-[var(--cashier-text)] text-lg mt-0.5">#{order.shortCode || (order.id || '').slice(-4).toUpperCase()}</p>
+                                <p className="text-sm text-[var(--cashier-text-secondary)] mt-1">{order.customerName}</p>
+                                <p className="text-xs text-[var(--cashier-text-muted)] mt-0.5">{order.location}</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-xl font-black text-[var(--cashier-warning)]">S/ {(order.financials?.total || order.total || 0).toFixed(2)}</p>
+                                <p className="text-[9px] text-[var(--cashier-text-muted)] mt-0.5">
+                                  {order.status === 'entregado' ? 'Entregado — sin cobrar' : order.status === 'en_camino' ? 'En ruta' : order.status}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 pt-1">
+                              {order.collectedBy ? (
+                                <button onClick={async () => {
+                                  const ok = await confirmDialog(`¿Confirmar pago contraentrega de S/ ${(order.financials?.total || order.total || 0).toFixed(2)}?`, 'Confirmar Pago');
+                                  if (!ok) return;
+                                  onPayContraentrega?.(order.id);
+                                }}
+                                  className="flex-1 py-2.5 rounded-xl font-black text-sm bg-[var(--cashier-success)] text-white hover:brightness-110 transition-colors">
+                                  CONFIRMAR PAGO
+                                </button>
+                              ) : (
+                                <button onClick={async () => {
+                                  const ok = await confirmDialog(`¿Cobrar contraentrega de S/ ${(order.financials?.total || order.total || 0).toFixed(2)}?`, 'Cobrar Contraentrega');
+                                  if (!ok) return;
+                                  onPayContraentrega?.(order.id);
+                                }}
+                                  className="flex-1 py-2.5 rounded-xl font-black text-sm bg-[var(--cashier-warning)] text-white hover:brightness-110 transition-colors">
+                                  COBRAR CONTRAENTREGA
+                                </button>
+                              )}
+                            </div>
+                            {order.collectedBy && (
+                              <p className="text-[9px] text-[var(--cashier-success)] font-semibold flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Cobrado por: {order.collectedByName || order.collectedBy} · {order.collectedAt ? new Date(order.collectedAt).toLocaleString('es-PE') : '—'}
+                              </p>
+                            )}
+                          </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+
                   {/* Pending orders */}
                   {pendingOrders.length > 0 && (
-                    <div>
+                    <motion.div variants={iv}>
                       <div className="flex items-center justify-between mb-2 px-1">
                         <h3 className="text-[11px] font-bold text-[var(--cashier-warning)] uppercase tracking-wider">
                         ⚡ Pendientes · {pendingOrders.length}
@@ -439,24 +636,30 @@ export function CashierUI({
                           S/ {pendingOrders.reduce((s, o) => s + (o.financials?.total || 0), 0).toFixed(2)}
                         </span>
                       </div>
+                      <AnimatePresence mode="popLayout">
                       <div className="space-y-2">
                         {pendingOrders.map(order => (
+                          <motion.div key={order.id} layout variants={iv} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.95 }}>
                           <OrderListItem
-                            key={order.id} order={order}
+                            order={order}
                             onQuickPay={() => handleQuickPay(order)}
                             onCancel={() => handleCancel(order)}
                             onTransfer={() => handleTransfer(order)}
                             onVerify={() => handleVerify(order)}
                             onSplit={() => handleSplit(order)}
+                            onEdit={() => setEditOrder(order)}
+                            onReceipt={() => handleReceipt(order)}
                           />
+                          </motion.div>
                         ))}
                       </div>
-                    </div>
+                      </AnimatePresence>
+                    </motion.div>
                   )}
 
                   {/* Paid orders (compact) */}
                   {paidOrders.length > 0 && (
-                    <div>
+                    <motion.div variants={iv}>
                       <div className="flex items-center justify-between mb-2 px-1">
                         <h3 className="text-[11px] font-bold text-[var(--cashier-success)] uppercase tracking-wider">
                         ✓ Pagadas · {paidOrders.length}
@@ -465,23 +668,29 @@ export function CashierUI({
                           S/ {paidOrders.reduce((s, o) => s + (o.financials?.total || 0), 0).toFixed(2)}
                         </span>
                       </div>
+                      <AnimatePresence mode="popLayout">
                       <div className="space-y-1.5">
                         {paidOrders.map(order => (
+                          <motion.div key={order.id} layout variants={iv} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.95 }}>
                           <OrderListItem
-                            key={order.id} order={order}
+                            order={order}
                             onQuickPay={() => handleQuickPay(order)}
                             onCancel={() => handleCancel(order)}
                             onTransfer={() => handleTransfer(order)}
                             onVerify={() => handleVerify(order)}
                             onSplit={() => handleSplit(order)}
+                            onReceipt={() => handleReceipt(order)}
                           />
+                          </motion.div>
                         ))}
                       </div>
-                    </div>
+                      </AnimatePresence>
+                    </motion.div>
                   )}
 
                   {/* Cancelled (collapsed) */}
                   {cancelledOrders.length > 0 && (
+                    <motion.div variants={iv}>
                     <details className="group">
                       <summary className="text-[10px] font-bold text-[var(--cashier-text-muted)] cursor-pointer hover:text-[var(--cashier-text-secondary)] transition-colors list-none flex items-center gap-1.5 px-1 py-1">
                         <svg className="w-3 h-3 group-open:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -502,14 +711,15 @@ export function CashierUI({
                         ))}
                       </div>
                     </details>
+                    </motion.div>
                   )}
 
                   {/* Summary */}
-                  <p className="text-[10px] font-bold text-[var(--cashier-text-muted)] text-center pt-1">
+                  <motion.p variants={iv} className="text-[10px] font-bold text-[var(--cashier-text-muted)] text-center pt-1">
                     {displayOrders.length} orden{displayOrders.length !== 1 ? 'es' : ''}
                     {session?.status === 'open' ? ' en esta sesión' : ''}
-                  </p>
-                </div>
+                  </motion.p>
+                </motion.div>
               )}
             </>
           )}
@@ -542,6 +752,14 @@ export function CashierUI({
           />
         )}
       </Suspense>
+
+      <EditOrderModal
+        isOpen={!!editOrder}
+        order={editOrder}
+        onClose={() => setEditOrder(null)}
+        onSave={handleEditSave}
+        saving={savingEdit}
+      />
     </div>
   );
 }
@@ -575,7 +793,7 @@ function KpiCardSmall({ icon, label, value, color }: { icon: string; label: stri
       </div>
       <div className="min-w-0">
         <p className="text-[9px] font-bold text-[var(--cashier-text-secondary)] uppercase tracking-wider">{label}</p>
-        <p className={`text-sm font-mono font-black ${colorMap[color] || 'text-[var(--cashier-text)]'}`}>S/ {value.toFixed(2)}</p>
+        <p className={`text-sm font-mono font-black ${colorMap[color] || 'text-[var(--cashier-text)]'}`}>S/ <AnimCounter value={value} duration={800} /></p>
       </div>
     </div>
   );

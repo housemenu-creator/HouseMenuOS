@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard, UtensilsCrossed, MapPin, ClipboardList,
-  DollarSign, Truck, Bike, Plus, QrCode, BarChart3, ChevronRight, LucideIcon
+  DollarSign, Truck, Bike, Plus, QrCode, BarChart3, ChevronRight, ShoppingCart, LucideIcon
 } from 'lucide-react';
 import { ROUTES, STAFF_ROUTES } from '../../../lib/routes';
 
@@ -42,6 +43,15 @@ const QUICK_LINKS: QuickLink[] = [
     roles: ['delivery', 'vendedor', 'cajero'],
     accent: 'from-blue-500 to-indigo-600',
     description: 'Historial personal',
+  },
+  {
+    id: 'prepedidos',
+    label: 'Pre-pedidos',
+    icon: ShoppingCart,
+    path: STAFF_ROUTES.PREPEDIDOS,
+    roles: ['kitchen', 'admin', 'superadmin'],
+    accent: 'from-orange-500 to-amber-600',
+    description: 'Pedir insumos',
   },
   {
     id: 'rastrear',
@@ -119,12 +129,13 @@ export default function QuickAccess({ userRole }: Props) {
           {available.length} disponible{available.length !== 1 ? 's' : ''}
         </span>
       </div>
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-        {available.map(link => {
+      <motion.div initial="hidden" animate="show" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.03 } } }} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+        {available.map((link, i) => {
           const Icon = link.icon;
           return (
-            <button
+            <motion.button
               key={link.id}
+              variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.25 } } }}
               onClick={() => navigate(link.path)}
               className="group flex flex-col items-center gap-1.5 p-3 rounded-xl bg-cm-surface border border-cm-border hover:border-cm-accent/40 hover:shadow-cm-sm transition-all duration-200 active:scale-[0.97]"
             >
@@ -139,10 +150,10 @@ export default function QuickAccess({ userRole }: Props) {
                   {link.description}
                 </span>
               )}
-            </button>
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

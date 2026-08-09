@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ordersService } from '../lib/ordersService';
 import { deliveryService } from '../lib/deliveryService';
-import { Truck, Package, Star, UtensilsCrossed, Loader2, Map, ChevronDown, ChevronUp } from 'lucide-react';
+import { Truck, Package, Star, UtensilsCrossed, Loader2, Map, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { playBeep } from '../lib/notificationSound';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/ToastContext';
@@ -26,6 +27,13 @@ import NotificationBell from '../components/NotificationBell';
 import { createNotification } from '../lib/notificationService';
 import { useFCM } from '../hooks/useFCM';
 
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const iv = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 22 } } };
+
+function SkeletonBlock({ className = '' }) {
+  return <div className={`bg-cm-border rounded-lg animate-pulse ${className}`} />;
+}
+
 export default function DispatchView() {
   const navigate = useNavigate();
   const { activeBranchId, activeBranch, setActiveBranchId } = useBranch();
@@ -35,6 +43,7 @@ export default function DispatchView() {
   const [showDriverAssign, setShowDriverAssign] = useState(null);
   const [confirmingOrder, setConfirmingOrder] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
+  const [error, setError] = useState(null);
 
   useOrderSync({ branchId: activeBranchId });
   useDrivers(activeBranchId);
@@ -51,6 +60,10 @@ export default function DispatchView() {
   const [showLocalOrders, setShowLocalOrders] = useState(true);
   const [showMap, setShowMap] = useState(true);
   const [focusedDriverId, setFocusedDriverId] = useState(null);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+  }, []);
 
   // Sound notification when new orders arrive
   const prevListosCount = useRef(0);
@@ -107,6 +120,8 @@ export default function DispatchView() {
   };
 
   const handleUnassignDriver = async (order) => {
+    const ok = await confirmDialog(`¿Desasignar repartidor de #${(order.id || '').slice(-4).toUpperCase()}?`, 'Desasignar Repartidor');
+    if (!ok) return;
     setLoadingId(order.id);
     const result = await deliveryService.unassignDriver(activeBranchId, order.id);
     setLoadingId(null);
@@ -114,6 +129,19 @@ export default function DispatchView() {
       showToast(`Repartidor desasignado de #${(order.id || '').slice(-4).toUpperCase()}`);
     } else {
       showToast('Error al desasignar.', 'error');
+    }
+  };
+
+  const handleVerifyPayment = async (order) => {
+    const ok = await confirmDialog(`¿Verificar pago de #${(order.id || '').slice(-4).toUpperCase()}?`, 'Verificar Pago');
+    if (!ok) return;
+    setLoadingId(order.id);
+    const result = await ordersService.confirmPayment(activeBranchId, order.id, user?.email);
+    setLoadingId(null);
+    if (result.success) {
+      showToast(`✓ Pago verificado — #${(order.id || '').slice(-4).toUpperCase()}`);
+    } else {
+      showToast('Error al verificar pago.', 'error');
     }
   };
 
@@ -283,19 +311,49 @@ export default function DispatchView() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 space-y-4 bg-cm-bg">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
-          </div>
+        {error ? (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center py-20 gap-4">
+            <AlertCircle className="w-10 h-10 text-cm-error" />
+            <p className="text-sm font-bold text-cm-error text-center max-w-sm">{error}</p>
+            <button onClick={handleRetry}
+              className="px-5 py-2.5 text-xs font-black bg-cm-accent text-white rounded-xl hover:brightness-110 transition-all tracking-wider uppercase">
+              Reintentar
+            </button>
+          </motion.div>
+        ) : isLoading ? (
+          <motion.div variants={cv} initial="hidden" animate="show" className="space-y-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[1,2,3,4].map((i) => (
+                <motion.div key={i} variants={iv} className="bg-cm-surface border border-cm-border rounded-xl p-4 space-y-2">
+                  <SkeletonBlock className="h-4 w-16" />
+                  <SkeletonBlock className="h-7 w-12" />
+                </motion.div>
+              ))}
+            </div>
+            <motion.div variants={iv} className="bg-cm-surface border border-cm-border rounded-xl p-4">
+              <SkeletonBlock className="h-4 w-32 mb-3" />
+              <div className="flex gap-2">
+                {[1,2,3].map((i) => <SkeletonBlock key={i} className="h-14 w-[140px] shrink-0" />)}
+              </div>
+            </motion.div>
+            <motion.div variants={iv} className="bg-cm-surface border border-cm-border rounded-xl p-4">
+              <SkeletonBlock className="h-12 w-48 mb-3" />
+              <SkeletonBlock className="h-24 w-full" />
+            </motion.div>
+          </motion.div>
         ) : (
-          <>
+          <motion.div variants={cv} initial="hidden" animate="show" className="space-y-4">
+        <motion.div variants={iv}>
         <DriverStatusBoard
           drivers={drivers}
           driverFilter={driverFilter}
           loading={false}
           onFilterChange={setDriverFilter}
         />
+        </motion.div>
 
+        <motion.div variants={iv}>
         <AnimatePresence mode="popLayout">
           {currentOrders.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -311,11 +369,13 @@ export default function DispatchView() {
                 onAssignDriver={handleTake}
                 onConfirmDelivery={(o) => setConfirmingOrder(o)}
                 onUnassignDriver={handleUnassignDriver}
+                onVerifyPayment={handleVerifyPayment}
               />
             ))
           )}
         </AnimatePresence>
-        </>
+        </motion.div>
+        </motion.div>
         )}
       </div>
 
@@ -328,6 +388,7 @@ export default function DispatchView() {
 
       <ConfirmDeliveryModal
         order={confirmingOrder}
+        branchId={activeBranchId}
         loading={loadingId === confirmingOrder?.id}
         onConfirm={handleDeliverConfirm}
         onClose={() => setConfirmingOrder(null)}

@@ -12,6 +12,11 @@
     "./src/components/Badge": "./src/components/Badge.jsx",
     "./src/components/Input": "./src/components/Input.jsx",
     "./src/components/Modal": "./src/components/Modal.jsx",
+    "./src/components/AnimatedCounter": "./src/components/AnimatedCounter.jsx",
+    "./src/components/EmptyState": "./src/components/EmptyState.jsx",
+    "./src/components/ErrorBanner": "./src/components/ErrorBanner.jsx",
+    "./src/components/SearchInput": "./src/components/SearchInput.jsx",
+    "./src/components/Table": "./src/components/Table.jsx",
     "./lib/utils": "./lib/utils.js"
   },
   "peerDependencies": {

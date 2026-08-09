@@ -30,11 +30,13 @@ const ControlCenterView = lazy(() => import('./pages/ControlCenterView'));
 const EmpleadosView = lazy(() => import('./staff/empleados/EmpleadosView'));
 const WorkerDashboard = lazy(() => import('./worker/components/WorkerDashboard'));
 const DashboardRedirect = lazy(() => import('./worker/components/DashboardRedirect'));
-const KioskMode = lazy(() => import('./kds/components/KioskMode'));
+const PrepedidosView = lazy(() => import('./worker/components/PrepedidosView'));
+import KioskMode from './kds/components/KioskMode';
 const MonitorView = lazy(() => import('./pages/MonitorView'));
 const ReservaView = lazy(() => import('./pages/ReservaView'));
 const MisPedidosView = lazy(() => import('./pages/MisPedidosView'));
 const CustomerProfileView = lazy(() => import('./pages/CustomerProfileView'));
+const EmpleadosPortal = lazy(() => import('./empleados/EmpleadosPortal'));
 
 // ── Capturar referido desde URL al cargar la app ──
 import { captureReferralFromURL } from './lib/customerService';
@@ -120,6 +122,9 @@ export default function App() {
                 {/* Carta pública sin sidebar */}
                 <Route path="/carta" element={<SuspenseBoundary message="Error en la vista de cliente"><CustomerView /></SuspenseBoundary>} />
 
+                {/* ── Portal Empleados (PIN auth propio, layout propio) ── */}
+                <Route path="/empleados" element={<SuspenseBoundary message="Error en portal empleados"><EmpleadosPortal /></SuspenseBoundary>} />
+
                 {/* ── Zona Staff (sin sidebar, con WorkerShell) ── */}
                 <Route path="/staff" element={<StaffGuard><WorkerShell /></StaffGuard>}>
                   {/* Redirige al dashboard específico del rol */}
@@ -136,6 +141,11 @@ export default function App() {
                   <Route path="cocina" element={
                     <AuthGuard requirePermission="orders:read">
                       <SuspenseBoundary message="Error en el KDS"><KitchenView /></SuspenseBoundary>
+                    </AuthGuard>
+                  } />
+                  <Route path="prepedidos" element={
+                    <AuthGuard requirePermission="orders:read">
+                      <SuspenseBoundary message="Error en pre-pedidos"><PrepedidosView /></SuspenseBoundary>
                     </AuthGuard>
                   } />
                   <Route path="despacho" element={

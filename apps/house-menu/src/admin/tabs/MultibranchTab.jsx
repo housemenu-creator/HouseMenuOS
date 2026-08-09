@@ -52,14 +52,14 @@ export default function MultibranchTab({ branches, activeBranchId }) {
             <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Origen</label>
             <select value={cloneSource} onChange={e => setCloneSource(e.target.value)} className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors">
               <option value="">Seleccionar origen</option>
-              {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {branches.map(b => <option key={b.id} value={b.id}>{b.name || b.id}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Destino</label>
             <select value={cloneTarget} onChange={e => setCloneTarget(e.target.value)} className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent transition-colors">
               <option value="">Seleccionar destino</option>
-              {otherBranches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {otherBranches.map(b => <option key={b.id} value={b.id}>{b.name || b.id}</option>)}
             </select>
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function MultibranchTab({ branches, activeBranchId }) {
             <div key={b.id} className="flex items-center justify-between py-2 border-b border-cm-border last:border-0">
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${b.id === activeBranchId ? 'bg-cm-success' : 'bg-cm-text-tertiary'}`} />
-                <span className="text-sm font-semibold text-cm-text">{b.name}</span>
+                <span className="text-sm font-semibold text-cm-text">{b.name || b.id}</span>
                 {b.id === activeBranchId && <span className="text-[0.55rem] font-semibold bg-cm-accent/10 text-cm-accent px-1.5 py-0.5 rounded uppercase tracking-wider">Actual</span>}
               </div>
               <span className="text-xs text-cm-text-secondary font-mono">{b.id}</span>

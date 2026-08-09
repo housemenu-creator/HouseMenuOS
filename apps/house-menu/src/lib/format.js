@@ -6,7 +6,11 @@ export function formatCurrency(amount) {
   return `${CURRENCY}${num.toFixed(2)}`;
 }
 
-export function formatOrderId(id) {
+export function formatOrderId(orderOrId) {
+  if (!orderOrId) return '#----';
+  // Si tiene displayId (nuevo formato secuencial tipo #MON-042), usarlo
+  if (typeof orderOrId === 'object' && orderOrId.displayId) return orderOrId.displayId;
+  const id = typeof orderOrId === 'object' ? orderOrId.id : orderOrId;
   if (!id) return '#----';
   return `#${String(id).slice(-4).toUpperCase()}`;
 }

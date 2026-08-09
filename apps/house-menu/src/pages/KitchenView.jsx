@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Reorder } from 'framer-motion';
 import { ordersService } from '../lib/ordersService';
-import { History, BellRing, UtensilsCrossed, ListChecks, Search, FilterX, CheckCircle, Package, Boxes } from 'lucide-react';
+import { History, BellRing, UtensilsCrossed, ListChecks, Search, FilterX, CheckCircle, Package, Boxes, Printer, PrinterCheck, Wifi, WifiOff } from 'lucide-react';
 import { KDSSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
@@ -22,6 +22,7 @@ import { KITCHEN_STATIONS, STATION_PREP_TIMES } from '../kds/kdsTypes';
 import { inferStationFromItem, inferOrderStation } from '../kds/utils/stationInference';
 import { useOrderStore, useEnrichedOrders, useIsKDSLoading } from '../kds/store/orderStore';
 import { useAuth } from '../context/AuthContext';
+import { printOrderTicket, isPrinterReady } from '../lib/printTicket';
 
 import CancelOrderModal from '../kds/components/CancelOrderModal';
 import NewOrderFlash from '../kds/components/NewOrderFlash';
@@ -103,6 +104,16 @@ export default function KitchenView() {
   const [showConsolidated, setShowConsolidated] = useState(() => {
     return localStorage.getItem('kds_show_consolidated') !== 'false';
   });
+
+  // Print engine status
+  const [printerOk, setPrinterOk] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const check = () => isPrinterReady().then(ok => { if (!cancelled) setPrinterOk(ok); });
+    check();
+    const iv = setInterval(check, 15000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
 
   const [stationFilter, setStationFilter] = useState(() => {
     return localStorage.getItem('kds_station_filter') || 'all';
@@ -253,22 +264,26 @@ export default function KitchenView() {
       const newIds = useOrderStore.getState().orderIndex.slice(prevOrderCountRef.current);
       for (const id of newIds) {
         const o = orders[id];
-        if (o?.status === 'recibido') {
-          setNewOrderFlash(true);
-          setTimeout(() => setNewOrderFlash(false), 2000);
+          if (o?.status === 'recibido') {
+            setNewOrderFlash(true);
+            setTimeout(() => setNewOrderFlash(false), 2000);
 
-          const station = inferOrderStation(o);
-          const stationMuted = soundEnabled[station] === false;
-          if (!stationMuted) {
-            playKitchenAlert(station);
-            
-            // Text to speech locución por voz
-            if (stationFilter === 'all' || station === stationFilter) {
-              announceOrderTTS(o);
+            const station = inferOrderStation(o);
+            const stationMuted = soundEnabled[station] === false;
+            if (!stationMuted) {
+              playKitchenAlert(station);
+              
+              // Text to speech locución por voz
+              if (stationFilter === 'all' || station === stationFilter) {
+                announceOrderTTS(o);
+              }
             }
-          }
 
-          break;
+            // Auto-print comanda
+            const branchName = localStorage.getItem('branch_name') || '';
+            printOrderTicket(o, branchName);
+
+            break;
         }
       }
     }
@@ -551,6 +566,15 @@ export default function KitchenView() {
             )}
             <div className="flex items-center gap-2 flex-wrap justify-end">
               <ConnectionStatus />
+              {printerOk ? (
+                <span className="flex items-center gap-1 text-[0.6rem] font-bold text-green-400/60 tracking-widest uppercase" title="Impresora conectada">
+                  <PrinterCheck className="w-3 h-3" /> Print
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-[0.6rem] font-bold text-cm-muted/30 tracking-widest uppercase" title="Impresora no disponible">
+                  <Printer className="w-3 h-3" /> Print
+                </span>
+              )}
               <VoiceCommandBar
                 isListening={isListening}
                 onToggle={toggleListening}

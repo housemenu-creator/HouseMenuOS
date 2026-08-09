@@ -55,8 +55,19 @@ export function AuthProvider({ children }) {
     // that survive staff login/logout in the same browser
     getSessionId();
 
+    let firstFirebaseEvent = true;
+
     const unsubscribe = onAuthChange(async (firebaseUser) => {
-      setFirebaseReady(true);
+      if (firstFirebaseEvent) {
+        firstFirebaseEvent = false;
+        // Defer firebaseReady to next microtask to let React settle
+        // lazy-loaded components (KioskMode/Suspense) before any
+        // re-render triggered by setFirebaseReady(true). Without this,
+        // React error #310 (Invalid hook call) occurs when framer-motion's
+        // useMemo is called during a re-render race with lazy chunk loading.
+        queueMicrotask(() => setFirebaseReady(true));
+        if (firebaseUser?.isAnonymous) return;
+      }
       if (firebaseUser) {
         console.log('AuthContext.onAuthChange', { uid: firebaseUser.uid, email: firebaseUser.email, isAnonymous: firebaseUser.isAnonymous });
         // Anonymous users (customer flow) don't need RTDB access

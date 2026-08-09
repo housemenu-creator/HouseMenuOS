@@ -1,4 +1,26 @@
+import { useState, useEffect, useRef } from 'react';
 import { Activity, Coffee } from 'lucide-react';
+
+function AnimCounter({ value, duration = 600 }) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef(0);
+  const st = useRef(0);
+  const from = useRef(0);
+  useEffect(() => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    from.current = display; st.current = null;
+    const step = (ts) => {
+      if (!st.current) st.current = ts;
+      const p = Math.min((ts - st.current) / duration, 1);
+      const e = 1 - (1 - p) * (1 - p);
+      setDisplay(Math.round(from.current + (value - from.current) * e));
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [value, duration]);
+  return <>{display}</>;
+}
 
 // ── Display config for each status ──
 
@@ -53,7 +75,7 @@ export default function OrderMetricsPanel({ statusCounts, activeOrders }: Props)
             <div className="relative mb-1">
               <div className={`w-2 h-2 rounded-full ${dot} mx-auto ${count > 0 ? 'animate-pulse' : 'opacity-30'}`} />
             </div>
-            <p className="text-2xl font-black text-cm-text tabular-nums">{count}</p>
+            <p className="text-2xl font-black text-cm-text tabular-nums"><AnimCounter value={count} /></p>
             <p className="text-[9px] text-cm-muted font-bold uppercase tracking-wide">{label}</p>
           </div>
         ))}

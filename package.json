@@ -14,20 +14,33 @@
     "build:menu": "npm run build -w apps/house-menu",
     "build:bot": "npm run build -w apps/housepysbot",
     "build:portal": "npm run build -w apps/portal-hub",
+    "build:landing": "cd apps/landing && npx vite build",
     "build": "npm run build:portal",
     "test:menu": "npm run test -w apps/house-menu",
     "test:bot": "npm run test -w apps/housepysbot",
-    "generate:view": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-view.ps1"
+    "generate:view": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-view.ps1",
+    "bridge": "node scripts/po-bridge-server.mjs",
+    "n8n": "docker compose -f n8n/docker-compose.yml up -d",
+    "n8n:stop": "docker compose -f n8n/docker-compose.yml down",
+    "n8n:logs": "docker compose -f n8n/docker-compose.yml logs -f",
+    "n8n:reset": "docker compose -f n8n/docker-compose.yml down --volumes && docker compose -f n8n/docker-compose.yml up -d",
+    "automation": "concurrently -n bridge,n8n -c yellow,cyan \"npm run bridge\" \"npm run n8n\"",
+    "test:e2e": "node scripts/test-n8n-flow.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
     "@types/qrcode": "^1.5.6",
     "concurrently": "^8.2.2",
-    "firebase-tools": "^15.18.0"
+    "escpos": "^3.0.0-alpha.6",
+    "escpos-usb": "^3.0.0-alpha.4",
+    "firebase-tools": "^15.18.0",
+    "node-thermal-printer": "^4.6.0",
+    "usb": "^2.18.0"
   },
   "overrides": {
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "framer-motion": "^12.40.0"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

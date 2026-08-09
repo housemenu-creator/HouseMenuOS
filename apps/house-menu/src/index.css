@@ -8,12 +8,13 @@
 @layer base {
   html {
     height: 100dvh;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   body {
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100dvh;
+    overflow-x: hidden;
     background-color: var(--cm-bg);
     color: var(--cm-text);
     font-family: var(--cm-font);
@@ -23,8 +24,7 @@
   }
 
   #root {
-    height: 100%;
-    overflow: hidden;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
   }

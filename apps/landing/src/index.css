@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --cm-bg: #F5F5F7;
+  --cm-surface: #FFFFFF;
+  --cm-text: #1E2B38;
+  --cm-text-secondary: #6B7280;
+  --cm-text-tertiary: #9CA3AF;
+  --cm-accent: #8A5A00;
+  --cm-accent-hover: #6F4700;
+  --cm-accent-light: rgba(138, 90, 0, 0.12);
+  --cm-border: rgba(0, 0, 0, 0.06);
+  --cm-glass-bg: rgba(255, 255, 255, 0.72);
+  --cm-glass-border: rgba(255, 255, 255, 0.3);
+  --cm-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] {
+  --cm-bg: #1E2B38;
+  --cm-surface: #2A3D4E;
+  --cm-text: #F5F5F7;
+  --cm-text-secondary: #9CA3AF;
+  --cm-text-tertiary: #6B7280;
+  --cm-accent: #F2B71A;
+  --cm-accent-hover: #FFC933;
+  --cm-accent-light: rgba(242, 183, 26, 0.15);
+  --cm-border: rgba(255, 255, 255, 0.08);
+  --cm-glass-bg: rgba(42, 61, 78, 0.72);
+  --cm-glass-border: rgba(255, 255, 255, 0.08);
+  --cm-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--cm-bg);
+  color: var(--cm-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background .4s ease, color .4s ease;
+}
+
+@utility glass {
+  background: var(--cm-glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--cm-glass-border);
+  box-shadow: var(--cm-glass-shadow);
+}
+
+@utility card-accent {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+.card-accent::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 1.25rem;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--cm-accent), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}

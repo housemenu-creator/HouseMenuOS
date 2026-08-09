@@ -1,9 +1,9 @@
-import { ref, push, set, onValue, update, get, runTransaction } from 'firebase/database';
+import { ref, push, set, onValue, update, get, runTransaction, serverTimestamp } from 'firebase/database';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { app, getSessionId } from '@house/db';
 import { realtimeDB as db } from '@house/db';
 import { ordersPath, ordersStatusPath, ordersUpdatedAtPath, catalogProductsPath } from './paths';
-import { nowISO } from './format';
+import { nowISO, dateKey } from './format';
 import { auditLog } from './auditService';
 
 const functions = getFunctions(app);
@@ -33,6 +33,26 @@ function walkOptionInProduct(product, optId, fn) {
     }
   }
   return false;
+}
+
+// ── Sequential order numbering ──
+async function getNextOrderCode(branchId, branchPrefix) {
+  try {
+    const date = dateKey();
+    const counterRef = ref(db, `branches/${branchId}/counters/orders/${date}`);
+    const result = await runTransaction(counterRef, (current) => (current || 0) + 1);
+    if (!result.committed) throw new Error('Counter transaction failed');
+    const seq = result.snapshot.val();
+    const prefix = (branchPrefix || branchId || '').slice(0, 3).toUpperCase();
+    return {
+      shortCode: `${prefix}-${String(seq).padStart(3, '0')}`,
+      displayId: `#${prefix}-${String(seq).padStart(3, '0')}`,
+      sequentialNumber: seq,
+    };
+  } catch (err) {
+    console.warn('getNextOrderCode fallback (no counter):', err.message);
+    return null; // fallback — order works without shortCode
+  }
 }
 
 function buildWizardOptMap(items) {
@@ -67,17 +87,26 @@ export const ordersService = {
       if (isScheduled) {
         const ordersRef = ref(db, ordersPath(branchId));
         const newOrderRef = push(ordersRef);
-        const timestamp = nowISO();
+        const code = await getNextOrderCode(branchId, orderData.branchPrefix);
+        const now = nowISO();
 
       const order = {
         ...orderData,
         id: newOrderRef.key,
         status: 'programado',
         deliveryDate,
-        createdAt: timestamp,
-        updatedAt: timestamp,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        _createdAt_client: now,
+        ...(code && { shortCode: code.shortCode, displayId: code.displayId, sequentialNumber: code.sequentialNumber }),
         ...(userEmail && { createdBy: userEmail }),
         sessionId: getSessionId(),
+        transitions: [{
+          from: null,
+          to: 'programado',
+          at: serverTimestamp(),
+          by: userEmail || 'system',
+        }],
       };
 
       await set(newOrderRef, order);
@@ -168,7 +197,8 @@ export const ordersService = {
 
       const ordersRef = ref(db, ordersPath(branchId));
       const newOrderRef = push(ordersRef);
-      const timestamp = nowISO();
+      const code = await getNextOrderCode(branchId, orderData.branchPrefix);
+      const now = nowISO();
 
       // Si el pago requiere verificación (Yape/Plin), la orden no va a cocina todavía
       const initialStatus = orderData.payment_status === 'por_verificar' ? 'pendiente_pago' : 'recibido';
@@ -178,10 +208,18 @@ export const ordersService = {
         id: newOrderRef.key,
         status: initialStatus,
         deliveryDate: deliveryDate || nowISO().split('T')[0],
-        createdAt: timestamp,
-        updatedAt: timestamp,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        _createdAt_client: now,
+        ...(code && { shortCode: code.shortCode, displayId: code.displayId, sequentialNumber: code.sequentialNumber }),
         ...(userEmail && { createdBy: userEmail }),
         sessionId: getSessionId(),
+        transitions: [{
+          from: null,
+          to: initialStatus,
+          at: serverTimestamp(),
+          by: userEmail || 'system',
+        }],
       };
 
       const sessionId = getSessionId();
@@ -196,10 +234,21 @@ export const ordersService = {
         }
       }
 
+      // ── Auto-consumo de insumos desde recetas ──
+      if (initialStatus === 'recibido' && orderData.items?.length > 0) {
+        try {
+          const { consumeRecipeIngredients } = await import('./logisticsService');
+          consumeRecipeIngredients(branchId, newOrderRef.key, orderData.items, userEmail)
+            .catch(e => console.warn('[orders] Auto-consumo falló (no crítico):', e.message));
+        } catch (e) {
+          console.warn('[orders] No se pudo importar consumeRecipeIngredients:', e.message);
+        }
+      }
+
       auditLog('order.created', {
         orderId: newOrderRef.key,
         total: orderData.total,
-        source: orderData.source,
+        source: orderData.source || 'unknown',
         payment_method: orderData.payment_method,
         payment_status: orderData.payment_status,
         itemCount: orderData.items?.length,
@@ -223,8 +272,11 @@ export const ordersService = {
       await update(orderRef, {
         payment_status: 'pagado',
         status: 'recibido',
-        payment_verified_at: nowISO(),
+        payment_verified_at: serverTimestamp(),
         payment_verified_by: verifierEmail || 'system',
+        collectedAt: serverTimestamp(),
+        collectedBy: verifierEmail || 'system',
+        updatedAt: serverTimestamp(),
       });
 
       auditLog('order.payment_verified', {
@@ -235,6 +287,32 @@ export const ordersService = {
       return { success: true };
     } catch (error) {
       console.error('Error verifying payment:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Confirmar pago desde despacho/caja sin alterar el flujo del pedido.
+   * A diferencia de verifyPayment, NO cambia status (el pedido ya está en cocina/despacho).
+   */
+  async confirmPayment(branchId, orderId, verifierEmail) {
+    try {
+      const orderRef = ref(db, `${ordersPath(branchId)}/${orderId}`);
+      await update(orderRef, {
+        payment_status: 'pagado',
+        payment_verified_at: serverTimestamp(),
+        payment_verified_by: verifierEmail || 'system',
+        updatedAt: serverTimestamp(),
+      });
+
+      auditLog('order.payment_confirmed', {
+        orderId,
+        from: 'dispatch_or_cashier',
+      }, verifierEmail || 'system');
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error confirming payment:', error);
       return { success: false, error: error.message };
     }
   },
@@ -332,12 +410,27 @@ export const ordersService = {
         }
       }
 
+      // ponytail: cancel doesn't revert ingredient consumption
+      // Reverting would need to know if ingredients were actually consumed
+
+      const oldStatus = (await get(orderRef)).val()?.status;
+      const transition = {
+        from: oldStatus || null,
+        to: newStatus,
+        at: serverTimestamp(),
+        by: userEmail || 'system',
+        ...(cancelReason && { reason: cancelReason }),
+      };
+      // Read current transitions and append
+      const currentOrder = (await get(orderRef)).val() || {};
+      const transitions = [...(currentOrder.transitions || []), transition];
+
       const updates = {
         status: newStatus,
-        updatedAt: nowISO(),
+        updatedAt: serverTimestamp(),
+        transitions,
         ...(userEmail && { updatedBy: userEmail }),
       };
-      const oldStatus = (await get(orderRef)).val()?.status;
       if (userEmail && newStatus === 'cancelado') updates.canceledBy = userEmail;
       if (newStatus === 'cancelado' && cancelReason) updates.cancelReason = cancelReason;
       await update(orderRef, updates);
@@ -364,11 +457,10 @@ export const ordersService = {
    */
   async batchUpdateOrderStatus(branchId, orderIds, newStatus) {
     try {
-      const timestamp = nowISO();
       const updates = {};
       orderIds.forEach((orderId) => {
         updates[ordersStatusPath(branchId, orderId)] = newStatus;
-        updates[ordersUpdatedAtPath(branchId, orderId)] = timestamp;
+        updates[ordersUpdatedAtPath(branchId, orderId)] = serverTimestamp();
       });
       await update(ref(db), updates);
       return { success: true, updatedCount: orderIds.length };
@@ -388,15 +480,46 @@ export const ordersService = {
         payment_status: 'pendiente',
         payment_rejected: {
           reason: reason || 'Sin motivo',
-          rejectedAt: nowISO(),
+          rejectedAt: serverTimestamp(),
           rejectedBy: rejectedBy || 'admin',
         },
-        updatedAt: nowISO(),
+        updatedAt: serverTimestamp(),
       });
       return { success: true };
     } catch (error) {
       console.error('Error rejecting payment:', error);
       return { success: false, error };
+    }
+  },
+
+  /**
+   * Marcar un pedido Contraentrega como pagado en la entrega (por el repartidor)
+   */
+  async markAsPaidOnDelivery(branchId, orderId, driverEmail, driverName) {
+    try {
+      const orderRef = ref(db, ordersPath(branchId, orderId));
+const updates = {
+        payment_status: 'pagado',
+        status: 'entregado',
+        paidAt: serverTimestamp(),
+        collectedAt: serverTimestamp(),
+        collectedBy: driverEmail,
+        collectedByName: driverName,
+        updatedAt: serverTimestamp(),
+        updatedBy: driverEmail,
+      };
+      await update(orderRef, updates);
+
+      auditLog('order.paid_on_delivery', {
+        orderId,
+        driver: driverEmail || 'driver',
+        driverName: driverName || 'Repartidor',
+      }, driverEmail || 'driver');
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error marking order as paid on delivery:', error);
+      return { success: false, error: error.message };
     }
   },
 
@@ -410,9 +533,10 @@ export const ordersService = {
         payment_method: paymentMethod,
         payment_status: 'pagado',
         status: 'recibido',
-        paidAt: nowISO(),
-        updatedAt: nowISO(),
-        ...(userEmail && { paidBy: userEmail }),
+        paidAt: serverTimestamp(),
+        collectedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        ...(userEmail && { paidBy: userEmail, collectedBy: userEmail }),
       };
       if (discount) {
         updates.discount = discount;
@@ -435,16 +559,13 @@ export const ordersService = {
     }
   },
 
-  /**
-   * Agrega o actualiza una nota interna en un pedido (backward compat — usa notes[])
-   */
   async addOrderNote(branchId, orderId, note, userEmail, displayName) {
     try {
       const noteEntry = {
         text: typeof note === 'string' ? note : '',
         createdBy: userEmail || 'admin',
         createdByName: displayName || userEmail || 'admin',
-        createdAt: nowISO(),
+        createdAt: serverTimestamp(),
       };
       const orderRef = ref(db, ordersPath(branchId, orderId));
       const snapshot = await get(orderRef);
@@ -453,7 +574,7 @@ export const ordersService = {
       await update(orderRef, {
         notes,
         ...(userEmail && { notedBy: userEmail }),
-        updatedAt: nowISO(),
+        updatedAt: serverTimestamp(),
       });
       return { success: true };
     } catch (error) {
@@ -468,7 +589,7 @@ export const ordersService = {
   async updateOrderItems(branchId, orderId, { items, financials, total }, userEmail) {
     try {
       const orderRef = ref(db, ordersPath(branchId, orderId));
-      const updates = { items, updatedAt: nowISO() };
+      const updates = { items, updatedAt: serverTimestamp() };
       if (financials) updates.financials = financials;
       if (total !== undefined) updates.total = total;
       if (userEmail) updates.editedBy = userEmail;
@@ -490,13 +611,13 @@ export const ordersService = {
         amount: refundData.amount,
         method: refundData.method,
         reason: refundData.reason || '',
-        processedAt: nowISO(),
+        processedAt: serverTimestamp(),
         processedBy: refundData.processedBy || userEmail || 'admin',
       };
       await update(orderRef, {
         refund,
         payment_status: 'reembolsado',
-        updatedAt: nowISO(),
+        updatedAt: serverTimestamp(),
       });
       return { success: true };
     } catch (error) {
@@ -508,7 +629,7 @@ export const ordersService = {
   async updateOrderPriority(branchId, orderId, priority, userEmail) {
     try {
       const orderRef = ref(db, ordersPath(branchId, orderId));
-      await update(orderRef, { priority, updatedAt: nowISO(), updatedBy: userEmail || 'system' });
+      await update(orderRef, { priority, updatedAt: serverTimestamp(), updatedBy: userEmail || 'system' });
       return { success: true };
     } catch (error) {
       console.error('Error updating order priority:', error);

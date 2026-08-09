@@ -10,15 +10,47 @@ import {
   getUnreadCount,
   NOTIF_ICONS,
 } from '../lib/notificationService';
-import { playChime } from '../lib/notificationSound';
+import { playSoundForType, showNotifFromData, requestNotifPermission } from '../lib/notificationSound';
 import { useToast } from '../components/ToastContext';
 import NotificationPreferencesPanel from '../components/NotificationPreferencesPanel';
 import { groupNotifications, getGroupTitle } from '../lib/notificationGrouping';
 import useTabBadge from '../hooks/useTabBadge';
 import {
   Bell, CheckCheck, ArrowLeft, Loader2, Clock,
-  Filter, X, Inbox, ChevronDown, BellRing, Sparkles, Settings,
+  Filter, X, Inbox, ChevronDown, BellRing, Sparkles, Settings, AlertCircle,
 } from 'lucide-react';
+
+// ── AnimCounter ──────────────────────────────────────
+function AnimCounter({ value, duration = 500 }) {
+  const [display, setDisplay] = useState(0);
+  const prev = useRef(0);
+  const raf = useRef(null);
+
+  useEffect(() => {
+    if (value === prev.current) { setDisplay(value); return; }
+    const start = prev.current;
+    const startTime = performance.now();
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - (1 - progress) * (1 - progress);
+      setDisplay(Math.round(start + (value - start) * eased));
+      if (progress < 1) raf.current = requestAnimationFrame(animate);
+    };
+    raf.current = requestAnimationFrame(animate);
+    prev.current = value;
+    return () => raf.current && cancelAnimationFrame(raf.current);
+  }, [value, duration]);
+
+  return <>{display}</>;
+}
+
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.03 } } };
+const iv = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 250, damping: 22 } } };
+
+function SkeletonBlock({ className = '' }) {
+  return <div className={`bg-cm-border rounded-lg animate-pulse ${className}`} />;
+}
 
 const TYPE_OPTIONS = [
   { value: '', label: 'Todas' },
@@ -79,31 +111,56 @@ export default function NotificacionesView() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showNewBadge, setShowNewBadge] = useState(false);
   const [showPrefs, setShowPrefs] = useState(false);
+  const [error, setError] = useState(null);
   const prevCountRef = useRef(0);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    if (!activeBranchId || !user?.email) return;
+    const unsub = subscribeToNotifications(activeBranchId, user.email, (list) => {
+      setNotifications(list);
+      setLoading(false);
+      setError(null);
+    });
+    return; // returned from callback, subscription handled by the effect
+  }, [activeBranchId, user?.email]);
 
   // ── Subscribe ──
   useEffect(() => {
     if (!activeBranchId || !user?.email) return;
     setLoading(true);
-    const unsub = subscribeToNotifications(activeBranchId, user.email, (list) => {
-      setNotifications(list);
+    setError(null);
+    try {
+      const unsub = subscribeToNotifications(activeBranchId, user.email, (list) => {
+        setNotifications(list);
+        setLoading(false);
+      });
+      return () => { try { unsub(); } catch {} };
+    } catch (e) {
+      setError('Error al cargar notificaciones: ' + e.message);
       setLoading(false);
-    });
-    return unsub;
+    }
   }, [activeBranchId, user?.email]);
 
-  // ── Chime cuando llega una noti nueva estando en la página ──
+  // ── Sonido + desktop + badge cuando llega una noti nueva ──
   useEffect(() => {
     const current = notifications.length;
     if (prevCountRef.current > 0 && current > prevCountRef.current) {
-      playChime();
-      // Mostrar badge "Nuevas" por 4s
+      const latest = notifications[0];
+      if (latest) {
+        playSoundForType(latest.type);
+        showNotifFromData(latest, () => {
+          markAsRead(activeBranchId, user?.email, latest.id, true);
+          if (latest.url) navigate(latest.url);
+        });
+      }
       setShowNewBadge(true);
       const t = setTimeout(() => setShowNewBadge(false), 4000);
       return () => clearTimeout(t);
     }
     prevCountRef.current = current;
-  }, [notifications.length]);
+  }, [notifications.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived ──
   const filtered = useMemo(() => {
@@ -227,12 +284,12 @@ export default function NotificacionesView() {
           <div className="flex items-center gap-3 text-[10px] font-bold text-cm-muted">
             <span className="flex items-center gap-1">
               <BellRing className="w-3 h-3" />
-              {total} notificación{total !== 1 ? 'es' : ''}
+              <span className="tabular-nums"><AnimCounter value={total} /></span> notificación{total !== 1 ? 'es' : ''}
             </span>
             {unreadCount > 0 && (
               <span className="flex items-center gap-1 text-cm-accent">
                 <span className="w-1.5 h-1.5 rounded-full bg-cm-accent animate-pulse" />
-                {unreadCount} sin leer
+                <span className="tabular-nums"><AnimCounter value={unreadCount} /></span> sin leer
               </span>
             )}
             <span className="flex items-center gap-1">
@@ -291,13 +348,36 @@ export default function NotificacionesView() {
           )}
         </div>
 
-        {/* ── Lista ── */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <Loader2 className="w-8 h-8 text-cm-accent animate-spin" />
-            <p className="text-xs font-bold text-cm-muted uppercase tracking-widest">Cargando...</p>
+        {/* ── Error ── */}
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <AlertCircle className="w-10 h-10 text-cm-error" />
+            <p className="text-sm font-bold text-cm-error">{error}</p>
+            <button onClick={handleRetry}
+              className="px-4 py-2 text-xs font-black bg-cm-accent text-white rounded-xl hover:brightness-110 transition-all tracking-wider uppercase">
+              Reintentar
+            </button>
           </div>
-        ) : filtered.length === 0 ? (
+        )}
+
+        {/* ── Lista ── */}
+        {!error && loading ? (
+          <motion.div variants={cv} initial="hidden" animate="show" className="space-y-3">
+            {[1,2,3,4,5].map((i) => (
+              <motion.div key={i} variants={iv} className="flex items-start gap-4 p-4 rounded-xl bg-cm-surface border border-cm-border">
+                <SkeletonBlock className="w-10 h-10 rounded-xl shrink-0" />
+                <div className="flex-1 space-y-2 min-w-0">
+                  <div className="flex justify-between">
+                    <SkeletonBlock className="h-4 w-36" />
+                    <SkeletonBlock className="h-3 w-6" />
+                  </div>
+                  <SkeletonBlock className="h-3 w-full" />
+                  <SkeletonBlock className="h-3 w-20" />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : !error && filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <div className="w-16 h-16 rounded-2xl bg-cm-bg-alt border border-cm-border flex items-center justify-center">
               <Inbox className="w-8 h-8 text-cm-muted/40" />
@@ -312,13 +392,13 @@ export default function NotificacionesView() {
             </div>
           </div>
         ) : (
-          <div className="space-y-5">
+          <motion.div variants={cv} initial="hidden" animate="show" className="space-y-5">
             {Object.entries(grouped).map(([dateLabel, items]) => {
               // Sub-group by type within each date (3min window for stacking)
               const subGroups = groupNotifications(items, 3 * 60 * 1000);
               const totalItems = items.length;
               return (
-                <div key={dateLabel}>
+                <motion.div key={dateLabel} variants={iv}>
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <span className="text-[10px] font-black text-cm-muted uppercase tracking-widest">{dateLabel}</span>
                     <div className="flex-1 h-px bg-cm-border/50" />
@@ -378,10 +458,10 @@ export default function NotificacionesView() {
                       );
                     })}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </div>
       )}

@@ -203,12 +203,13 @@ export default function HeroBanner({ branchName, campaign, kitchenHours, catalog
                   </div>
                 </div>
                 <p className="text-cm-text text-lg sm:text-xl font-black leading-snug">
-                  Comida servida con ritmo de operación real.
+                  {campaign?.creatives?.heroDescription || 'Menú del día, carta completa y más.'}
                 </p>
-                <div className="mt-4 flex items-center gap-2 text-cm-text-secondary/60 text-[0.55rem] font-semibold">
-                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-cm-success" /> Ingredientes frescos</span>
+                <div className="mt-4 flex items-center gap-2 text-cm-text-secondary/60 text-[0.55rem] font-semibold flex-wrap">
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-cm-success" /> {campaign?.creatives?.bullet1 || 'Ingredientes frescos'}</span>
                   <span className="w-1 h-1 rounded-full bg-cm-text-tertiary/30" />
-                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-cm-success" /> 30 min o menos</span>
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-cm-success" /> {campaign?.creatives?.bullet2 || '30 min o menos'}</span>
+                  {campaign?.creatives?.bullet3 && (<><span className="w-1 h-1 rounded-full bg-cm-text-tertiary/30" /><span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-cm-success" /> {campaign?.creatives?.bullet3}</span></>)}
                 </div>
               </div>
             </motion.div>

@@ -5,6 +5,7 @@ import {
   Zap, Clock, Sliders, Sparkles, Share2, Send, Heart, BrainCircuit, Instagram, Wifi, Battery,
   ThumbsUp, MessageCircle, Repeat2, ExternalLink, ChevronRight, TrendingUp, Star, Lightbulb,
   Copy, CheckCheck, Globe, SmartphoneNfc, Flame, BadgePercent, LayoutGrid,
+  RefreshCw, AlertTriangle, Store,
 } from 'lucide-react';
 import { marketingService } from '../../lib/marketingService';
 import { flashOfferService } from '../../lib/flashOfferService';
@@ -13,6 +14,32 @@ import { useToast } from '../../components/ToastContext';
 import { ref, set, update, onValue, get } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { ROUTES } from '../../lib/routes';
+import SocialSection from '../components/marketing/SocialSection';
+
+// ── Animated Counter ──
+function AnimCounter({ value, decimals = 0, duration = 800 }) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef(null);
+  const st = useRef(null);
+  const from = useRef(0);
+  useEffect(() => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    from.current = display; st.current = null;
+    const step = (ts) => {
+      if (!st.current) st.current = ts;
+      const p = Math.min((ts - st.current) / duration, 1);
+      const e = 1 - (1 - p) * (1 - p);
+      setDisplay(from.current + (value - from.current) * e);
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [value, duration]);
+  return <>{display.toFixed(decimals)}</>;
+}
+
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const iv = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 
 function SectionHeader({ label, count, onCreate, children }) {
   return (
@@ -100,23 +127,24 @@ function StatField({ label, value, onChange, suffix }) {
   );
 }
 
-function KpiCard({ icon: Icon, label, value, sub, accent }) {
+function KpiCard({ icon: Icon, label, value, sub, accent, animated }) {
   return (
-    <div className={`bg-cm-surface border border-cm-border rounded-xl p-4 shadow-cm-sm ${accent ? 'border-cm-accent/30' : ''}`}>
+    <motion.div variants={iv} className={`bg-cm-surface border border-cm-border rounded-xl p-4 shadow-cm-sm ${accent ? 'border-cm-accent/30' : ''}`}>
       <div className="flex items-center gap-2 mb-2">
         <div className={`p-1.5 rounded-lg ${accent ? 'bg-cm-accent/10 text-cm-accent' : 'bg-cm-bg-alt text-cm-text-secondary'}`}>
           <Icon className="w-4 h-4" />
         </div>
         <span className="text-[0.65rem] font-bold uppercase tracking-wider text-cm-text-secondary">{label}</span>
       </div>
-      <p className="text-xl font-black text-cm-text tabular-nums">{value}</p>
+      <p className="text-xl font-black text-cm-text tabular-nums">{animated ? <AnimCounter value={value} /> : value}</p>
       {sub && <p className="text-[0.6rem] font-semibold text-cm-muted mt-0.5">{sub}</p>}
-    </div>
+    </motion.div>
   );
 }
 
 const SECTIONS = [
   { key: 'agency_hub', label: '🤖 IA & Redes', icon: Sparkles },
+  { key: 'social', label: '📱 Redes Sociales', icon: Share2 },
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'campaigns', label: 'Campañas', icon: Megaphone },
   { key: 'banners', label: 'Banners', icon: Image },
@@ -226,6 +254,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
   const [layoutConfigSaving, setLayoutConfigSaving] = useState(false);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM.campaign);
@@ -245,6 +274,9 @@ export default function MarketingTab({ activeBranchId, branches }) {
   const [agPublishing, setAgPublishing] = useState(false);
   const [agBoosterLoading, setAgBoosterLoading] = useState(null);
   const igLikesIntervalRef = useRef(null);
+
+  // Derived: category names for social scheduling
+  const socialCategories = [...new Set(catalogProducts.map((p) => p.category || p.category_name || 'General').filter(Boolean))];
 
   // ── Cargar catálogo de productos para el Hub de Agencia ───────────────────
   useEffect(() => {
@@ -266,44 +298,47 @@ export default function MarketingTab({ activeBranchId, branches }) {
   useEffect(() => {
     if (!activeBranchId) return;
     setLoading(true);
+    setError(null);
 
-    const unsubCampaigns = marketingService.subscribeCampaigns(activeBranchId, {
+    let unsubCampaigns, unsubBanners, unsubPromos, unsubTestimonials, unsubStats, unsubFlash, kitchenUnsub, layoutUnsub;
+    try {
+      unsubCampaigns = marketingService.subscribeCampaigns(activeBranchId, {
       onAdd: (raw) => setCampaigns((prev) => prev.some((c) => c.id === raw.id) ? prev : [...prev, raw]),
       onChange: (raw) => setCampaigns((prev) => prev.map((c) => c.id === raw.id ? { ...c, ...raw } : c)),
       onRemove: (id) => setCampaigns((prev) => prev.filter((c) => c.id !== id)),
     });
 
-    const unsubBanners = marketingService.subscribeBanners(activeBranchId, {
+    unsubBanners = marketingService.subscribeBanners(activeBranchId, {
       onAdd: (raw) => setBanners((prev) => prev.some((b) => b.id === raw.id) ? prev : [...prev, raw]),
       onChange: (raw) => setBanners((prev) => prev.map((b) => b.id === raw.id ? { ...b, ...raw } : b)),
       onRemove: (id) => setBanners((prev) => prev.filter((b) => b.id !== id)),
     });
 
-    const unsubPromos = marketingService.subscribePromos(activeBranchId, {
+    unsubPromos = marketingService.subscribePromos(activeBranchId, {
       onAdd: (raw) => setPromos((prev) => prev.some((p) => p.id === raw.id) ? prev : [...prev, raw]),
       onChange: (raw) => setPromos((prev) => prev.map((p) => p.id === raw.id ? { ...p, ...raw } : p)),
       onRemove: (id) => setPromos((prev) => prev.filter((p) => p.id !== id)),
     });
 
-    const unsubTestimonials = marketingService.subscribeTestimonials(activeBranchId, {
+    unsubTestimonials = marketingService.subscribeTestimonials(activeBranchId, {
       onAdd: (raw) => setTestimonials((prev) => prev.some((t) => t.id === raw.id) ? prev : [...prev, raw]),
       onChange: (raw) => setTestimonials((prev) => prev.map((t) => t.id === raw.id ? { ...t, ...raw } : t)),
       onRemove: (id) => setTestimonials((prev) => prev.filter((t) => t.id !== id)),
     });
 
-    const unsubStats = marketingService.subscribeStats(activeBranchId, (data) => {
+    unsubStats = marketingService.subscribeStats(activeBranchId, (data) => {
       setStats(data);
       setLoading(false);
     });
 
     // Flash Offers
-    const unsubFlash = flashOfferService.subscribeToActiveFlashOffers(
+    unsubFlash = flashOfferService.subscribeToActiveFlashOffers(
       activeBranchId,
       (offers) => setFlashOffers(offers ?? []),
     );
 
     // Horarios de cocina
-    const kitchenUnsub = onValue(
+    kitchenUnsub = onValue(
       ref(db, `branches_config/${activeBranchId}/kitchenHours`),
       (snap) => {
         const val = snap.val();
@@ -315,7 +350,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
     );
 
     // Configuración de diseño
-    const layoutUnsub = onValue(
+    layoutUnsub = onValue(
       ref(db, `branches_config/${activeBranchId}/marketingLayout`),
       (snap) => {
         const val = snap.val();
@@ -329,16 +364,20 @@ export default function MarketingTab({ activeBranchId, branches }) {
     getAllPromotions().then(setCustomerPromos).catch(() => {});
 
     setLoading(false);
+    } catch (err) {
+      setError(err.message || 'Error al cargar datos de marketing');
+      setLoading(false);
+    }
 
     return () => {
-      unsubCampaigns();
-      unsubBanners();
-      unsubPromos();
-      unsubTestimonials();
-      unsubStats();
-      unsubFlash();
-      kitchenUnsub();
-      layoutUnsub();
+      unsubCampaigns?.();
+      unsubBanners?.();
+      unsubPromos?.();
+      unsubTestimonials?.();
+      unsubStats?.();
+      unsubFlash?.();
+      kitchenUnsub?.();
+      layoutUnsub?.();
       if (igLikesIntervalRef.current) {
         clearInterval(igLikesIntervalRef.current);
       }
@@ -627,7 +666,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
   // --- Render ---
 
   const renderSectionNav = () => (
-    <nav className="flex gap-2 overflow-x-auto pb-2">
+    <motion.nav variants={iv} className="flex gap-2 overflow-x-auto pb-2">
       {SECTIONS.map((s) => {
         const Icon = s.icon;
         return (
@@ -637,7 +676,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
           </button>
         );
       })}
-    </nav>
+    </motion.nav>
   );
 
   const renderModal = () => {
@@ -1222,18 +1261,18 @@ export default function MarketingTab({ activeBranchId, branches }) {
     const activePromoCount = promos.filter((p) => p.isActive).length;
 
     return (
-      <div className="space-y-4">
+      <motion.div variants={iv} className="space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KpiCard icon={Eye} label="Vistas Campañas" value={totalViews.toLocaleString()} accent />
-          <KpiCard icon={MousePointerClick} label="Conversiones" value={totalConversions.toLocaleString()} sub={`${convRate}% tasa`} accent />
-          <KpiCard icon={Image} label="Vistas Banners" value={totalBannerViews.toLocaleString()} />
-          <KpiCard icon={MousePointerClick} label="Clicks Banners" value={totalBannerClicks.toLocaleString()} />
+          <KpiCard icon={Eye} label="Vistas Campañas" value={totalViews} accent animated />
+          <KpiCard icon={MousePointerClick} label="Conversiones" value={totalConversions} sub={`${convRate}% tasa`} accent animated />
+          <KpiCard icon={Image} label="Vistas Banners" value={totalBannerViews} animated />
+          <KpiCard icon={MousePointerClick} label="Clicks Banners" value={totalBannerClicks} animated />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KpiCard icon={Tag} label="Usos Promos" value={totalPromoUses.toLocaleString()} />
-          <KpiCard icon={Megaphone} label="Campañas Activas" value={activeCampCount.toString()} />
-          <KpiCard icon={Image} label="Banners Activos" value={activeBannerCount.toString()} />
-          <KpiCard icon={Tag} label="Promos Activas" value={activePromoCount.toString()} />
+          <KpiCard icon={Tag} label="Usos Promos" value={totalPromoUses} animated />
+          <KpiCard icon={Megaphone} label="Campañas Activas" value={activeCampCount} animated />
+          <KpiCard icon={Image} label="Banners Activos" value={activeBannerCount} animated />
+          <KpiCard icon={Tag} label="Promos Activas" value={activePromoCount} animated />
         </div>
 
         {/* Campaign performance table */}
@@ -1310,7 +1349,7 @@ export default function MarketingTab({ activeBranchId, branches }) {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   };
 
@@ -2014,40 +2053,69 @@ export default function MarketingTab({ activeBranchId, branches }) {
     );
   };
 
+  const renderSocial = () => (
+    <SocialSection
+      activeBranchId={activeBranchId}
+      campaigns={campaigns}
+      categories={socialCategories}
+    />
+  );
+
   const sectionContent = () => {
-    switch (activeSection) {
-      case 'agency_hub': return renderAgencyHub();
-      case 'dashboard': return renderDashboard();
-      case 'campaigns': return renderCampaigns();
-      case 'banners': return renderBanners();
-      case 'promos': return renderPromos();
-      case 'testimonials': return renderTestimonials();
-      case 'flash_offers': return renderFlashOffers();
-      case 'customer_promos': return renderCustomerPromos();
-      case 'kitchen_hours': return renderKitchenHours();
-      case 'layout_config': return renderLayoutConfig();
-      case 'stats': return renderStats();
-      default: return null;
-    }
+    const renderInner = () => {
+      switch (activeSection) {
+        case 'agency_hub': return renderAgencyHub();
+        case 'social': return renderSocial();
+        case 'dashboard': return renderDashboard();
+        case 'campaigns': return renderCampaigns();
+        case 'banners': return renderBanners();
+        case 'promos': return renderPromos();
+        case 'testimonials': return renderTestimonials();
+        case 'flash_offers': return renderFlashOffers();
+        case 'customer_promos': return renderCustomerPromos();
+        case 'kitchen_hours': return renderKitchenHours();
+        case 'layout_config': return renderLayoutConfig();
+        case 'stats': return renderStats();
+        default: return null;
+      }
+    };
+    return <motion.div key={activeSection} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>{renderInner()}</motion.div>;
   };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <AlertTriangle className="w-10 h-10 text-cm-error" />
+        <p className="text-sm text-cm-text-secondary text-center">{error}</p>
+        <button onClick={() => window.location.reload()} className="flex items-center gap-1.5 text-xs font-bold text-cm-accent hover:underline">
+          <RefreshCw className="w-3.5 h-3.5" /> Reintentar
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-cm-accent animate-spin" /></div>;
   }
 
   if (!activeBranchId) {
-    return <p className="text-sm text-cm-text-secondary text-center py-8">Selecciona una sucursal para gestionar marketing</p>;
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 gap-3">
+        <Store className="w-10 h-10 text-cm-muted opacity-40" />
+        <p className="text-sm text-cm-text-secondary text-center">Selecciona una sucursal para gestionar marketing</p>
+      </motion.div>
+    );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <motion.div variants={cv} initial="hidden" animate="show" className="space-y-4">
+      <motion.div variants={iv} className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-cm-text">Marketing</h2>
-      </div>
+      </motion.div>
       {renderSectionNav()}
       {sectionContent()}
       {renderModal()}
-    </div>
+    </motion.div>
   );
 }
 

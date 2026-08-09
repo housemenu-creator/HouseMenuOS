@@ -11,9 +11,10 @@ describe('OrderMetricsPanel', () => {
     ],
   };
 
-  it('renders pipeline counts for each status', () => {
+  it('renders pipeline counts for each status', async () => {
     render(<OrderMetricsPanel {...pipelineProps} />);
-    expect(screen.getByText('3')).toBeDefined();   // recibido
+    // AnimCounter starts at 0 and animates — use findByText to wait for final value
+    expect(await screen.findByText('3')).toBeDefined();   // recibido
     expect(screen.getByText('2')).toBeDefined();   // preparando
     expect(screen.getByText('1')).toBeDefined();   // listo
     expect(screen.getByText('0')).toBeDefined();   // en_camino

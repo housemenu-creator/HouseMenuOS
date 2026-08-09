@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Plus, ImageIcon, Loader2, X, Soup } from 'lucide-react';
+import { ChevronDown, Plus, ImageIcon, Loader2, X, Soup, Trash2 } from 'lucide-react';
 import InlineEdit from '../InlineEdit';
 import MenuItemRow from './MenuItemRow';
 import { storageService } from '../../../lib/storageService';
@@ -18,6 +18,7 @@ interface MenuCategoryBlockProps {
   onConfigureWizard: (productId: string) => void;
   onCreateCampaign?: (product: MenuProduct & { id: string }) => void;
   renameCategory: (oldName: string, newName: string) => Promise<void>;
+  deleteCategory?: (categoryName: string) => Promise<void>;
   activeBranchId: string;
   categoriesConfig: Record<string, { name: string; image?: string }>;
   notify?: (message: string, type?: 'success' | 'error') => void;
@@ -58,6 +59,7 @@ export default function MenuCategoryBlock({
   onConfigureWizard,
   onCreateCampaign,
   renameCategory,
+  deleteCategory,
   activeBranchId,
   categoriesConfig = {},
   notify,
@@ -107,7 +109,7 @@ export default function MenuCategoryBlock({
       {/* Header */}
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center gap-3 p-4 bg-cm-bg/50 hover:bg-cm-bg transition-colors cursor-pointer ${
+        className={`group/header w-full flex items-center gap-3 p-4 bg-cm-bg/50 hover:bg-cm-bg transition-colors cursor-pointer ${
           isOpen ? 'border-b border-cm-border rounded-t-xl' : 'rounded-xl'
         }`}
       >
@@ -157,6 +159,15 @@ export default function MenuCategoryBlock({
             onSave={(newName: string) => { if (newName.trim() && newName.trim() !== category) renameCategory(category, newName.trim()); }}
             className="font-black text-cm-text uppercase tracking-widest text-sm"
           />
+          {deleteCategory && (
+            <button
+              onClick={() => deleteCategory(category)}
+              className="p-1 rounded-md text-cm-muted hover:text-cm-error hover:bg-cm-error/10 opacity-0 group-hover/header:opacity-100 transition-all"
+              title="Eliminar categoría completa"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <span className="ml-auto text-xs font-bold text-cm-muted shrink-0">{items.length} ítems</span>
@@ -171,7 +182,7 @@ export default function MenuCategoryBlock({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
+            style={{ overflow: 'visible' }}
           >
             <div className="divide-y divide-cm-border">
               {items.length > 0 ? (

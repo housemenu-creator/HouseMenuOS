@@ -15,9 +15,10 @@ function formatDuration(ms: number) {
 
 interface AttendanceViewProps {
   uid: string;
+  branchId: string;
 }
 
-export default function AttendanceView({ uid }: AttendanceViewProps) {
+export default function AttendanceView({ uid, branchId }: AttendanceViewProps) {
   const [state, setState] = useState<'loading' | 'empty' | 'error' | 'populated'>('loading');
   const [records, setRecords] = useState<Record<string, unknown>[]>([]);
   const [filterMonth, setFilterMonth] = useState(() => {
@@ -26,15 +27,15 @@ export default function AttendanceView({ uid }: AttendanceViewProps) {
   });
 
   useEffect(() => {
-    if (!uid) { setState('error'); return; }
+    if (!uid || !branchId) { setState('error'); return; }
 
-    const unsub = subscribeAttendanceHistory(uid, (data) => {
+    const unsub = subscribeAttendanceHistory(branchId, uid, (data) => {
       setRecords(data || []);
       setState(Array.isArray(data) && data.length > 0 ? 'populated' : 'empty');
     });
 
     return unsub;
-  }, [uid]);
+  }, [uid, branchId]);
 
   // Filter by selected month
   const filtered = records.filter((r) => (r.date as string)?.startsWith(filterMonth));

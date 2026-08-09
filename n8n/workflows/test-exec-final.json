@@ -1,0 +1,66 @@
+{
+    "name": "TEST Exec Final",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "test-final",
+                "httpMethod": "POST",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "tfe-webhook",
+            "webhookId": "tfe-webhook",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [250, 300]
+        },
+        {
+            "parameters": {
+                "jsCode": "const input = $input.first().json;\nreturn [{ json: { testField: JSON.stringify(input), rawInput: input } }];"
+            },
+            "id": "tfe-code",
+            "name": "Code",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [450, 300]
+        },
+        {
+            "parameters": {
+                "executeOnce": true,
+                "command": "echo 'FIELD_VALUE: {{ $json.testField }}'"
+            },
+            "id": "tfe-exec",
+            "name": "Execute Command",
+            "type": "n8n-nodes-base.executeCommand",
+            "typeVersion": 1,
+            "position": [650, 300]
+        },
+        {
+            "parameters": {
+                "respondWith": "firstIncomingItem",
+                "options": {}
+            },
+            "id": "tfe-respond",
+            "name": "Responder",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [850, 300]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [[{"node": "Code", "type": "main", "index": 0}]]
+        },
+        "Code": {
+            "main": [[{"node": "Execute Command", "type": "main", "index": 0}]]
+        },
+        "Execute Command": {
+            "main": [[{"node": "Responder", "type": "main", "index": 0}]]
+        }
+    },
+    "active": true,
+    "settings": {"executionOrder": "v1"},
+    "staticData": "{}",
+    "tags": []
+}

@@ -20,6 +20,7 @@ vi.mock('firebase/database', () => ({
   set: mockSet,
   update: mockUpdate,
   get: mockGet,
+  serverTimestamp: vi.fn(() => ({ '.sv': 'timestamp' })),
 }));
 
 vi.mock('firebase/functions', () => ({

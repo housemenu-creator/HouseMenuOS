@@ -1,0 +1,2777 @@
+{
+  "67chDGkYYM6jhw": {
+    "productId": "-OvcCecc2OM2yLzppqQT",
+    "productName": "Arma tu Menú",
+    "productCategory": "Nuestras Expiencias",
+    "productPrice": 13.5,
+    "ingredients": {
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 3.24
+      },
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 0.5,
+        "unit": "und",
+        "unitCost": 3.19
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.96
+      }
+    },
+    "totalCost": 2.26,
+    "portionCost": 2.94,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "lw4DAmfsFe7E0g": {
+    "productId": "-OvwYuQSnKF32STPGRG6",
+    "productName": "Arma tu Causa",
+    "productCategory": "Nuestras Expiencias",
+    "productPrice": 10,
+    "ingredients": {
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 3.11
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 3.43
+      },
+      "W36Z33RRwWKWSWSr": {
+        "name": "Aceite de oliva",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 2.52
+      },
+      "8sIv8sxIXgfUwvU-": {
+        "name": "AJI LIMO",
+        "quantity": 0.01,
+        "unit": "sol",
+        "unitCost": 4.97
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.48
+      }
+    },
+    "totalCost": 7.92,
+    "portionCost": 10.29,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "6dvHLIMm0hv6zA": {
+    "productId": "-Ow9QMKll8MfSFMNNgqk",
+    "productName": "Seco de Cabrito",
+    "productCategory": "Promos del Día",
+    "productPrice": 20,
+    "ingredients": {
+      "VpeRTsjP7H1XiNzg": {
+        "name": "pierna cabrito",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 3.92
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.74
+      },
+      "mOoCOW28pvbZJD_P": {
+        "name": "chicha de jora",
+        "quantity": 0.1,
+        "unit": "bot",
+        "unitCost": 4.55
+      },
+      "lIArLLKDsb07DbUw": {
+        "name": "culantro",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 3.47
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 2.83
+      },
+      "5aY2erF_SyWhWWjN": {
+        "name": "ajo PELADO",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 1.66
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.45
+      },
+      "9llECJNu5diyKtfm": {
+        "name": "comino",
+        "quantity": 0.01,
+        "unit": "sol",
+        "unitCost": 3.65
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 2.32
+      }
+    },
+    "totalCost": 2.84,
+    "portionCost": 3.69,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "uyVTA0vfyGVGOQ": {
+    "productId": "-Ow9RXJRSf6DjufpwaoW",
+    "productName": "Milanesa de Pollo",
+    "productCategory": "Promos del Día",
+    "productPrice": 20,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 1.39
+      },
+      "msrwwtiBVag_oEss": {
+        "name": "pan casa",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 4.88
+      },
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.82
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 4.35
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.82
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.24
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.64
+      }
+    },
+    "totalCost": 17.18,
+    "portionCost": 22.34,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "kphvbeqD9WWcNg": {
+    "productId": "-Ow9SN6ur9EeKNRQg903",
+    "productName": "Ceviches",
+    "productCategory": "Pescados",
+    "productPrice": 20,
+    "ingredients": {
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 3.83
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 5,
+        "unit": "und",
+        "unitCost": 1.61
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 1.18
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2.94
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.11
+      }
+    },
+    "totalCost": 9.39,
+    "portionCost": 12.2,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "3k4Dx322VchAYw": {
+    "productId": "-OwnW-hU2Vxp8KcHtHVs",
+    "productName": "Chicharrones",
+    "productCategory": "Pescados",
+    "productPrice": 20,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.1
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.15,
+        "unit": "und",
+        "unitCost": 4.99
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 4.15
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.65
+      }
+    },
+    "totalCost": 13.68,
+    "portionCost": 17.78,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "E0vSp3fFElrA3Q": {
+    "productId": "-Ows7e7cpzlDYr5qV3HR",
+    "productName": "Lomo Saltado E2E v2",
+    "productCategory": "Sandwichs",
+    "productPrice": 30,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 3.92
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 2.81
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 3.22
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 1.09
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 1.46
+      },
+      "V56RsvH6i1PvqbOi": {
+        "name": "sillao kiko",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 1.68
+      }
+    },
+    "totalCost": 3.01,
+    "portionCost": 3.91,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "V326NiocrVFuZg": {
+    "productId": "-OxlpVktiUpafWx_K8JQ",
+    "productName": "Pollo al Horno",
+    "productCategory": "Opciones del Día",
+    "productPrice": 18,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.18
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.77
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.81
+      },
+      "W36Z33RRwWKWSWSr": {
+        "name": "Aceite de oliva",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 1.3
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 3.28
+      },
+      "9llECJNu5diyKtfm": {
+        "name": "comino",
+        "quantity": 0.01,
+        "unit": "sol",
+        "unitCost": 2.16
+      }
+    },
+    "totalCost": 5.38,
+    "portionCost": 6.99,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "M6xWgSBwUHB7sA": {
+    "productId": "-OxlpVo6QlrcETkMnbOq",
+    "productName": "Pollo al Horno con Tallarines",
+    "productCategory": "Opciones del Día",
+    "productPrice": 18,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 1.88
+      },
+      "aqJUdyQwKawSxrrZ": {
+        "name": "Fideo tallarin alianza",
+        "quantity": 0.2,
+        "unit": "paq",
+        "unitCost": 1.32
+      },
+      "W36Z33RRwWKWSWSr": {
+        "name": "Aceite de oliva",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 1.19
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.44
+      },
+      "9llECJNu5diyKtfm": {
+        "name": "comino",
+        "quantity": 0.01,
+        "unit": "sol",
+        "unitCost": 4.2
+      }
+    },
+    "totalCost": 2.22,
+    "portionCost": 2.89,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "0DxwmOF_Vdwcgw": {
+    "productId": "-OxlpVrJD9HUl3f_Afwo",
+    "productName": "Lomo Saltado",
+    "productCategory": "Opciones del Día",
+    "productPrice": 18,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 3.25
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 2.08
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 5
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 3.34
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 1.11
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 2.55
+      },
+      "V56RsvH6i1PvqbOi": {
+        "name": "sillao kiko",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 4.19
+      },
+      "LTWKwNSlQ_wrqV4f": {
+        "name": "vinagre blanco",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 3.13
+      }
+    },
+    "totalCost": 3.22,
+    "portionCost": 4.18,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "44M32lUI761Hzw": {
+    "productId": "-OxlpVuVKTSoq5X5mqBa",
+    "productName": "Pollo a la Plancha Fit",
+    "productCategory": "Almuerzo Fit",
+    "productPrice": 19,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 3.56
+      },
+      "u0urI6hrHYhVRezz": {
+        "name": "Brocoli",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 2.58
+      },
+      "pnGtZRnOuAfQ4aO-": {
+        "name": "zanahoria",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.27
+      },
+      "W36Z33RRwWKWSWSr": {
+        "name": "Aceite de oliva",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 1.02
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.22
+      }
+    },
+    "totalCost": 4.19,
+    "portionCost": 5.44,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "WV5Eds70WPssQQ": {
+    "productId": "-OxlpVxhfvgoswX8LZ2S",
+    "productName": "Bisteck Frito Fit",
+    "productCategory": "Almuerzo Fit",
+    "productPrice": 19,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.04
+      },
+      "bigZwQXf7G3__7Om": {
+        "name": "lechuga repollada",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 3.95
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 4.39
+      },
+      "W36Z33RRwWKWSWSr": {
+        "name": "Aceite de oliva",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 2.46
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.45
+      }
+    },
+    "totalCost": 1.3,
+    "portionCost": 1.69,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "scMIJ1vH8sL5Nw": {
+    "productId": "-OxlpW1VSfbAv6Z64yqf",
+    "productName": "Chuleta de Chancho",
+    "productCategory": "Carnes y Saltados",
+    "productPrice": 24,
+    "ingredients": {
+      "cecBOlw06yNRBPYv": {
+        "name": "chuletas cerdo menu",
+        "quantity": 1,
+        "unit": "unds",
+        "unitCost": 3.64
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.36
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.76
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 2.4
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.42
+      },
+      "9llECJNu5diyKtfm": {
+        "name": "comino",
+        "quantity": 0.01,
+        "unit": "sol",
+        "unitCost": 2.08
+      }
+    },
+    "totalCost": 5.03,
+    "portionCost": 6.54,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "76iC7WmbnAIRyQ": {
+    "productId": "-OxlpW4hs1cR7ZdPVrBB",
+    "productName": "Bisteck a lo Pobre",
+    "productCategory": "Carnes y Saltados",
+    "productPrice": 19,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 4.35
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 2.04
+      },
+      "bvPwBSyGzzLfdSql": {
+        "name": "platanos de freir",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 2.05
+      },
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 1.62
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.15
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 3.77
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.41
+      },
+      "oBjaVQOKj5ZPVjPa": {
+        "name": "pimienta sibarita",
+        "quantity": 0.01,
+        "unit": "sol",
+        "unitCost": 1.35
+      }
+    },
+    "totalCost": 7.52,
+    "portionCost": 9.78,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "BT5AvzGYyDOC7w": {
+    "productId": "-OxlpWB5KogTiasOvU9M",
+    "productName": "Filete de Chancho",
+    "productCategory": "Carnes y Saltados",
+    "productPrice": 19,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.04
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.99
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 2.52
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 1.81
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 3.05
+      }
+    },
+    "totalCost": 1.78,
+    "portionCost": 2.31,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "f6q92EqK6dwTGQ": {
+    "productId": "-OxlpWEISyl7nz8mTAWx",
+    "productName": "Apanado de Res",
+    "productCategory": "Carnes y Saltados",
+    "productPrice": 21,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.86
+      },
+      "msrwwtiBVag_oEss": {
+        "name": "pan casa",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 4.14
+      },
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.47
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 4.43
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 3.91
+      }
+    },
+    "totalCost": 13.38,
+    "portionCost": 17.4,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "b3tFsexEa--e7w": {
+    "productId": "-OxlpWHVQbtKLFwcfy0D",
+    "productName": "Bisteck Frito",
+    "productCategory": "Carnes y Saltados",
+    "productPrice": 21,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 3.76
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.54
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 4.28
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 1.4
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 3.78
+      }
+    },
+    "totalCost": 1.78,
+    "portionCost": 2.32,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "gB1OT5mdZJslYQ": {
+    "productId": "-OxlpWKh9ixEPqLqV99P",
+    "productName": "Lomo Saltado a lo Pobre",
+    "productCategory": "Carnes y Saltados",
+    "productPrice": 24,
+    "ingredients": {
+      "_KIuiOKHG8iuFZlZ": {
+        "name": "pulpa de res fileteada",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 1.66
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 3.94
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.59
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 1.57
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 2.99
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 3.19
+      },
+      "V56RsvH6i1PvqbOi": {
+        "name": "sillao kiko",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 4.19
+      },
+      "LTWKwNSlQ_wrqV4f": {
+        "name": "vinagre blanco",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 3.26
+      }
+    },
+    "totalCost": 2.84,
+    "portionCost": 3.69,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "R_wjojk3mDZCPA": {
+    "productId": "-OxlpWNu7Ef-4rFgZu4T",
+    "productName": "Pechuga a la Plancha",
+    "productCategory": "Parrilla y Pollos",
+    "productPrice": 20,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 2.09
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.03
+      },
+      "W36Z33RRwWKWSWSr": {
+        "name": "Aceite de oliva",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 3.97
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.56
+      },
+      "oBjaVQOKj5ZPVjPa": {
+        "name": "pimienta sibarita",
+        "quantity": 0.01,
+        "unit": "sol",
+        "unitCost": 2.75
+      }
+    },
+    "totalCost": 3.02,
+    "portionCost": 3.92,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "snpoEp2sl-CJqA": {
+    "productId": "-OxlpWR5y-uwKT3uPtt4",
+    "productName": "Pollo Saltado",
+    "productCategory": "Parrilla y Pollos",
+    "productPrice": 16,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 1.6
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 1.36
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 4.09
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.28
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.31
+      },
+      "V56RsvH6i1PvqbOi": {
+        "name": "sillao kiko",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 4.27
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 3.23
+      }
+    },
+    "totalCost": 4.18,
+    "portionCost": 5.43,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "QPzBGICKVl3hdg": {
+    "productId": "-OxlpW_d7-3KEI4OWXNq",
+    "productName": "Chicharrón de Pollo 100gr",
+    "productCategory": "Parrilla y Pollos",
+    "productPrice": 16,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 0.5,
+        "unit": "und",
+        "unitCost": 4.16
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.1,
+        "unit": "und",
+        "unitCost": 3.39
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.35
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 2.03
+      }
+    },
+    "totalCost": 4.47,
+    "portionCost": 5.81,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "j9RRi1zfnTEMVQ": {
+    "productId": "-OxlpWcgR7VBJNGgIk8N",
+    "productName": "Chicharrón de Pollo 200gr",
+    "productCategory": "Parrilla y Pollos",
+    "productPrice": 16,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 1.52
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.15,
+        "unit": "und",
+        "unitCost": 4.43
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.17
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 4.98
+      }
+    },
+    "totalCost": 12.16,
+    "portionCost": 15.8,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "9Bwsvu-gZA0D0A": {
+    "productId": "-OxlpWg5nXGBMy70DNaN",
+    "productName": "Pollo Saltado a lo Pobre",
+    "productCategory": "Parrilla y Pollos",
+    "productPrice": 17,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 2.61
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 3.96
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.29
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 1.42
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.49
+      },
+      "bvPwBSyGzzLfdSql": {
+        "name": "platanos de freir",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.21
+      },
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.34
+      },
+      "V56RsvH6i1PvqbOi": {
+        "name": "sillao kiko",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 2.87
+      }
+    },
+    "totalCost": 13.46,
+    "portionCost": 17.5,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "r7aJfTdaZIupAg": {
+    "productId": "-OxlpWjIRLYgr5eVORYv",
+    "productName": "Ceviche de Pota",
+    "productCategory": "Ceviches",
+    "productPrice": 20,
+    "ingredients": {
+      "k9bmkBG6G8OUAihF": {
+        "name": "pota",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.64
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 5,
+        "unit": "und",
+        "unitCost": 2.12
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 1.47
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.88
+      },
+      "8sIv8sxIXgfUwvU-": {
+        "name": "AJI LIMO",
+        "quantity": 0.02,
+        "unit": "sol",
+        "unitCost": 3.12
+      },
+      "lIArLLKDsb07DbUw": {
+        "name": "culantro",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 4.17
+      }
+    },
+    "totalCost": 12.14,
+    "portionCost": 15.78,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "NwxkYIgTE0DxsQ": {
+    "productId": "-OxlpWmVDQO1mHm2_ufI",
+    "productName": "Ceviche de Filete",
+    "productCategory": "Ceviches",
+    "productPrice": 25,
+    "ingredients": {
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.51
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 5,
+        "unit": "und",
+        "unitCost": 2.73
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 1.81
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2.9
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 3.23
+      },
+      "8sIv8sxIXgfUwvU-": {
+        "name": "AJI LIMO",
+        "quantity": 0.02,
+        "unit": "sol",
+        "unitCost": 3.63
+      },
+      "lIArLLKDsb07DbUw": {
+        "name": "culantro",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 1.76
+      }
+    },
+    "totalCost": 14.71,
+    "portionCost": 19.12,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "0mg5bCgPMf2-bA": {
+    "productId": "-OxlpWphBAS5pczd60RW",
+    "productName": "Ceviche de Congrio",
+    "productCategory": "Ceviches",
+    "productPrice": 30,
+    "ingredients": {
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 3.27
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 6,
+        "unit": "und",
+        "unitCost": 3.75
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2.58
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.13
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.06
+      },
+      "8sIv8sxIXgfUwvU-": {
+        "name": "AJI LIMO",
+        "quantity": 0.02,
+        "unit": "sol",
+        "unitCost": 4.12
+      },
+      "lIArLLKDsb07DbUw": {
+        "name": "culantro",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 1.68
+      }
+    },
+    "totalCost": 24.27,
+    "portionCost": 31.55,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "iWu-0bwpIq9HXw": {
+    "productId": "-OxlpWstqL3OWmYUsL6-",
+    "productName": "Ceviche Mixto",
+    "productCategory": "Ceviches",
+    "productPrice": 30,
+    "ingredients": {
+      "k9bmkBG6G8OUAihF": {
+        "name": "pota",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.12
+      },
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.46
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 6,
+        "unit": "und",
+        "unitCost": 4.66
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 1.55
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.59
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.36
+      },
+      "8sIv8sxIXgfUwvU-": {
+        "name": "AJI LIMO",
+        "quantity": 0.02,
+        "unit": "sol",
+        "unitCost": 2.57
+      },
+      "lIArLLKDsb07DbUw": {
+        "name": "culantro",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 4.13
+      }
+    },
+    "totalCost": 29.93,
+    "portionCost": 38.9,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "_XEbBA0xmzzLog": {
+    "productId": "-OxlpWw53fy7WmTIaxG9",
+    "productName": "Ceviche + Chicharrón (Filete)",
+    "productCategory": "Ceviches",
+    "productPrice": 35,
+    "ingredients": {
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.86
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 5,
+        "unit": "und",
+        "unitCost": 1.93
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 1.93
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 1.24
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2.76
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 4
+      },
+      "8sIv8sxIXgfUwvU-": {
+        "name": "AJI LIMO",
+        "quantity": 0.02,
+        "unit": "sol",
+        "unitCost": 2.59
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 4.28
+      }
+    },
+    "totalCost": 11.12,
+    "portionCost": 14.46,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "J0I36EBPGQYZEA": {
+    "productId": "-OxlpWzApJNXZ0-AVgAq",
+    "productName": "Ceviche + Chicharrón (Congrio)",
+    "productCategory": "Ceviches",
+    "productPrice": 40,
+    "ingredients": {
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 3.18
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 6,
+        "unit": "und",
+        "unitCost": 3.46
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 3.84
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.11
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 3.16
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.82
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 2.6
+      }
+    },
+    "totalCost": 23.34,
+    "portionCost": 30.35,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "2uYkyJ8gXuXeow": {
+    "productId": "-OxlpX1Vd_l4UjGHbUN7",
+    "productName": "Ceviche + Chicharrón (Mixto)",
+    "productCategory": "Ceviches",
+    "productPrice": 40,
+    "ingredients": {
+      "k9bmkBG6G8OUAihF": {
+        "name": "pota",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 4.48
+      },
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 2.95
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 6,
+        "unit": "und",
+        "unitCost": 4.1
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2.28
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.62
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 4.66
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.41
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 4.68
+      }
+    },
+    "totalCost": 26.96,
+    "portionCost": 35.04,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "4mhVIkRaAIdDyg": {
+    "productId": "-OxlpX4dLKFdof6ROXCd",
+    "productName": "Combo Ceviche + Chicharrón",
+    "productCategory": "Ceviches",
+    "productPrice": 45,
+    "ingredients": {
+      "k9bmkBG6G8OUAihF": {
+        "name": "pota",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 3.29
+      },
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2.2
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 8,
+        "unit": "und",
+        "unitCost": 4.27
+      },
+      "dtb-Vjr1beDU-cs1": {
+        "name": "cebolla china",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 4.25
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 2.99
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 3.54
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 3
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.1,
+        "unit": "und",
+        "unitCost": 2.92
+      }
+    },
+    "totalCost": 37.64,
+    "portionCost": 48.93,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "5RaEs1ughnyjXQ": {
+    "productId": "-OxlpX7t6M2PaZ_UMJ6I",
+    "productName": "Pescado Frito",
+    "productCategory": "Ceviches",
+    "productPrice": 30,
+    "ingredients": {
+      "cFgp6-ikmVdOjV4_": {
+        "name": "Filete merluza",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 3.64
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 2.81
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 3,
+        "unit": "und",
+        "unitCost": 1.41
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.1,
+        "unit": "und",
+        "unitCost": 3.68
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.28
+      }
+    },
+    "totalCost": 6.08,
+    "portionCost": 7.91,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "k-RO_T-ME8a4Bg": {
+    "productId": "-OxlpXB6Yjf3qYQnyLhF",
+    "productName": "Café Pasado 8oz",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 5.5,
+    "ingredients": {
+      "jSfC32cd7tq4T265": {
+        "name": "azucar blanca",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 4.98
+      }
+    },
+    "totalCost": 0.05,
+    "portionCost": 0.06,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "c_eBSenrbms-eg": {
+    "productId": "-OxlpXEJ3rnCsE72FqYO",
+    "productName": "Café Pasado 16oz",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 8,
+    "ingredients": {
+      "jSfC32cd7tq4T265": {
+        "name": "azucar blanca",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 2.14
+      }
+    },
+    "totalCost": 0.04,
+    "portionCost": 0.06,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "E8aDo5dG9TGBsg": {
+    "productId": "-OxlpXHVyKiFTxDjV4er",
+    "productName": "Espresso",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 6,
+    "ingredients": {
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.28
+      }
+    },
+    "totalCost": 0.02,
+    "portionCost": 0.03,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "B6oTOWZy3NSUjQ": {
+    "productId": "-OxlpXKhbgHQNKh9HCMb",
+    "productName": "Americano",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 7,
+    "ingredients": {
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 3.1
+      }
+    },
+    "totalCost": 0.03,
+    "portionCost": 0.04,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "hv4oDvQzbRJ8rw": {
+    "productId": "-OxlpXNt8dD_hUvRio0X",
+    "productName": "Café Macchiato",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 7.5,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.1,
+        "unit": "und",
+        "unitCost": 4.56
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.08
+      }
+    },
+    "totalCost": 0.48,
+    "portionCost": 0.62,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "QLald0rN4TMCrw": {
+    "productId": "-OxlpXR55NEOSujIQy2P",
+    "productName": "Café Latte",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 8.5,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.2,
+        "unit": "und",
+        "unitCost": 1.36
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 4.88
+      }
+    },
+    "totalCost": 0.32,
+    "portionCost": 0.42,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "Ruvp2biDlQQHhA": {
+    "productId": "-OxlpXUIh5n-OmT2cT1Q",
+    "productName": "Cappuccino",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 8.5,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.15,
+        "unit": "und",
+        "unitCost": 4.95
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 4.08
+      }
+    },
+    "totalCost": 0.78,
+    "portionCost": 1.02,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "KxPyBdhdBQrbKQ": {
+    "productId": "-OxlpXXD1tQum_0eAUq2",
+    "productName": "Café Mocha",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 9,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.15,
+        "unit": "und",
+        "unitCost": 4.05
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.05
+      }
+    },
+    "totalCost": 0.63,
+    "portionCost": 0.82,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "uVxjDbdcmnYX2Q": {
+    "productId": "-OxlpXbEpt8k1hDg4YW8",
+    "productName": "Long Coffee",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 8.5,
+    "ingredients": {
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 3.34
+      }
+    },
+    "totalCost": 0.03,
+    "portionCost": 0.04,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "FkmeGHyHD3oMPg": {
+    "productId": "-OxlpXeVYMoFLnTUQHWy",
+    "productName": "2 Cafés Pasados",
+    "productCategory": "Bebidas Calientes",
+    "productPrice": 10,
+    "ingredients": {
+      "jSfC32cd7tq4T265": {
+        "name": "azucar blanca",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 1.71
+      }
+    },
+    "totalCost": 0.03,
+    "portionCost": 0.04,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "LFTAUMdg4459mQ": {
+    "productId": "-OxlpXhh3DsBVXzhAL8-",
+    "productName": "Iced Coffee",
+    "productCategory": "Bebidas Frías",
+    "productPrice": 6.5,
+    "ingredients": {
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 1.75
+      },
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.1,
+        "unit": "und",
+        "unitCost": 4.03
+      }
+    },
+    "totalCost": 0.42,
+    "portionCost": 0.55,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "PoamiSLZp-cWYA": {
+    "productId": "-OxlpXkuVCyAtcoZ0kLo",
+    "productName": "Iced Latte",
+    "productCategory": "Bebidas Frías",
+    "productPrice": 9,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.2,
+        "unit": "und",
+        "unitCost": 1.29
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 2.85
+      }
+    },
+    "totalCost": 0.29,
+    "portionCost": 0.37,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "kvYMFMdthQ_aoQ": {
+    "productId": "-OxlpXo6KLO_lwRY8v0_",
+    "productName": "Frappuccino",
+    "productCategory": "Bebidas Frías",
+    "productPrice": 9,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.2,
+        "unit": "und",
+        "unitCost": 4.14
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 4.14
+      }
+    },
+    "totalCost": 0.91,
+    "portionCost": 1.18,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "CDyH4WjIlZbtiw": {
+    "productId": "-OxlpXrIVMRGrOF7VJY8",
+    "productName": "Affogato",
+    "productCategory": "Bebidas Frías",
+    "productPrice": 9,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.1,
+        "unit": "und",
+        "unitCost": 1.55
+      }
+    },
+    "totalCost": 0.16,
+    "portionCost": 0.2,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "gDqSWvmOCxgmJg": {
+    "productId": "-OxlpXuWenGPkfCLSVCR",
+    "productName": "Jugo de Papaya 8oz",
+    "productCategory": "Jugos Naturales",
+    "productPrice": 5,
+    "ingredients": {
+      "sXKt-aHxASU3fD8k": {
+        "name": "papaya",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.65
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 3.08
+      }
+    },
+    "totalCost": 0.39,
+    "portionCost": 0.51,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "NmIwmQr5XVbAzg": {
+    "productId": "-OxlpXxhau_oBRyadNh8",
+    "productName": "Jugo de Piña 8oz",
+    "productCategory": "Jugos Naturales",
+    "productPrice": 6,
+    "ingredients": {
+      "-pFG62h-jRJpkn3p": {
+        "name": "piña",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 3.27
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 1.72
+      }
+    },
+    "totalCost": 0.69,
+    "portionCost": 0.89,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "Us8UtOA2gOVVFg": {
+    "productId": "-OxlpY-tTB6o5-w7MNjN",
+    "productName": "Jugo de Melón 8oz",
+    "productCategory": "Jugos Naturales",
+    "productPrice": 5,
+    "ingredients": {
+      "aO6ih0rEqKCAcAHn": {
+        "name": "melon",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.42
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 3.17
+      }
+    },
+    "totalCost": 0.35,
+    "portionCost": 0.45,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "QSQkdx_N7G52xw": {
+    "productId": "-OxlpY35uDVJTQgbNHpq",
+    "productName": "Jugo de Fresa 8oz",
+    "productCategory": "Jugos Naturales",
+    "productPrice": 7,
+    "ingredients": {
+      "9muol22UJ7JRPFPO": {
+        "name": "fresa",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 1.33
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 3.38
+      }
+    },
+    "totalCost": 0.27,
+    "portionCost": 0.35,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "ULgHq1qZ8nkYrA": {
+    "productId": "-OxlpY6ENEqc3LGspiLK",
+    "productName": "Jugo Surtido 8oz",
+    "productCategory": "Jugos Naturales",
+    "productPrice": 8,
+    "ingredients": {
+      "sXKt-aHxASU3fD8k": {
+        "name": "papaya",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.86
+      },
+      "-pFG62h-jRJpkn3p": {
+        "name": "piña",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 2.91
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 4.69
+      }
+    },
+    "totalCost": 0.77,
+    "portionCost": 1,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "TWm4KHwcQjMdaQ": {
+    "productId": "-OxlpY9VBXswi8dCOn8r",
+    "productName": "Milkshake de Fresa",
+    "productCategory": "Milkshakes",
+    "productPrice": 15,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.3,
+        "unit": "und",
+        "unitCost": 3.38
+      },
+      "9muol22UJ7JRPFPO": {
+        "name": "fresa",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 4.06
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 3.8
+      }
+    },
+    "totalCost": 1.74,
+    "portionCost": 2.26,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "l4ZZgGkKJRYybg": {
+    "productId": "-OxlpYChJhlmSDCixOIe",
+    "productName": "Milkshake de Oreo",
+    "productCategory": "Milkshakes",
+    "productPrice": 15,
+    "ingredients": {
+      "B6DNpXpyGtNjH4g9": {
+        "name": "leche gloria",
+        "quantity": 0.3,
+        "unit": "und",
+        "unitCost": 4.89
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 4.64
+      }
+    },
+    "totalCost": 1.61,
+    "portionCost": 2.09,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "pCyC1ITFYe0l0g": {
+    "productId": "-OxlpYFtW6QROH4-M8Vf",
+    "productName": "Limonada 500ml",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 2.5,
+    "ingredients": {
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 3,
+        "unit": "und",
+        "unitCost": 4.85
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 4.98
+      }
+    },
+    "totalCost": 14.7,
+    "portionCost": 19.11,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "f__-J9luxWko7g": {
+    "productId": "-OxlpYJ5llg9Kt-1TSRp",
+    "productName": "Limonada 1L",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 6,
+    "ingredients": {
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 5,
+        "unit": "und",
+        "unitCost": 2.36
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 4.37
+      }
+    },
+    "totalCost": 12.02,
+    "portionCost": 15.62,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "kMgv5RRYqqnjkg": {
+    "productId": "-OxlpYMI3u6PInOzqNm9",
+    "productName": "Maracuyá 500ml",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 2.5,
+    "ingredients": {
+      "EDKZ1__8zKnFvnYH": {
+        "name": "maracuya",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 1.53
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 3.74
+      }
+    },
+    "totalCost": 0.34,
+    "portionCost": 0.44,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "6HNHV3DCU_G1aQ": {
+    "productId": "-OxlpYPWUm-n_92ml_4V",
+    "productName": "Maracuyá 1L",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 6,
+    "ingredients": {
+      "EDKZ1__8zKnFvnYH": {
+        "name": "maracuya",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 1.06
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 2.5
+      }
+    },
+    "totalCost": 0.39,
+    "portionCost": 0.51,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "Hj4KpC4azCHSbQ": {
+    "productId": "-OxlpYShUiLUfiR7zCVk",
+    "productName": "Chicha Morada 500ml",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 2.5,
+    "ingredients": {
+      "knvgtsrjxI3bMEaQ": {
+        "name": "maiz morado",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.67
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 2.41
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 1.22
+      }
+    },
+    "totalCost": 1.66,
+    "portionCost": 2.16,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "yk19zcEfVizZOw": {
+    "productId": "-OxlpYVuOPnFyn3e4BKP",
+    "productName": "Chicha Morada 1L",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 6,
+    "ingredients": {
+      "knvgtsrjxI3bMEaQ": {
+        "name": "maiz morado",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.25
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 3.01
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 2.17
+      }
+    },
+    "totalCost": 4.74,
+    "portionCost": 6.16,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "cUsxucR2FGBzSw": {
+    "productId": "-OxlpYZ5uC3VVbWhDI3j",
+    "productName": "Cebada 500ml",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 2.5,
+    "ingredients": {
+      "XCeaDRZaHFU3F4WV": {
+        "name": "Cebada Negra",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 4.68
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 1.12
+      }
+    },
+    "totalCost": 0.27,
+    "portionCost": 0.35,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "1eK39Q_ht9F1ig": {
+    "productId": "-OxlpYbFyvyzh-OPjpr_",
+    "productName": "Cebada 1L",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 6,
+    "ingredients": {
+      "XCeaDRZaHFU3F4WV": {
+        "name": "Cebada Negra",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 4.92
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 1.73
+      }
+    },
+    "totalCost": 0.58,
+    "portionCost": 0.75,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "E_S3L-NLzR3Q7A": {
+    "productId": "-OxlpYeV-Th2JUx2_8j9",
+    "productName": "Jamaica 500ml",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 2.5,
+    "ingredients": {
+      "UWOF6090xuVM8Rrw": {
+        "name": "jamaica",
+        "quantity": 0.02,
+        "unit": "sol",
+        "unitCost": 1.85
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 3.01
+      }
+    },
+    "totalCost": 0.13,
+    "portionCost": 0.17,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "RFzRfn_UEflS0A": {
+    "productId": "-OxlpYhhvjPwmmEQESgW",
+    "productName": "Jamaica 1L",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 6,
+    "ingredients": {
+      "UWOF6090xuVM8Rrw": {
+        "name": "jamaica",
+        "quantity": 0.04,
+        "unit": "sol",
+        "unitCost": 4.65
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 4.13
+      }
+    },
+    "totalCost": 0.39,
+    "portionCost": 0.51,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "eiihitGVTMsc6Q": {
+    "productId": "-OxlpYku2BAhaNNvBpFg",
+    "productName": "Manzana 500ml",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 2.5,
+    "ingredients": {
+      "7NwcaZp1eFj4lafw": {
+        "name": "manzana roja",
+        "quantity": 1,
+        "unit": "kg",
+        "unitCost": 4.45
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 1.34
+      }
+    },
+    "totalCost": 4.49,
+    "portionCost": 5.84,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "ZVmRp8DThCZz4A": {
+    "productId": "-OxlpYo67SwLINTD8f1c",
+    "productName": "Manzana 1L",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 6,
+    "ingredients": {
+      "7NwcaZp1eFj4lafw": {
+        "name": "manzana roja",
+        "quantity": 2,
+        "unit": "kg",
+        "unitCost": 2.91
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 2.71
+      }
+    },
+    "totalCost": 5.96,
+    "portionCost": 7.74,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "tis3bU864pg42A": {
+    "productId": "-OxlpYrI1vRjYGbGnK--",
+    "productName": "Huevo Frito",
+    "productCategory": "Adicionales",
+    "productPrice": 2,
+    "ingredients": {
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 1.56
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.02,
+        "unit": "und",
+        "unitCost": 1.37
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.005,
+        "unit": "kg",
+        "unitCost": 3.99
+      }
+    },
+    "totalCost": 1.61,
+    "portionCost": 2.09,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "XA7a_LBr-Dm4Hg": {
+    "productId": "-OxlpYuVLYRgrNY-40BK",
+    "productName": "Plátanos Fritos",
+    "productCategory": "Adicionales",
+    "productPrice": 2,
+    "ingredients": {
+      "bvPwBSyGzzLfdSql": {
+        "name": "platanos de freir",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 2.48
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.03,
+        "unit": "und",
+        "unitCost": 4.66
+      }
+    },
+    "totalCost": 2.62,
+    "portionCost": 3.41,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "6ZfvPmOH2FlBoQ": {
+    "productId": "-OxlpYxhQuU-Ia4a8lUD",
+    "productName": "Huevo y Plátanos Fritos",
+    "productCategory": "Adicionales",
+    "productPrice": 3,
+    "ingredients": {
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 3.37
+      },
+      "bvPwBSyGzzLfdSql": {
+        "name": "platanos de freir",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 3.76
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 3.94
+      }
+    },
+    "totalCost": 7.33,
+    "portionCost": 9.53,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "0o7B4mMix9Z_hQ": {
+    "productId": "-OxlpZ-ulOXOGMJ_2vMv",
+    "productName": "Ensalada Fresca",
+    "productCategory": "Adicionales",
+    "productPrice": 5,
+    "ingredients": {
+      "bigZwQXf7G3__7Om": {
+        "name": "lechuga repollada",
+        "quantity": 0.5,
+        "unit": "und",
+        "unitCost": 1.08
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 2.77
+      },
+      "pnGtZRnOuAfQ4aO-": {
+        "name": "zanahoria",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 1.51
+      },
+      "W36Z33RRwWKWSWSr": {
+        "name": "Aceite de oliva",
+        "quantity": 0.02,
+        "unit": "bot",
+        "unitCost": 4.76
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.38
+      }
+    },
+    "totalCost": 5.44,
+    "portionCost": 7.08,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "5xv3qRev7phEQg": {
+    "productId": "-OxlxgCtTnIeV9iTfnBX",
+    "productName": "Pollo Personal",
+    "productCategory": "Parrilla y Pollos",
+    "productPrice": 18,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 3.07
+      },
+      "WEg2wT6C5wAMVNL4": {
+        "name": "Arroz caserita",
+        "quantity": 0.2,
+        "unit": "kg",
+        "unitCost": 1.54
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.05,
+        "unit": "und",
+        "unitCost": 1.62
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.01,
+        "unit": "kg",
+        "unitCost": 4.87
+      }
+    },
+    "totalCost": 3.51,
+    "portionCost": 4.56,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "J50PdkbPwgTsTg": {
+    "productId": "-OxlxgGHm5zJIsCpMeKJ",
+    "productName": "Fuente de Chicharrones",
+    "productCategory": "Parrilla y Pollos",
+    "productPrice": 25,
+    "ingredients": {
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 2.84
+      },
+      "7KxSVEUQGRBCunOo": {
+        "name": "Aceite mirasol",
+        "quantity": 0.3,
+        "unit": "und",
+        "unitCost": 4.07
+      },
+      "9XwK0ba0dC_Ji5d1": {
+        "name": "salsa de ostion",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 1.41
+      },
+      "4HkXxpiYL1nubmtV": {
+        "name": "limon",
+        "quantity": 4,
+        "unit": "und",
+        "unitCost": 3.61
+      },
+      "wy-7CoELwy8mr4rG": {
+        "name": "camote amarillo",
+        "quantity": 0.3,
+        "unit": "kg",
+        "unitCost": 4.73
+      }
+    },
+    "totalCost": 22.79,
+    "portionCost": 29.62,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "SxodpQcxMA_5BA": {
+    "productId": "-OxlxgJUxpCJ3jPhQF3j",
+    "productName": "Karambola 500ml",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 2.5,
+    "ingredients": {
+      "8w6Ti0U1XW4msKx1": {
+        "name": "carambola",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 2.06
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 1.3
+      }
+    },
+    "totalCost": 0.35,
+    "portionCost": 0.45,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "OYe5Zd06NrsC9g": {
+    "productId": "-OxlxgMfzYtqYd9PORFd",
+    "productName": "Karambola 1L",
+    "productCategory": "Bebidas Refrescantes",
+    "productPrice": 6,
+    "ingredients": {
+      "8w6Ti0U1XW4msKx1": {
+        "name": "carambola",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 2.76
+      },
+      "gcmEA-ztHYOJfgbn": {
+        "name": "Azucar",
+        "quantity": 0.05,
+        "unit": "kg",
+        "unitCost": 3.57
+      }
+    },
+    "totalCost": 0.87,
+    "portionCost": 1.13,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "AqqrBKWqlVE59Q": {
+    "productId": "-OxlxgPtagLokT4g2Lkj",
+    "productName": "Club Sandwich Clásico",
+    "productCategory": "Especiales",
+    "productPrice": 12,
+    "ingredients": {
+      "msrwwtiBVag_oEss": {
+        "name": "pan casa",
+        "quantity": 3,
+        "unit": "und",
+        "unitCost": 2.78
+      },
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 0.5,
+        "unit": "und",
+        "unitCost": 1.15
+      },
+      "bigZwQXf7G3__7Om": {
+        "name": "lechuga repollada",
+        "quantity": 0.3,
+        "unit": "und",
+        "unitCost": 2.51
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.1,
+        "unit": "kg",
+        "unitCost": 3.8
+      },
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 2.53
+      },
+      "OJgcxvAvV25u0JJM": {
+        "name": "mostaza bolsa",
+        "quantity": 0.02,
+        "unit": "kg",
+        "unitCost": 1.84
+      }
+    },
+    "totalCost": 12.61,
+    "portionCost": 16.4,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "tK1TaS020nEUUA": {
+    "productId": "-OxlxgT40VrVtsxoCf62",
+    "productName": "Combo Club Sandwich",
+    "productCategory": "Especiales",
+    "productPrice": 40,
+    "ingredients": {
+      "msrwwtiBVag_oEss": {
+        "name": "pan casa",
+        "quantity": 6,
+        "unit": "und",
+        "unitCost": 2.99
+      },
+      "ZTUBhBk5FGIOhPP8": {
+        "name": "pechugas enteras",
+        "quantity": 1,
+        "unit": "und",
+        "unitCost": 4.16
+      },
+      "bigZwQXf7G3__7Om": {
+        "name": "lechuga repollada",
+        "quantity": 0.5,
+        "unit": "und",
+        "unitCost": 2.44
+      },
+      "z1X8HzEoOep_0rpO": {
+        "name": "tomate",
+        "quantity": 0.15,
+        "unit": "kg",
+        "unitCost": 3.75
+      },
+      "_Mgg4xpGdyM_SRVF": {
+        "name": "huevos",
+        "quantity": 2,
+        "unit": "und",
+        "unitCost": 2.44
+      },
+      "v5We2wtsg6AMBIfx": {
+        "name": "papa rosada - unica",
+        "quantity": 0.25,
+        "unit": "kg",
+        "unitCost": 3.17
+      },
+      "OJgcxvAvV25u0JJM": {
+        "name": "mostaza bolsa",
+        "quantity": 0.03,
+        "unit": "kg",
+        "unitCost": 3.9
+      }
+    },
+    "totalCost": 29.67,
+    "portionCost": 38.57,
+    "servings": 1,
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  }
+}

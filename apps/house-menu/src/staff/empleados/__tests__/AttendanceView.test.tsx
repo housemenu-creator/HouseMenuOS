@@ -34,21 +34,32 @@ const mockRecords = [
 ];
 
 describe('AttendanceView', () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-06-15'));
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('shows loading skeleton on mount', () => {
-    mockSubscribeHistory.mockImplementation(() => () => {});
-    render(<AttendanceView uid={UID} />);
+    mockSubscribeHistory.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
+      Promise.resolve().then(() => cb([]));
+      return () => {};
+    });
+    render(<AttendanceView uid={UID} branchId="b1" />);
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('renders populated with stats and records', async () => {
-    mockSubscribeHistory.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeHistory.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb(mockRecords);
       return () => {};
     });
-    render(<AttendanceView uid={UID} />);
+    render(<AttendanceView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Días')).toBeDefined();
@@ -75,11 +86,11 @@ describe('AttendanceView', () => {
     const partialRecords = [
       { date: '2026-06-22', clockIn: 1000 },
     ];
-    mockSubscribeHistory.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeHistory.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb(partialRecords);
       return () => {};
     });
-    render(<AttendanceView uid={UID} />);
+    render(<AttendanceView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('En curso')).toBeDefined();
@@ -89,28 +100,28 @@ describe('AttendanceView', () => {
   });
 
   it('shows empty state when no records', async () => {
-    mockSubscribeHistory.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeHistory.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb([]);
       return () => {};
     });
-    render(<AttendanceView uid={UID} />);
+    render(<AttendanceView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Sin registros')).toBeDefined();
     });
   });
 
-  it('shows error state when uid is empty', () => {
-    render(<AttendanceView uid="" />);
+it('shows error state when uid is empty', () => {
+    render(<AttendanceView uid="" branchId="b1" />);
     expect(screen.getByText('Error al cargar')).toBeDefined();
   });
 
   it('shows month filter when multiple months available', async () => {
-    mockSubscribeHistory.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeHistory.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb(mockRecords);
       return () => {};
     });
-    render(<AttendanceView uid={UID} />);
+    render(<AttendanceView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText(/Junio 2026/)).toBeDefined();
@@ -127,11 +138,11 @@ describe('AttendanceView', () => {
       { date: '2026-06-22', clockIn: 1000, clockOut: 1000 + EIGHT_H_30M },
       { date: '2026-06-21', clockIn: 2000 }, // partial (no clockOut)
     ];
-    mockSubscribeHistory.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeHistory.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb(mixedRecords);
       return () => {};
     });
-    render(<AttendanceView uid={UID} />);
+    render(<AttendanceView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('22')).toBeDefined();

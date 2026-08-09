@@ -1,14 +1,51 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ref, onValue, query, orderByChild, limitToLast } from 'firebase/database';
 import {
   BarChart3, Package, Users, ShoppingCart, TrendingUp, TrendingDown,
   Clock, DollarSign, Utensils, AlertTriangle, CheckCircle, XCircle,
-  ChevronRight, Activity, Zap, Percent
+  ChevronRight, Activity, Zap, Percent, Loader2
 } from 'lucide-react';
 import { realtimeDB as db } from '@house/db';
 import { useBranch } from '../context/BranchContext';
 import { useAuth } from '../context/AuthContext';
+
+// ── AnimCounter ──────────────────────────────────────
+function AnimCounter({ value, duration = 600, prefix = '', suffix = '' }) {
+  const [display, setDisplay] = useState(0);
+  const prev = useRef(0);
+  const raf = useRef(null);
+
+  useEffect(() => {
+    if (value === prev.current) { setDisplay(value); return; }
+    const start = prev.current;
+    const startTime = performance.now();
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - (1 - progress) * (1 - progress);
+      setDisplay(Math.round(start + (value - start) * eased));
+      if (progress < 1) raf.current = requestAnimationFrame(animate);
+    };
+    raf.current = requestAnimationFrame(animate);
+    prev.current = value;
+    return () => raf.current && cancelAnimationFrame(raf.current);
+  }, [value, duration]);
+
+  // Si el valor original tiene decimales, los mostramos
+  const isDecimal = value !== Math.floor(value);
+  const formatted = isDecimal ? (value).toFixed(2) : display;
+  return <>{prefix}{formatted}{suffix}</>;
+}
+
+// ── Variants + Skeleton ───────────────────────────────
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const iv = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 22 } } };
+
+function SkeletonBlock({ className = '' }) {
+  return <div className={`bg-cm-border rounded-lg animate-pulse ${className}`} />;
+}
 
 // ── Sidebar nav items ──────────────────────────────────
 const NAV_ITEMS = [
@@ -20,10 +57,11 @@ const NAV_ITEMS = [
 ];
 
 // ── KPI Card ───────────────────────────────────────────
-function KpiCard({ icon: Icon, label, value, sub, trend, color }) {
+function KpiCard({ icon: Icon, label, value, sub, trend, color, isNumeric }) {
   const isUp = trend > 0;
   return (
-    <div className="bg-cm-surface border border-cm-border rounded-xl p-5 flex flex-col gap-3">
+    <motion.div variants={iv}
+      className="bg-cm-surface border border-cm-border rounded-xl p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
           <Icon size={20} />
@@ -36,11 +74,13 @@ function KpiCard({ icon: Icon, label, value, sub, trend, color }) {
         )}
       </div>
       <div>
-        <p className="text-2xl font-bold text-cm-text">{value}</p>
+        <p className="text-2xl font-bold text-cm-text tabular-nums">
+          {isNumeric ? <AnimCounter value={Number(value)} /> : value}
+        </p>
         <p className="text-sm text-cm-text-secondary">{label}</p>
       </div>
       {sub && <p className="text-xs text-cm-text-tertiary">{sub}</p>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -216,16 +256,25 @@ export default function ControlCenterView() {
   const { activeBranchId } = useBranch();
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('resumen');
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setRetryCount((c) => c + 1);
+    setLoading(true);
+  }, []);
+
   // ── Load data ─────────────────────────────────────────
   useEffect(() => {
     if (!activeBranchId) return;
     setLoading(true);
+    setError(null);
 
     const ordersRef = ref(db, `branches/${activeBranchId}/orders`);
     const productsRef = ref(db, `branches/${activeBranchId}/catalog/products`);
@@ -239,7 +288,7 @@ export default function ControlCenterView() {
       } else {
         setOrders([]);
       }
-    });
+    }, (err) => { console.warn('ControlCenter orders error:', err); setError('Error al cargar pedidos'); setLoading(false); });
 
     const unsubProducts = onValue(productsRef, (snap) => {
       if (snap.exists()) {
@@ -248,7 +297,7 @@ export default function ControlCenterView() {
       } else {
         setProducts([]);
       }
-    });
+    }, (err) => { console.warn('ControlCenter products error:', err); });
 
     const unsubStaff = onValue(staffRef, (snap) => {
       if (snap.exists()) {
@@ -257,7 +306,7 @@ export default function ControlCenterView() {
       } else {
         setEmployees([]);
       }
-    });
+    }, (err) => { console.warn('ControlCenter staff error:', err); });
 
     const timer = setTimeout(() => setLoading(false), 2000);
 
@@ -267,7 +316,7 @@ export default function ControlCenterView() {
       unsubStaff();
       clearTimeout(timer);
     };
-  }, [activeBranchId]);
+  }, [activeBranchId, retryCount]);
 
   // ── Computed stats ────────────────────────────────────
   const stats = useMemo(() => {
@@ -316,18 +365,76 @@ export default function ControlCenterView() {
 
   if (!user) return null;
 
+  // ── Error state ──
+  if (error) {
+    return (
+      <div className="h-screen bg-cm-bg flex items-center justify-center">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center gap-4 px-6 text-center">
+          <AlertCircle className="w-12 h-12 text-cm-error" />
+          <p className="text-lg font-bold text-cm-error">{error}</p>
+          <button onClick={handleRetry}
+            className="px-6 py-3 text-xs font-black bg-cm-accent text-white rounded-xl hover:brightness-110 transition-all tracking-wider uppercase">
+            Reintentar
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ── Skeleton loading ──
+  if (loading && orders.length === 0) {
+    return (
+      <div className="flex h-screen bg-cm-bg overflow-hidden">
+        <aside className="w-56 flex-shrink-0 bg-cm-surface border-r border-cm-border flex flex-col">
+          <div className="p-4 border-b border-cm-border space-y-2">
+            <SkeletonBlock className="h-4 w-28" />
+            <SkeletonBlock className="h-3 w-20" />
+          </div>
+          <div className="flex-1 p-3 space-y-1">
+            {[1,2,3,4,5].map((i) => <SkeletonBlock key={i} className="h-10 w-full" />)}
+          </div>
+        </aside>
+        <main className="flex-1 p-6 space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1,2,3,4].map((i) => (
+              <div key={i} className="bg-cm-surface border border-cm-border rounded-xl p-5 space-y-2">
+                <SkeletonBlock className="h-10 w-10" />
+                <SkeletonBlock className="h-7 w-24" />
+                <SkeletonBlock className="h-3 w-20" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 bg-cm-surface border border-cm-border rounded-xl p-5 space-y-4">
+              <SkeletonBlock className="h-4 w-40" />
+              <div className="flex items-end gap-2 h-40">
+                {[1,2,3,4,5,6,7,8].map((i) => <SkeletonBlock key={i} className="flex-1 h-full max-h-[80%]" />)}
+              </div>
+            </div>
+            <div className="bg-cm-surface border border-cm-border rounded-xl p-5 space-y-3">
+              <SkeletonBlock className="h-4 w-36" />
+              {[1,2,3,4].map((i) => <SkeletonBlock key={i} className="h-6 w-full" />)}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-cm-bg overflow-hidden">
+    <motion.div variants={cv} initial="hidden" animate="show" className="flex h-screen bg-cm-bg overflow-hidden">
       {/* ── Sidebar ── */}
-      <aside className="w-56 flex-shrink-0 bg-cm-surface border-r border-cm-border flex flex-col">
+      <motion.aside variants={iv} className="w-56 flex-shrink-0 bg-cm-surface border-r border-cm-border flex flex-col">
         <div className="p-4 border-b border-cm-border">
           <h1 className="text-sm font-bold text-cm-text tracking-wide">Control Center</h1>
           <p className="text-xs text-cm-text-tertiary mt-0.5">House Portal OS</p>
         </div>
         <nav className="flex-1 p-3 flex flex-col gap-1">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
-            <button
+            <motion.button
               key={id}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setActiveSection(id)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 activeSection === id
@@ -337,7 +444,7 @@ export default function ControlCenterView() {
             >
               <Icon size={18} />
               {label}
-            </button>
+            </motion.button>
           ))}
         </nav>
         <div className="p-3 border-t border-cm-border">
@@ -349,13 +456,13 @@ export default function ControlCenterView() {
             Panel Admin
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 flex flex-col gap-6 max-w-7xl mx-auto">
           {/* ── KPIs ── */}
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <motion.section variants={cv} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
               icon={DollarSign}
               label="Ventas hoy"
@@ -363,6 +470,7 @@ export default function ControlCenterView() {
               sub={`${stats.pedidoCount} pedidos`}
               trend={null}
               color="bg-cm-success/20 text-cm-success"
+              isNumeric={false}
             />
             <KpiCard
               icon={ShoppingCart}
@@ -371,6 +479,7 @@ export default function ControlCenterView() {
               sub={`${stats.totalItems} ítems`}
               trend={null}
               color="bg-cm-info/20 text-cm-info"
+              isNumeric={true}
             />
             <KpiCard
               icon={Utensils}
@@ -379,6 +488,7 @@ export default function ControlCenterView() {
               sub={`${stats.pedidoCount > 0 ? 'por pedido' : 'sin pedidos'}`}
               trend={null}
               color="bg-cm-accent/20 text-cm-accent"
+              isNumeric={false}
             />
             <KpiCard
               icon={Activity}
@@ -387,10 +497,16 @@ export default function ControlCenterView() {
               sub={`${(stats.statusCount['pendente'] || 0) + (stats.statusCount['confirmado'] || 0)} pendientes`}
               trend={null}
               color="bg-cm-warning/20 text-cm-warning"
+              isNumeric={true}
             />
-          </section>
+          </motion.section>
 
-          {/* ── Resumen ── */}
+          {/* ── Section content with AnimatePresence ── */}
+          <AnimatePresence mode="wait">
+            <motion.div key={activeSection}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}>
+
           {activeSection === 'resumen' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
@@ -402,7 +518,6 @@ export default function ControlCenterView() {
             </div>
           )}
 
-          {/* ── Ventas ── */}
           {activeSection === 'ventas' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
@@ -417,7 +532,6 @@ export default function ControlCenterView() {
             </div>
           )}
 
-          {/* ── Stock ── */}
           {activeSection === 'stock' && (
             <div className="flex flex-col gap-4">
               <StockAlerts products={products} />
@@ -455,7 +569,6 @@ export default function ControlCenterView() {
             </div>
           )}
 
-          {/* ── Staff ── */}
           {activeSection === 'staff' && (
             <div className="flex flex-col gap-4">
               <StaffNow employees={employees} />
@@ -493,14 +606,14 @@ export default function ControlCenterView() {
             </div>
           )}
 
-          {/* ── Pedidos ── */}
           {activeSection === 'pedidos' && (
             <div className="flex flex-col gap-4">
-              {/* Status summary */}
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                 {Object.entries(stats.statusCount).map(([status, count]) => (
                   <div key={status} className="bg-cm-surface border border-cm-border rounded-xl p-3 flex flex-col items-center gap-1">
-                    <span className="text-xl font-bold text-cm-text">{count}</span>
+                    <span className="text-xl font-bold text-cm-text tabular-nums">
+                      <AnimCounter value={count} />
+                    </span>
                     <StatusBadge status={status} />
                   </div>
                 ))}
@@ -508,8 +621,11 @@ export default function ControlCenterView() {
               <RecentOrders orders={stats.allOrders} />
             </div>
           )}
+
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
-    </div>
+    </motion.div>
   );
 }

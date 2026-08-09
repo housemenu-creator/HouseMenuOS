@@ -1,0 +1,22 @@
+{
+  "body": {
+    "eventId": "test_001",
+    "type": "inventory.stock.low",
+    "version": 1,
+    "tenantId": "monteverde",
+    "branchId": "monteverde",
+    "occurredAt": "2026-07-18T13:00:00.000Z",
+    "source": "test-script",
+    "correlationId": "corr_test_001",
+    "payload": {
+      "productId": "prod_papa_001",
+      "productName": "Papa Amarilla",
+      "currentStock": 5,
+      "minStock": 20,
+      "supplierId": "prov_dist_001"
+    },
+    "metadata": {
+      "idempotencyKey": "test_001"
+    }
+  }
+}

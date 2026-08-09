@@ -1,0 +1,16 @@
+{
+  "eventType": "inventory.stock.low",
+  "description": "Stock de Papa Amarilla por debajo del mínimo",
+  "payload": {
+    "productId": "prod_papa_001",
+    "productName": "Papa Amarilla",
+    "currentStock": 5,
+    "minStock": 20,
+    "supplierId": "prov_dist_001"
+  },
+  "context": {
+    "branchId": "test-branch",
+    "userEmail": "system@house.com",
+    "userRole": "system"
+  }
+}

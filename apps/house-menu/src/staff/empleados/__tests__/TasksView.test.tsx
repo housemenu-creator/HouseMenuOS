@@ -30,19 +30,23 @@ const mockGoals = [
 describe('TasksView', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
-  it('shows loading skeleton on mount', () => {
-    mockSubscribeGoals.mockImplementation(() => () => {});
-    render(<TasksView uid={UID} />);
+  it('shows loading skeleton on mount', async () => {
+    mockSubscribeGoals.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
+      // Async callback to allow loading state to render
+      Promise.resolve().then(() => cb([]));
+      return () => {};
+    });
+    render(<TasksView uid={UID} branchId="b1" />);
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('renders populated tasks with pending and completed sections', async () => {
-    mockSubscribeGoals.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeGoals.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb(mockGoals);
       return () => {};
     });
-    render(<TasksView uid={UID} />);
+    render(<TasksView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Pendientes (2)')).toBeDefined();
@@ -62,11 +66,11 @@ describe('TasksView', () => {
     const allCompleted = [
       { id: 'g1', title: 'Done task', completed: true },
     ];
-    mockSubscribeGoals.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeGoals.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb(allCompleted);
       return () => {};
     });
-    render(<TasksView uid={UID} />);
+    render(<TasksView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText(/Todo al día/)).toBeDefined();
@@ -74,11 +78,11 @@ describe('TasksView', () => {
   });
 
   it('shows empty state when no goals returned', async () => {
-    mockSubscribeGoals.mockImplementation((_uid: string, cb: (data: any[]) => void) => {
+    mockSubscribeGoals.mockImplementation((_branchId: string, _uid: string, cb: (data: any[]) => void) => {
       cb([]);
       return () => {};
     });
-    render(<TasksView uid={UID} />);
+    render(<TasksView uid={UID} branchId="b1" />);
 
     await waitFor(() => {
       expect(screen.getByText('Sin tareas asignadas')).toBeDefined();
@@ -86,7 +90,7 @@ describe('TasksView', () => {
   });
 
   it('shows error state when uid is empty', () => {
-    render(<TasksView uid="" />);
+    render(<TasksView uid="" branchId="b1" />);
     expect(screen.getByText('Error al cargar')).toBeDefined();
   });
 });

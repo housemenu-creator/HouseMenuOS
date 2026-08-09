@@ -1,0 +1,48 @@
+# ═══════════════════════════════════════════════════════
+# n8n — Workflow Automation Engine
+#
+# Usage:
+#   docker compose up -d                    # Start n8n
+#   docker compose logs -f                  # Watch logs
+#   docker compose down                     # Stop
+#
+# Web UI: http://localhost:5678
+# Webhook: http://localhost:5678/webhook/{workflow-path}
+#
+# For production: set N8N_ENCRYPTION_KEY and N8N_USER_MANAGEMENT_DISABLED=false
+# ═══════════════════════════════════════════════════════
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: house-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_WEBHOOK_URL=http://localhost:5678/
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-change-me-in-production}
+      - N8N_USER_MANAGEMENT_DISABLED=true
+      - WEBHOOK_URL=http://localhost:5678/
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168  # 7 days
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/backup/workflows   # Import/export workflows here
+    restart: unless-stopped
+    networks:
+      - house-network
+
+networks:
+  house-network:
+    name: house-network
+    driver: bridge
+
+volumes:
+  n8n_data:
+    driver: local

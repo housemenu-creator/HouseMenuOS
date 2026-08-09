@@ -8,6 +8,7 @@ const monoRoot = path.resolve(__dirname, '../../');
 
 export default defineConfig({
   test: {
+    pool: 'forks',
     globals: true,
     environment: 'jsdom',
     testTimeout: 15_000,

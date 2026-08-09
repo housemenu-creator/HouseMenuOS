@@ -25,8 +25,10 @@ export default function TenantResolver() {
         if (active) {
           if (result) {
             setTenantId(result.tenantId);
-            appStore.getState().setActiveBranchId(result.branchId);
-            setResolved(result);
+            // ponytail: redirect legacy 'default' branchId to monteverde
+            const branchId = result.branchId === 'default' ? 'monteverde' : result.branchId;
+            appStore.getState().setActiveBranchId(branchId);
+            setResolved({ ...result, branchId });
           } else {
             setResolved(null);
           }

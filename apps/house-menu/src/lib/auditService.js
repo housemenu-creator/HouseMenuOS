@@ -1,4 +1,4 @@
-import { ref, push, set, get, query, limitToLast, orderByKey } from 'firebase/database';
+import { ref, push, set, get, query, limitToLast, orderByKey, serverTimestamp } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { nowISO } from './format';
 
@@ -19,7 +19,8 @@ export async function auditLog(action, detail = {}, actor = 'system') {
       action,
       detail,
       actor,
-      timestamp: Date.now(),
+      timestamp: serverTimestamp(),
+      _timestamp_client: Date.now(),
     });
   } catch (err) {
     console.warn('auditLog error:', err);

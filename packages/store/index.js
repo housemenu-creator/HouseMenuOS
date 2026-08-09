@@ -7,7 +7,7 @@ const CART_KEY = 'house_cart';
 function getInitialBranchId() {
   if (typeof window === 'undefined') return 'monteverde';
   const stored = localStorage.getItem('house_active_branch');
-  if (!stored || stored === 'hq' || stored === 'castilla') return 'monteverde';
+  if (!stored || stored === 'hq' || stored === 'castilla' || stored === 'default') return 'monteverde';
   return stored;
 }
 
@@ -51,10 +51,15 @@ export const appStore = createStore(
       setBranchError: (error) => set({ branchError: error, branchLoading: false }),
       setBranchLoading: (branchLoading) => set({ branchLoading }),
       setActiveBranchId: (id) => {
+        // ponytail: reject legacy/unknown branch IDs, fallback to monteverde
+        const safeId = !id || id === 'hq' || id === 'castilla' || id === 'default' ? 'monteverde' : id;
         if (typeof window !== 'undefined') {
-          localStorage.setItem('house_active_branch', id);
+          if (safeId !== id) {
+            console.warn(`[store] setActiveBranchId: "${id}" no es válido, re-asignado a "${safeId}"`);
+          }
+          localStorage.setItem('house_active_branch', safeId);
         }
-        set({ activeBranchId: id });
+        set({ activeBranchId: safeId });
       },
     }),
     {

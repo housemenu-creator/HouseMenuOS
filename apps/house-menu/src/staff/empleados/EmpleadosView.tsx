@@ -44,11 +44,11 @@ export default function EmpleadosView() {
       case 'dashboard':
         return <EmpleadosDashboard uid={uid} branchId={activeBranchId} />;
       case 'schedule':
-        return <ScheduleView uid={uid} />;
+        return <ScheduleView uid={uid} branchId={activeBranchId} />;
       case 'tasks':
-        return <TasksView uid={uid} />;
+        return <TasksView uid={uid} branchId={activeBranchId} />;
       case 'attendance':
-        return <AttendanceView uid={uid} />;
+        return <AttendanceView uid={uid} branchId={activeBranchId} />;
       case 'profile':
         return <ProfileView uid={uid} branchId={activeBranchId} />;
       default:

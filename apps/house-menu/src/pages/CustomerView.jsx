@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react
 import { motion, AnimatePresence } from 'framer-motion';
 import { ref, onValue } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { ShoppingCart, ArrowLeft, UtensilsCrossed, ChevronRight, ArrowUp, User, LogIn } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, UtensilsCrossed, ChevronRight, ArrowUp, User, LogIn, Smartphone } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import { menuService } from '../lib/menuService';
 import { dailyMenuService } from '../lib/dailyMenuService';
@@ -110,6 +110,7 @@ export default function CustomerView() {
 
   const [dailyMenus, setDailyMenus] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [showKiosk, setShowKiosk] = useState(false);
   const [layoutConfig, setLayoutConfig] = useState({
     landingShowHero: true,
     landingShowFlashOffer: true,
@@ -157,25 +158,6 @@ export default function CustomerView() {
     });
     return ['todos', ...Array.from(cats)];
   }, [catalog.products]);
-
-  const categoryImages = useMemo(() => {
-    const images = {};
-    if (catalog.products) {
-      Object.values(catalog.products).forEach(p => {
-        if (isVisibleInCarta(p) && p.category && p.image && !images[p.category]) {
-          images[p.category] = p.image;
-        }
-      });
-    }
-    if (catalog.categories) {
-      Object.entries(catalog.categories).forEach(([_, catData]) => {
-        if (catData && catData.image && catData.name) {
-          images[catData.name] = catData.image;
-        }
-      });
-    }
-    return images;
-  }, [catalog.products, catalog.categories]);
 
   // All products filtered by channel (carta) + search query
   const filteredProducts = useMemo(() => {
@@ -421,7 +403,7 @@ export default function CustomerView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cm-bg flex flex-col">
+      <div className="min-h-screen bg-cm-bg flex flex-col" data-theme="dark">
         {/* Header Shimmer */}
         <div className="sticky top-0 z-40 bg-cm-bg/85 backdrop-blur-lg border-b border-cm-accent/15 px-6 py-4 flex justify-between items-center animate-pulse">
           <div className="h-5 bg-cm-muted/20 w-24 rounded-full" />
@@ -462,7 +444,7 @@ export default function CustomerView() {
 
   if (!loading && (!catalog?.products || Object.keys(catalog.products).length === 0)) {
     return (
-      <div className="min-h-screen bg-cm-bg flex items-center justify-center">
+      <div className="min-h-screen bg-cm-bg flex items-center justify-center" data-theme="dark">
         <EmptyState
           icon={UtensilsCrossed}
           title="Menú no disponible"
@@ -472,12 +454,12 @@ export default function CustomerView() {
     );
   }
 
-  if (kioskEnabled) {
-    return <Suspense fallback={<div className="min-h-screen bg-cm-bg flex items-center justify-center"><div className="w-8 h-8 border-4 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}><KioskMode /></Suspense>;
+  if (kioskEnabled && showKiosk) {
+    return <Suspense fallback={<div className="min-h-screen bg-cm-bg flex items-center justify-center"><div className="w-8 h-8 border-4 border-cm-accent border-t-transparent rounded-full animate-spin" /></div>}><KioskMode onExit={() => setShowKiosk(false)} /></Suspense>;
   }
 
   return (
-    <div className="transition-all duration-300 flex flex-col min-h-screen">
+    <div className="transition-all duration-300 flex flex-col min-h-screen" data-theme="dark">
       <UrgencyBar />
 
       {/* ── Scroll-linked header ── */}
@@ -487,9 +469,10 @@ export default function CustomerView() {
         }`}
       >
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(slugRoute(slug, ROUTES.HOME))} className="p-1.5 hover:bg-cm-accent/10 rounded-full transition-colors text-cm-text shrink-0" title="Volver al inicio">
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+            onClick={() => navigate(slugRoute(slug, ROUTES.HOME))} className="p-1.5 hover:bg-cm-accent/10 rounded-full transition-colors text-cm-text shrink-0" title="Volver al inicio">
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </motion.button>
           <div className={`flex items-center gap-2 transition-all duration-200 ${headerCompact ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
             <img src={logo} alt="House Logo" className="w-7 h-7 rounded-lg object-cover border border-cm-border shadow-cm-sm" />
             <div className="text-[0.8rem] font-black tracking-widest text-cm-accent">HOUSE</div>
@@ -507,45 +490,46 @@ export default function CustomerView() {
 
         {/* Auth button — priority: staff > customer > guest */}
         {isAuthenticated ? (
-          <button
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => navigate(staffDashboardRoute(authUser?.role || 'admin'))}
             className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold text-cm-accent border border-cm-accent/20 hover:bg-cm-accent/10 transition-all"
           >
             <User className="w-3.5 h-3.5" />
             {!headerCompact && <span>Dash</span>}
-          </button>
+          </motion.button>
         ) : customerAuth ? (
-          <button
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => navigate(ROUTES.MI_CUENTA)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold text-cm-accent border border-cm-accent/20 hover:bg-cm-accent/10 transition-all"
             title="Mi Cuenta"
           >
             <User className="w-3.5 h-3.5" />
             {!headerCompact && <span>{customerPoints} pts</span>}
-          </button>
+          </motion.button>
         ) : (
-          <button
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => setShowAuthModal(true)}
             className="flex items-center gap-1.5 px-2 py-2 rounded-full text-xs text-cm-text-secondary hover:text-cm-accent transition-all"
             title="Crear Cuenta o Iniciar Sesión"
           >
             <LogIn className="w-3.5 h-3.5" />
             {!headerCompact && <span className="hidden sm:inline text-[10px] font-semibold">Crear Cuenta</span>}
-          </button>
+          </motion.button>
         )}
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
           onClick={() => setIsCartOpen(true)}
           className="relative flex items-center gap-2 px-4 py-2 border border-cm-border hover:border-cm-accent/40 hover:bg-cm-accent/5 rounded-full transition-all text-xs font-black uppercase tracking-wider text-cm-text"
         >
           <ShoppingCart className="w-4 h-4" />
-          {!headerCompact && <span>Carrito</span>}
+          {!headerCompact && <span className="hidden sm:inline">Carrito</span>}
           {cart.length > 0 && (
-            <span className="bg-cm-accent text-white text-[0.65rem] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-cm-sm">
+            <motion.span key={cart.length} initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-cm-accent text-white text-[0.65rem] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-cm-sm">
               {cart.length}
-            </span>
+            </motion.span>
           )}
-        </button>
+        </motion.button>
       </nav>
 
       {/* 3-Column Layout */}
@@ -565,7 +549,12 @@ export default function CustomerView() {
         {/* Main Content */}
         <main className="flex-1 min-w-0">
           <div className="w-full px-4 sm:px-8 lg:px-12 pt-6 pb-24">
-            <motion.div key="menu" className="space-y-8">
+            <motion.div
+              key="menu"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              className="space-y-8">
               {layoutConfig.cartaShowHero && (
                 <HeroBanner 
                   branchName={branches.find(b => b.id === activeBranchId)?.name}
@@ -594,7 +583,7 @@ export default function CustomerView() {
               <div className={`sticky z-30 bg-cm-bg transition-all duration-200 ${
                 headerCompact ? 'top-[50px] -mx-4 sm:-mx-6 px-4 sm:px-6 pt-3 pb-2 shadow-sm border-b border-cm-border/20' : 'top-14 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2'
               }`}>
-                <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} categoryImages={categoryImages} />
+                <CategoryRibbon categories={categoriesList} selected={activeCategory} onSelect={handleCategoryClick} />
               </div>
 
               <ProductGrid products={filteredProducts} onSelectProduct={handleSelectProduct} searchQuery={searchQuery} />
@@ -672,6 +661,21 @@ export default function CustomerView() {
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Kiosk mode FAB */}
+      {kioskEnabled && !showKiosk && view === 'landing' && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setShowKiosk(true)}
+          className="fixed bottom-52 right-6 z-40 flex items-center gap-2 px-4 py-3 bg-cm-accent text-white rounded-2xl shadow-cm-lg hover:bg-cm-accent-hover transition-colors border border-white/10"
+        >
+          <Smartphone className="w-5 h-5" />
+          <span className="text-xs font-black tracking-wide">Modo Kiosko</span>
+        </motion.button>
+      )}
 
       {/* Scroll to Top Button */}
       <AnimatePresence>

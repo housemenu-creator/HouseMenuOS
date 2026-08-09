@@ -1,8 +1,17 @@
 import { useState, useMemo } from 'react';
-import { Search, X, Minus, Plus as PlusIcon, Save, Loader2 } from 'lucide-react';
+import { Search, X, Minus, Plus as PlusIcon, Save, Loader2, Wallet, Banknote, Smartphone, CreditCard, Clock, Truck } from 'lucide-react';
 import { ordersService } from '../../lib/ordersService';
 import ProductDetailPanel from './ProductDetailPanel';
 import { isRequired } from '@house/validation';
+
+const PAYMENT_OPTIONS = [
+  { value: 'pendiente', label: 'Pendiente', icon: Clock, desc: 'Pagar después en caja', status: 'pendiente' },
+  { value: 'efectivo', label: 'Efectivo', icon: Banknote, desc: 'Pago en efectivo', status: 'pagado' },
+  { value: 'yape', label: 'Yape', icon: Smartphone, desc: 'Yape — pendiente de verificar', status: 'por_verificar' },
+  { value: 'plin', label: 'Plin', icon: Smartphone, desc: 'Plin — pendiente de verificar', status: 'por_verificar' },
+  { value: 'tarjeta', label: 'Tarjeta POS', icon: CreditCard, desc: 'Pago con tarjeta', status: 'pagado' },
+  { value: 'contraentrega', label: 'Contraentrega', icon: Truck, desc: 'Paga al recibir el pedido', status: 'contraentrega' },
+] as const;
 
 interface NewOrderModalProps {
   activeBranchId: string;
@@ -27,6 +36,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [nameError, setNameError] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string>('pendiente');
 
   const products = useMemo(() => {
     const all = Object.entries(catalog.products || {})
@@ -89,6 +99,7 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
       details: i.details || [],
       ...(i.wizardSelections ? { wizardSelections: i.wizardSelections } : {}),
     }));
+    const payOption = PAYMENT_OPTIONS.find(p => p.value === paymentMethod)!;
     const result = await ordersService.createOrder(activeBranchId, {
       customerName: customerName.trim(),
       location: mesa ? `Mesa ${mesa}` : '',
@@ -98,6 +109,8 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
       financials: { subtotal: total, total },
       total,
       order_type: 'mesa',
+      payment_method: payOption.label,
+      payment_status: payOption.status,
     }, userEmail);
     setSaving(false);
     if (result.success) {
@@ -243,6 +256,27 @@ export default function NewOrderModal({ activeBranchId, userEmail, catalog, onCl
             </div>
           )}
         </div>
+
+        {cart.length > 0 && (
+          <div className="px-5">
+            <p className="text-[0.55rem] font-bold text-cm-muted uppercase tracking-widest mb-2">Medio de pago</p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {PAYMENT_OPTIONS.map(opt => (
+                <button key={opt.value} onClick={() => setPaymentMethod(opt.value)}
+                  className={`flex flex-col items-center gap-1 rounded-lg border p-2 transition-all ${
+                    paymentMethod === opt.value
+                      ? 'border-cm-accent bg-cm-accent/10 ring-1 ring-cm-accent/30'
+                      : 'border-cm-border bg-cm-bg-alt hover:border-cm-text-tertiary'
+                  }`}>
+                  <opt.icon className={`w-4 h-4 ${paymentMethod === opt.value ? 'text-cm-accent' : 'text-cm-text-tertiary'}`} />
+                  <span className={`text-[0.5rem] font-bold leading-tight text-center ${paymentMethod === opt.value ? 'text-cm-accent' : 'text-cm-text-secondary'}`}>
+                    {opt.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {createError && (
           <div className="px-5 pb-0 pt-2">

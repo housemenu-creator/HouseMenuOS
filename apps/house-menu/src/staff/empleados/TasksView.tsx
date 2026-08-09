@@ -5,22 +5,23 @@ import { subscribeGoals } from './employeeService';
 
 interface TasksViewProps {
   uid: string;
+  branchId?: string | null;
 }
 
-export default function TasksView({ uid }: TasksViewProps) {
+export default function TasksView({ uid, branchId }: TasksViewProps) {
   const [state, setState] = useState<'loading' | 'empty' | 'error' | 'populated'>('loading');
   const [goals, setGoals] = useState<Record<string, unknown>[]>([]);
 
   useEffect(() => {
     if (!uid) { setState('error'); return; }
 
-    const unsub = subscribeGoals(uid, (data) => {
+    const unsub = subscribeGoals(branchId, uid, (data) => {
       setGoals(data || []);
       setState(data && data.length > 0 ? 'populated' : 'empty');
     });
 
     return unsub;
-  }, [uid]);
+  }, [uid, branchId]);
 
   const pending = goals.filter(g => !g.completed);
   const completed = goals.filter(g => g.completed);

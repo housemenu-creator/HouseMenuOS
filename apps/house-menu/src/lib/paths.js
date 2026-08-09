@@ -291,6 +291,40 @@ export function marketingStatsPath(branchId) {
   return `${BRANCH_PREFIX(branchId)}/marketing/stats`;
 }
 
+// --- Social Media Module ---
+
+export function socialConnectionsPath(branchId, platform) {
+  const base = `${BRANCH_PREFIX(branchId)}/social/connections`;
+  return platform ? `${base}/${platform}` : base;
+}
+
+export function socialPostsPath(branchId, postId) {
+  const base = `${BRANCH_PREFIX(branchId)}/social/posts`;
+  return postId ? `${base}/${postId}` : base;
+}
+
+export function socialScheduledPostsPath(branchId, postId) {
+  const base = `${BRANCH_PREFIX(branchId)}/social/scheduled`;
+  return postId ? `${base}/${postId}` : base;
+}
+
+export function socialInsightsPath(branchId, platform, date) {
+  let base = `${BRANCH_PREFIX(branchId)}/social/insights`;
+  if (platform) base += `/${platform}`;
+  if (date) base += `/${date}`;
+  return base;
+}
+
+export function socialWhatsAppMessagesPath(branchId, messageId) {
+  const base = `${BRANCH_PREFIX(branchId)}/social/whatsapp`;
+  return messageId ? `${base}/${messageId}` : base;
+}
+
+export function socialQrCodesPath(branchId, campaignId) {
+  const base = `${BRANCH_PREFIX(branchId)}/social/qrcodes`;
+  return campaignId ? `${base}/${campaignId}` : base;
+}
+
 // --- Vendedor Module ---
 
 export function cuentasPath(branchId, cuentaId) {

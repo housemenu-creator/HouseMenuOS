@@ -7,11 +7,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 
+// Shared mock so tests can assert on showToast calls
+const { mockShowToast } = vi.hoisted(() => ({
+  mockShowToast: vi.fn(),
+}));
+
 // Mock useAuth before importing the component
 vi.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'test-user-1', role: 'kitchen', name: 'Test Chef' },
   }),
+}));
+
+// Mock ToastContext — component uses useToast() internally, not a prop
+vi.mock('../../../components/ToastContext', () => ({
+  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 // Mock useComm hook
@@ -50,7 +60,7 @@ describe('PTTButton', () => {
   describe('Rendering', () => {
     it('renders with Mic icon when not recording', async () => {
       const { PTTButton } = await import('../PTTButton');
-      render(<PTTButton showToast={vi.fn()} />);
+      render(<PTTButton />);
 
       const button = screen.getByRole('button');
       expect(button).toBeInTheDocument();
@@ -68,7 +78,7 @@ describe('PTTButton', () => {
       });
 
       const { PTTButton } = await import('../PTTButton');
-      render(<PTTButton showToast={vi.fn()} />);
+      render(<PTTButton />);
 
       const button = screen.getByRole('button');
       expect(button).toBeDisabled();
@@ -88,7 +98,7 @@ describe('PTTButton', () => {
       });
 
       const { PTTButton } = await import('../PTTButton');
-      render(<PTTButton showToast={vi.fn()} />);
+      render(<PTTButton />);
 
       // Should show duration
       const duration = screen.getByText('0:05');
@@ -107,7 +117,7 @@ describe('PTTButton', () => {
       });
 
       const { PTTButton } = await import('../PTTButton');
-      render(<PTTButton showToast={vi.fn()} />);
+      render(<PTTButton />);
 
       // The button should have the recording class (red pulse)
       const button = screen.getByRole('button');
@@ -129,7 +139,7 @@ describe('PTTButton', () => {
       });
 
       const { PTTButton } = await import('../PTTButton');
-      render(<PTTButton showToast={vi.fn()} />);
+      render(<PTTButton />);
 
       const button = screen.getByRole('button');
 
@@ -155,7 +165,7 @@ describe('PTTButton', () => {
       });
 
       const { PTTButton } = await import('../PTTButton');
-      render(<PTTButton showToast={vi.fn()} />);
+      render(<PTTButton />);
 
       const button = screen.getByRole('button');
 
@@ -171,7 +181,6 @@ describe('PTTButton', () => {
 
   describe('Error Handling', () => {
     it('shows toast when startRecording fails', async () => {
-      const showToast = vi.fn();
       const startRecording = vi.fn().mockResolvedValue({ success: false, error: 'Permission denied' });
       const { usePTT } = await import('../../hooks/usePTT');
       usePTT.mockReturnValue({
@@ -184,7 +193,7 @@ describe('PTTButton', () => {
       });
 
       const { PTTButton } = await import('../PTTButton');
-      render(<PTTButton showToast={showToast} />);
+      render(<PTTButton />);
 
       const button = screen.getByRole('button');
 
@@ -193,7 +202,7 @@ describe('PTTButton', () => {
       });
 
       await waitFor(() => {
-        expect(showToast).toHaveBeenCalledWith('Microphone access needed', 'error');
+        expect(mockShowToast).toHaveBeenCalledWith('Permiso de micrófono requerido', 'error');
       });
     });
   });

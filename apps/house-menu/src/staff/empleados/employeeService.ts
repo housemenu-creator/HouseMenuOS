@@ -1,7 +1,7 @@
 /**
  * Employee Service — Portal Empleados data layer for house-menu.
  *
- * Reads/writes from tenants/{tenantId}/employees/{uid}
+ * Reads/writes from branches/{branchId}/employees/{uid}
  * using the unified auth model (keyed by Firebase UID).
  *
  * Extended with:
@@ -11,34 +11,40 @@
  *  - Timeline of events per shift
  *  - Incident reporting
  *  - Handover notes
+ *
+ * HISTORICAL NOTE: previously used tenants/{tenantId}/employees/{uid}.
+ * Unified to branches/ to match admin employeeService.js.
  */
 
 import { ref, get, set, update, push, onValue, runTransaction, serverTimestamp } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
-import { tenantRef, tenantPath } from '../../lib/tenantService';
 
 // ── Helpers ────────────────────────────────────────────
+
+function employeesRoot(branchId: string) {
+  return `branches/${branchId}/employees`;
+}
+
+function employeePath(branchId: string, uid: string) {
+  return `branches/${branchId}/employees/${uid}`;
+}
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function nowISO() {
-  return new Date().toISOString();
-}
-
 // ── Employee ───────────────────────────────────────────
 
-export async function getEmployee(uid) {
+export async function getEmployee(branchId: string, uid: string) {
   if (!uid) return null;
-  const snap = await get(tenantRef(`employees/${uid}`));
+  const snap = await get(ref(db, employeePath(branchId, uid)));
   if (!snap.exists()) return null;
   return { uid, ...snap.val() };
 }
 
-export function subscribeEmployee(uid, callback) {
+export function subscribeEmployee(branchId: string, uid: string, callback: (data: any) => void) {
   if (!uid) { callback(null); return () => {}; }
-  const unsub = onValue(tenantRef(`employees/${uid}`), (snap) => {
+  const unsub = onValue(ref(db, employeePath(branchId, uid)), (snap) => {
     if (!snap.exists()) { callback(null); return; }
     callback({ uid, ...snap.val() });
   });
@@ -48,7 +54,7 @@ export function subscribeEmployee(uid, callback) {
 // ── Shift (attendance extended v2) ─────────────────────
 //
 // Data shape:
-//   tenants/{tenantId}/employees/{uid}/attendance/{date}/
+//   branches/{branchId}/employees/{uid}/attendance/{date}/
 //     state: "active" | "completed" | "verified"
 //     clockIn: timestamp
 //     clockOut: timestamp | null
@@ -66,45 +72,26 @@ export function subscribeEmployee(uid, callback) {
 
 // ── Clock in with area support ─────────────────────────
 
-export async function clockIn(uid, area = null, station = null, areaTemplate = null) {
+export async function clockIn(branchId: string, uid: string, area = null, station = null, areaTemplate = null) {
   const date = todayStr();
   const now = Date.now();
-  const recordRef = ref(db, tenantPath(`employees/${uid}/attendance/${date}`));
+  const recordRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}`);
 
   // ── Validar estado del empleado ──
-  const empSnap = await get(tenantRef(`employees/${uid}`));
+  const empSnap = await get(ref(db, employeePath(branchId, uid)));
   const emp = empSnap.val();
   const empStatus = emp?.status || (emp?.active !== false ? 'active' : 'inactive');
   if (empStatus !== 'active') {
-    const msgs = { suspended: 'Suspendido', vacation: 'de vacaciones', inactive: 'inactivo' };
+    const msgs: Record<string, string> = { suspended: 'Suspendido', vacation: 'de vacaciones', inactive: 'inactivo' };
     throw new Error(`No podés marcar entrada: estás ${msgs[empStatus] || 'inactivo'}. Consultá con tu administrador.`);
-  }
-
-  // Try to fetch today's schedule to compute expected break
-  let breakMinutes = 60; // default for full shifts
-  try {
-    const schedule = await getSchedule(uid);
-    if (schedule) {
-      const dayName = new Date().toLocaleDateString('es-PE', { weekday: 'long' }).toLowerCase();
-      const dayData = schedule[dayName];
-      if (dayData?.active && dayData?.start && dayData?.end) {
-        const [sh, sm] = dayData.start.split(':').map(Number);
-        const [eh, em] = dayData.end.split(':').map(Number);
-        const scheduledMin = (eh * 60 + em) - (sh * 60 + sm);
-        breakMinutes = scheduledMin >= 360 ? 60 : scheduledMin >= 240 ? 30 : 0;
-      }
-    }
-  } catch {
-    // If schedule fetch fails, use default
   }
 
   const result = await runTransaction(recordRef, (current) => {
     if (current === null) {
-      const shift = {
+      const shift: Record<string, any> = {
         state: 'active',
         clockIn: now,
         clockOut: null,
-        breakMinutes,
         area: area || '',
         station: station || '',
         areaSnapshot: areaTemplate || null,
@@ -141,10 +128,10 @@ export async function clockIn(uid, area = null, station = null, areaTemplate = n
 
 // ── Clock out ──────────────────────────────────────────
 
-export async function clockOut(uid) {
+export async function clockOut(branchId: string, uid: string) {
   const date = todayStr();
   const now = Date.now();
-  const recordRef = tenantRef(`employees/${uid}/attendance/${date}`);
+  const recordRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}`);
 
   const result = await runTransaction(recordRef, (current) => {
     if (!current) return current; // no shift to close
@@ -162,10 +149,10 @@ export async function clockOut(uid) {
 
 // ── Break (refrigerio) ─────────────────────────────────
 
-export async function startBreak(uid) {
+export async function startBreak(branchId: string, uid: string) {
   const date = todayStr();
   const now = Date.now();
-  const recordRef = tenantRef(`employees/${uid}/attendance/${date}`);
+  const recordRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}`);
 
   const result = await runTransaction(recordRef, (current) => {
     if (!current || !current.clockIn || current.clockOut) return current; // no active shift
@@ -181,10 +168,10 @@ export async function startBreak(uid) {
   return result.snapshot.val();
 }
 
-export async function endBreak(uid) {
+export async function endBreak(branchId: string, uid: string) {
   const date = todayStr();
   const now = Date.now();
-  const recordRef = tenantRef(`employees/${uid}/attendance/${date}`);
+  const recordRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}`);
 
   const result = await runTransaction(recordRef, (current) => {
     if (!current || !current.breakStart || current.breakEnd) return current; // not on break
@@ -204,11 +191,11 @@ export async function endBreak(uid) {
 
 // ── Toggle checklist item ──────────────────────────────
 
-export async function toggleChecklistItem(uid, phase, itemId) {
+export async function toggleChecklistItem(branchId: string, uid: string, phase: string, itemId: string) {
   if (!['inicio', 'cierre'].includes(phase)) throw new Error('phase must be inicio or cierre');
   const date = todayStr();
   const now = Date.now();
-  const itemRef = ref(db, tenantPath(`employees/${uid}/attendance/${date}/checklists/${phase}/${itemId}`));
+  const itemRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}/checklists/${phase}/${itemId}`);
 
   const result = await runTransaction(itemRef, (current) => {
     const done = current ? !current.done : true;
@@ -216,7 +203,7 @@ export async function toggleChecklistItem(uid, phase, itemId) {
   });
 
   // Append to timeline
-  const timelineRef = ref(db, tenantPath(`employees/${uid}/attendance/${date}/timeline`));
+  const timelineRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}/timeline`);
   await runTransaction(timelineRef, (current) => {
     const arr = current || [];
     return [...arr, { at: now, type: 'checklist_item', data: { phase, itemId, done: result.snapshot.val()?.done } }];
@@ -227,15 +214,15 @@ export async function toggleChecklistItem(uid, phase, itemId) {
 
 // ── Handover notes ─────────────────────────────────────
 
-export async function saveHandoverNotes(uid, notes) {
+export async function saveHandoverNotes(branchId: string, uid: string, notes: string) {
   const date = todayStr();
-  await update(ref(db, tenantPath(`employees/${uid}/attendance/${date}/handover`)), { notes, updatedAt: Date.now() });
+  await update(ref(db, `${employeePath(branchId, uid)}/attendance/${date}/handover`), { notes, updatedAt: Date.now() });
 }
 
-export async function confirmHandover(uid, receiverUid) {
+export async function confirmHandover(branchId: string, uid: string, receiverUid: string) {
   const date = todayStr();
   const now = Date.now();
-  await update(ref(db, tenantPath(`employees/${uid}/attendance/${date}/handover`)), {
+  await update(ref(db, `${employeePath(branchId, uid)}/attendance/${date}/handover`), {
     receivedBy: receiverUid,
     receivedAt: now,
   });
@@ -243,17 +230,16 @@ export async function confirmHandover(uid, receiverUid) {
 
 // ── Verify shift (admin) ───────────────────────────────
 
-export async function verifyShift(uid, date, adminUid) {
+export async function verifyShift(branchId: string, uid: string, date: string, adminUid: string) {
   const now = Date.now();
-  const shiftRef = tenantRef(`employees/${uid}/attendance/${date}`);
+  const shiftRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}`);
   await update(shiftRef, {
     state: 'verified',
     verifiedBy: adminUid,
     verifiedAt: now,
-    timeline: runTransaction(ref(db, tenantPath(`employees/${uid}/attendance/${date}/timeline`))),
   });
   // Append verify event
-  const timelineRef = ref(db, tenantPath(`employees/${uid}/attendance/${date}/timeline`));
+  const timelineRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}/timeline`);
   await runTransaction(timelineRef, (current) => {
     const arr = current || [];
     return [...arr, { at: now, type: 'verify', data: { by: adminUid } }];
@@ -262,10 +248,10 @@ export async function verifyShift(uid, date, adminUid) {
 
 // ── Incident reporting ─────────────────────────────────
 
-export async function reportIncident(uid, incident) {
+export async function reportIncident(branchId: string, uid: string, incident: { type?: string; description?: string }) {
   const date = todayStr();
-  const incRef = push(ref(db, tenantPath(`employees/${uid}/incidents`)));
-  const record = {
+  const incRef = push(ref(db, `${employeePath(branchId, uid)}/incidents`));
+  const record: Record<string, any> = {
     date,
     type: incident.type || 'other',
     description: incident.description || '',
@@ -278,7 +264,7 @@ export async function reportIncident(uid, incident) {
 
   // Append to shift timeline
   const now = Date.now();
-  const timelineRef = ref(db, tenantPath(`employees/${uid}/attendance/${date}/timeline`));
+  const timelineRef = ref(db, `${employeePath(branchId, uid)}/attendance/${date}/timeline`);
   await runTransaction(timelineRef, (current) => {
     const arr = current || [];
     return [...arr, { at: now, type: 'incident', data: { id: incRef.key, type: incident.type } }];
@@ -289,21 +275,21 @@ export async function reportIncident(uid, incident) {
 
 // ── Subscriptions ──────────────────────────────────────
 
-export function subscribeAttendance(uid, callback) {
+export function subscribeAttendance(branchId: string, uid: string, callback: (data: any) => void) {
   if (!uid) { callback(null); return () => {}; }
   const date = todayStr();
-  const unsub = onValue(ref(db, tenantPath(`employees/${uid}/attendance/${date}`)), (snap) => {
+  const unsub = onValue(ref(db, `${employeePath(branchId, uid)}/attendance/${date}`), (snap) => {
     if (!snap.exists()) { callback(null); return; }
     callback({ date, ...snap.val() });
   });
   return unsub;
 }
 
-export function subscribeAttendanceHistory(uid, callback) {
+export function subscribeAttendanceHistory(branchId: string, uid: string, callback: (data: any[]) => void) {
   if (!uid) { callback([]); return () => {}; }
-  const unsub = onValue(tenantRef(`employees/${uid}/attendance`), (snap) => {
+  const unsub = onValue(ref(db, `${employeePath(branchId, uid)}/attendance`), (snap) => {
     if (!snap.exists()) { callback([]); return; }
-    const records = Object.entries(snap.val()).map(([date, data]) => ({ date, ...data }));
+    const records = Object.entries(snap.val()).map(([date, data]) => ({ date, ...(data as any) }));
     records.sort((a, b) => b.date.localeCompare(a.date));
     callback(records);
   });
@@ -312,31 +298,31 @@ export function subscribeAttendanceHistory(uid, callback) {
 
 // ── Schedule ───────────────────────────────────────────
 
-export async function getSchedule(uid) {
+export async function getSchedule(branchId: string, uid: string) {
   if (!uid) return null;
-  const snap = await get(tenantRef(`employees/${uid}/schedule`));
+  const snap = await get(ref(db, `${employeePath(branchId, uid)}/schedule`));
   if (!snap.exists()) return null;
   return snap.val();
 }
 
 // ── Goals / Tasks ──────────────────────────────────────
 
-export function subscribeGoals(uid, callback) {
+export function subscribeGoals(branchId: string, uid: string, callback: (data: any[]) => void) {
   if (!uid) { callback([]); return () => {}; }
-  const unsub = onValue(tenantRef(`employees/${uid}/goals`), (snap) => {
+  const unsub = onValue(ref(db, `${employeePath(branchId, uid)}/goals`), (snap) => {
     if (!snap.exists()) { callback([]); return; }
-    callback(Object.entries(snap.val()).map(([id, g]) => ({ id, ...g })));
+    callback(Object.entries(snap.val()).map(([id, g]) => ({ id, ...(g as any) })));
   });
   return unsub;
 }
 
 // ── Incidents (read) ───────────────────────────────────
 
-export function subscribeIncidents(uid, callback) {
+export function subscribeIncidents(branchId: string, uid: string, callback: (data: any[]) => void) {
   if (!uid) { callback([]); return () => {}; }
-  const unsub = onValue(tenantRef(`employees/${uid}/incidents`), (snap) => {
+  const unsub = onValue(ref(db, `${employeePath(branchId, uid)}/incidents`), (snap) => {
     if (!snap.exists()) { callback([]); return; }
-    callback(Object.entries(snap.val()).map(([id, r]) => ({ id, ...r })));
+    callback(Object.entries(snap.val()).map(([id, r]) => ({ id, ...(r as any) })));
   });
   return unsub;
 }

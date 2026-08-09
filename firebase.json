@@ -1,0 +1,68 @@
+{
+  "database": {
+    "rules": "apps/house-menu/database.rules.json"
+  },
+  "functions": [
+    {
+      "source": "functions/eventDispatcher",
+      "codebase": "event-dispatcher",
+      "runtime": "nodejs20",
+      "ignore": ["node_modules"]
+    },
+    {
+      "source": "functions/apiGateway",
+      "codebase": "api-gateway",
+      "runtime": "nodejs20",
+      "ignore": ["node_modules"]
+    }
+  ],
+  "hosting": [
+    {
+      "target": "house-menu",
+      "public": "apps/house-menu/dist",
+      "ignore": ["firebase.json", ".firebaserc"],
+      "headers": [
+        {
+          "source": "index.html",
+          "headers": [
+            {"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"}
+          ]
+        },
+        {
+          "source": "assets/**",
+          "headers": [
+            {"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "landing",
+      "public": "apps/landing/dist",
+      "ignore": ["firebase.json", ".firebaserc"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "portal-hub",
+      "public": "apps/portal-hub/dist",
+      "ignore": ["firebase.json", ".firebaserc"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
+}

@@ -73,6 +73,10 @@ function normalizeOrder(raw: Partial<Order> & { id: string }): Order {
     station: raw.station || '',
     dueTime: raw.dueTime || 0,
     pacingStatus: raw.pacingStatus || 'ahead',
+    payment_status: raw.payment_status,
+    payment_method: raw.payment_method,
+    collectedBy: raw.collectedBy,
+    collectedAt: raw.collectedAt,
   };
 }
 

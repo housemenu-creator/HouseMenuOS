@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { confirmDialog } from '../../components/ConfirmDialog';
 import { CheckCircle, Clock, User, Hash, Package, UtensilsCrossed, Bike } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { formatTimer } from '../utils/formatTimer';
@@ -95,7 +96,11 @@ function ExpoCard({ order, onDeliver }) {
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        onClick={() => onDeliver(order.id)}
+        onClick={async () => {
+          const ok = await confirmDialog('¿Entregar este pedido al cliente?', 'Entregar');
+          if (!ok) return;
+          onDeliver(order.id);
+        }}
         className={cn(
           'w-full mt-4 py-3 rounded-xl font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-2',
           isUrgent

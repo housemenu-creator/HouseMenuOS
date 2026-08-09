@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Check, Square, CheckSquare, User, Hash, ArrowRight, Printer, Circle, CheckCircle, Zap, XCircle, Plus, ChevronDown, ChevronUp, StickyNote } from 'lucide-react';
+import { confirmDialog } from '../../components/ConfirmDialog';
 import { cn } from '../../lib/utils';
 import PriorityBadge from './PriorityBadge';
 import TimerBadge from './TimerBadge';
@@ -10,10 +11,11 @@ import KDSNoteBadge from './KDSNoteBadge';
 import OrderNoteModal from '../../comm/components/OrderNoteModal';
 import { PRIORITY, STATION_THRESHOLDS } from '../kdsTypes';
 import useTimerStore from '../store/timerStore';
-import { printTicket } from '../../lib/printTicket';
+import { printOrderTicket } from '../../lib/printTicket';
 import { ordersService } from '../../lib/ordersService';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
+import { getPaymentStatusConfig } from '../../lib/paymentMethods';
 
 const STATUS_ACCENT = {
   recibido: {
@@ -112,7 +114,7 @@ function TicketAlertBar({ order, alertLevel }) {
 
   useEffect(() => {
     if (alertLevel === 'safe' || !startTs || order?.status === 'listo' || order?.status === 'entregado') {
-      return;
+      return undefined;
     }
     const interval = setInterval(() => {
       setElapsed(Date.now() - new Date(startTs).getTime());
@@ -247,6 +249,14 @@ function KDSTicket({
                 <span className="inline-flex items-center gap-1 text-[0.6rem] font-black text-cm-muted/70 bg-cm-bg px-2 py-0.5 rounded-md border border-cm-border/60 font-mono tracking-wider">
                   #{(order.id || '').slice(-6).toUpperCase()}
                 </span>
+                {order.payment_status && order.payment_status !== 'pagado' && (() => {
+                  const ps = getPaymentStatusConfig(order.payment_status);
+                  return (
+                    <span className={`inline-flex items-center gap-0.5 text-[0.5rem] font-bold px-1.5 py-0.5 rounded-full border ${ps.bg} ${ps.text} ${ps.border}`}>
+                      {ps.label}
+                    </span>
+                  );
+                })()}
                 <PriorityBadge priority={order.priority || PRIORITY.NORMAL} />
                 <KDSNoteBadge
                   count={order.notes?.length || 0}
@@ -262,7 +272,14 @@ function KDSTicket({
                 {!isHistory && <PacingBadge status={order.pacingStatus} />}
                 {!isBulkMode && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); printTicket(order); }}
+                    onClick={(e) => { e.stopPropagation();
+                      const btn = e.currentTarget;
+                      const branchName = localStorage.getItem('branch_name') || '';
+                      printOrderTicket(order, branchName).then(r => {
+                        if (r?.engine) { btn.classList.add('text-green-400'); setTimeout(() => btn.classList.remove('text-green-400'), 1500); }
+                        else if (!r?.success) console.warn('Print engine fail:', r?.error);
+                      });
+                    }}
                     className="text-cm-muted/30 hover:text-cm-muted/60 transition-colors p-0.5"
                     aria-label="Imprimir comanda"
                     title="Imprimir comanda"
@@ -394,7 +411,13 @@ function KDSTicket({
         <motion.button
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => onUpdateStatus(order.id, order.status)}
+          onClick={async () => {
+            const action = order.status === 'recibido' ? 'iniciar la preparación' : 'marcar como listo';
+            const title = order.status === 'recibido' ? 'Iniciar Preparación' : 'Marcar como Listo';
+            const ok = await confirmDialog(`¿${action} de este pedido?`, title);
+            if (!ok) return;
+            onUpdateStatus(order.id, order.status);
+          }}
           aria-label={order.status === 'recibido' ? 'Iniciar preparación' : 'Marcar como listo'}
           className={cn(
             'w-full font-black tracking-widest transition-all flex items-center justify-center gap-2',

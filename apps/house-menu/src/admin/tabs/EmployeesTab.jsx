@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { confirmDialog } from '../../components/ConfirmDialog';
 import { subscribeAreas, createArea, updateArea, deleteArea } from '../../lib/areaConfigService';
 import AreaFormModal from '../../admin/components/AreaFormModal';
+import { RefreshCw } from 'lucide-react';
 import { Store } from 'lucide-react';
 import {
   subscribeEmployees, createEmployee, updateEmployee, deleteEmployee,
@@ -21,6 +22,31 @@ import {
 } from '../../lib/employeeService';
 import { auditLog } from '../../lib/auditService';
 import { todayISO } from '../../lib/format';
+
+// ── Animated Counter ──
+function AnimCounter({ value, decimals = 0, duration = 800 }) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef(null);
+  const st = useRef(null);
+  const from = useRef(0);
+  useEffect(() => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    from.current = display; st.current = null;
+    const step = (ts) => {
+      if (!st.current) st.current = ts;
+      const p = Math.min((ts - st.current) / duration, 1);
+      const e = 1 - (1 - p) * (1 - p);
+      setDisplay(from.current + (value - from.current) * e);
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [value, duration]);
+  return <>{display.toFixed(decimals)}</>;
+}
+
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.03 } } };
+const iv = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 
 const ROLES = [
   { value: 'admin', label: 'Administrador' },
@@ -506,6 +532,8 @@ export default function EmployeesTab({ allOrders }) {
   const [section, setSection] = useState('employees');
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingEmp, setEditingEmp] = useState(null);
   const [scheduleEmp, setScheduleEmp] = useState(null);
@@ -532,14 +560,22 @@ export default function EmployeesTab({ allOrders }) {
   // Subscribe employees
   useEffect(() => {
     if (!activeBranchId) return;
-    const unsub = subscribeEmployees(activeBranchId, (emps) => {
-      setEmployees(emps);
-      userToPushIdRef.current = emps.reduce((acc, e) => {
-        if (e.userId) acc[e.userId] = e.id;
-        return acc;
-      }, {});
-    });
-    return unsub;
+    setLoading(true);
+    setError(null);
+    try {
+      const unsub = subscribeEmployees(activeBranchId, (emps) => {
+        setEmployees(emps);
+        setLoading(false);
+        userToPushIdRef.current = emps.reduce((acc, e) => {
+          if (e.userId) acc[e.userId] = e.id;
+          return acc;
+        }, {});
+      });
+      return unsub;
+    } catch (err) {
+      setError(err.message || 'Error al cargar empleados');
+      setLoading(false);
+    }
   }, [activeBranchId]);
 
   // Subscribe areas config
@@ -690,7 +726,7 @@ export default function EmployeesTab({ allOrders }) {
         </div>
       )}
       {/* Stats bar */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <motion.div variants={iv} className="grid grid-cols-4 gap-3 mb-5">
         {EMPLOYEE_STATUS.map(st => {
           const Icon = st.icon;
           const count = statusCounts[st.value] || 0;
@@ -700,13 +736,13 @@ export default function EmployeesTab({ allOrders }) {
                 <Icon className={`w-5 h-5 ${st.color}`} />
               </div>
               <div>
-                <p className={`text-2xl font-black ${st.color}`}>{count}</p>
+                <p className={`text-2xl font-black ${st.color}`}><AnimCounter value={count} /></p>
                 <p className="text-xs font-semibold text-cm-text-tertiary mt-0.5">{st.label}</p>
               </div>
             </div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* Search + Add */}
       <div className="flex items-center gap-3 mb-4">
@@ -725,18 +761,18 @@ export default function EmployeesTab({ allOrders }) {
       </div>
 
       {/* List */}
-      <div className="space-y-2">
+      <motion.div variants={iv} className="space-y-2">
         {filtered.length === 0 && (
-          <div className="text-center py-12">
+          <motion.div variants={iv} className="text-center py-12">
             <Users className="w-10 h-10 text-cm-text-tertiary mx-auto mb-3" />
             <p className="text-sm text-cm-text-secondary">No hay empleados {search ? 'que coincidan' : 'aún'}</p>
-          </div>
+          </motion.div>
         )}
         {filtered.map(emp => {
           const kpi = allOrders ? computeEmployeeKPI(allOrders, emp.id, emp.name) : null;
           const today = attendance[emp.id];
           return (
-            <div key={emp.id} className="bg-cm-surface rounded-xl border border-cm-border p-4 flex items-start justify-between gap-3 hover:border-cm-border-hover transition-colors">
+            <motion.div key={emp.id} variants={iv} className="bg-cm-surface rounded-xl border border-cm-border p-4 flex items-start justify-between gap-3 hover:border-cm-border-hover transition-colors">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-cm-text">{emp.name}</h4>
@@ -801,10 +837,10 @@ export default function EmployeesTab({ allOrders }) {
                   </button>
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 
@@ -1153,8 +1189,24 @@ export default function EmployeesTab({ allOrders }) {
 
   // ── Render ───────────────────────────────────────
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <AlertTriangle className="w-10 h-10 text-cm-error" />
+        <p className="text-sm text-cm-text-secondary text-center">{error}</p>
+        <button onClick={() => window.location.reload()} className="flex items-center gap-1.5 text-xs font-bold text-cm-accent hover:underline">
+          <RefreshCw className="w-3.5 h-3.5" /> Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-cm-accent animate-spin" /></div>;
+  }
+
   return (
-    <div>
+    <motion.div variants={cv} initial="hidden" animate="show">
       {/* Section nav with animated indicator */}
       <div className="mb-6 p-1 bg-cm-bg-alt rounded-xl border border-cm-border w-fit">
         <LayoutGroup id="emp-sections">
@@ -1213,6 +1265,6 @@ export default function EmployeesTab({ allOrders }) {
           <GoalsModal employeeId={goalsEmp.id} onClose={() => setGoalsEmp(null)} />
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

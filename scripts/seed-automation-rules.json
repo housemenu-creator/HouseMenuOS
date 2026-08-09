@@ -1,0 +1,76 @@
+{
+  "rule_stock_low": {
+    "name": "Auto PO cuando stock bajo",
+    "eventType": "inventory.stock.low",
+    "enabled": true,
+    "config": {
+      "quantityFormula": "minStock * 1.5"
+    },
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "rule_po_created": {
+    "name": "Notificar en PO creada",
+    "eventType": "purchase_order.created",
+    "enabled": true,
+    "config": {
+      "notifyChannels": [
+        "cocina",
+        "admin"
+      ]
+    },
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "rule_inventory_confirm": {
+    "name": "Actualizar inventario al confirmar",
+    "eventType": "purchase_order.confirmed",
+    "enabled": true,
+    "config": {},
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "rule_order_ready": {
+    "name": "Marcar como listo",
+    "eventType": "purchase_order.ready",
+    "enabled": false,
+    "config": {},
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "rule_order_close": {
+    "name": "Cerrar OC al recibir",
+    "eventType": "purchase_order.delivered",
+    "enabled": false,
+    "config": {},
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "rule_daily_report": {
+    "name": "Reporte diario de ventas",
+    "eventType": "schedule.daily",
+    "enabled": true,
+    "config": {
+      "time": "21:00",
+      "notifyChannels": [
+        "admin"
+      ]
+    },
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  },
+  "rule_low_stock_alert": {
+    "name": "Alertar stock crítico",
+    "eventType": "inventory.stock.critical",
+    "enabled": true,
+    "config": {
+      "threshold": "minStock * 0.5",
+      "notifyChannels": [
+        "admin",
+        "compras"
+      ]
+    },
+    "createdAt": "2026-07-18T01:25:13.965Z",
+    "updatedAt": "2026-07-18T01:25:13.965Z"
+  }
+}

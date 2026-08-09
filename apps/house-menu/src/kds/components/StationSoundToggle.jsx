@@ -7,7 +7,7 @@ export default function StationSoundToggle({ soundEnabled, setSoundEnabled, stat
   const ref = useRef(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return undefined;
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setIsOpen(false);
     };

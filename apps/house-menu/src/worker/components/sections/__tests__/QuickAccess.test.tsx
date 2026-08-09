@@ -16,7 +16,7 @@ describe('QuickAccess', () => {
   it('renders Carta Digital and Rastrear links for non-admin roles', () => {
     render(<QuickAccess userRole="mozo" />);
     expect(screen.getByText('Carta Digital')).toBeDefined();
-    expect(screen.getByText('Rastrear Pedido')).toBeDefined();
+    expect(screen.getByText('Rastrear')).toBeDefined();
   });
 
   it('renders Panel Admin link for admin role', () => {
@@ -35,9 +35,9 @@ describe('QuickAccess', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/carta');
   });
 
-  it('navigates when clicking Rastrear Pedido', () => {
+  it('navigates when clicking Rastrear', () => {
     render(<QuickAccess userRole="mozo" />);
-    fireEvent.click(screen.getByText('Rastrear Pedido'));
+    fireEvent.click(screen.getByText('Rastrear'));
     expect(mockNavigate).toHaveBeenCalledWith('/rastreo');
   });
 

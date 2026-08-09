@@ -15,7 +15,7 @@ import { ROUTES } from '../lib/routes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCheck, Loader2, Clock, Moon } from 'lucide-react';
 import { subscribeToNotifications, markAsRead, markAllAsRead, getUnreadCount, NOTIF_ICONS } from '../lib/notificationService';
-import { playChime } from '../lib/notificationSound';
+import { playSoundForType, requestNotifPermission, showNotifFromData } from '../lib/notificationSound';
 import { useCommStore } from '../comm/store/commStore';
 import { subscribeToDNDConfig, isDNDActive, toggleDND } from '../lib/notificationPreferences';
 import { groupNotifications, getGroupTitle } from '../lib/notificationGrouping';
@@ -60,14 +60,27 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
     return subscribeToDNDConfig(branchId, userId, setDNDConfig);
   }, [branchId, userId]);
 
-  // Play chime on new notification
+  // Play chime + desktop notification on new notification
   useEffect(() => {
     const currentCount = notifications.length;
     if (prevCountRef.current > 0 && currentCount > prevCountRef.current) {
-      playChime();
+      // The newest notification is at index 0 (reverse sorted)
+      const latest = notifications[0];
+      if (latest) {
+        playSoundForType(latest.type);
+        // ponytail: desktop notification, passthrough navigate
+        showNotifFromData(latest, () => {
+          markAsRead(branchId, userId, latest.id, true);
+          if (latest.type === 'comm_message') {
+            useCommStore.getState().setPanelOpen(true);
+          } else if (latest.url) {
+            onNavigate(latest.url);
+          }
+        });
+      }
     }
     prevCountRef.current = currentCount;
-  }, [notifications.length]);
+  }, [notifications.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close on click outside
   useEffect(() => {
@@ -124,7 +137,7 @@ export default function NotificationBell({ branchId, userId, onNavigate = () => 
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Bell button */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); requestNotifPermission(); }}
         className="relative p-2 rounded-xl hover:bg-cm-bg-alt transition-colors"
         title="Notificaciones"
       >

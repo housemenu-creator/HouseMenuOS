@@ -22,6 +22,7 @@ interface MenuBuilderProps {
   onMoveItem?: (productId: string, direction: 'up' | 'down') => void;
   onReorder?: (sourceId: string, targetId: string) => void;
   renameCategory: (oldName: string, newName: string) => Promise<void>;
+  deleteCategory?: (categoryName: string) => Promise<void>;
   createCategory: (name: string) => Promise<void>;
   catalogLoading?: boolean;
 }
@@ -66,6 +67,7 @@ export default function MenuBuilder({
   onMoveItem,
   onReorder,
   renameCategory,
+  deleteCategory,
   createCategory,
   catalogLoading,
 }: MenuBuilderProps) {
@@ -209,24 +211,25 @@ export default function MenuBuilder({
                 exit={{ opacity: 0, y: -16, scale: 0.95 }}
                 transition={{ delay: idx * 0.05, duration: 0.2 }}
               >
-                <MenuCategoryBlock
-                  category={category}
-                  items={items}
-                  toggleAvailability={toggleAvailability}
-                  updateField={updateField}
-                  createProduct={createProduct}
-                  deleteProduct={deleteProduct}
-                  duplicateProduct={duplicateProduct}
-                  onConfigureWizard={onConfigureWizard}
-                  onCreateCampaign={handleCreateCampaign}
-                  renameCategory={renameCategory}
-                  activeBranchId={activeBranchId}
-                  categoriesConfig={categoriesConfig}
-                  notify={notify}
-                  onMoveItem={onMoveItem}
-                  onReorder={onReorder}
-                  categoryIndex={idx}
-                />
+                  <MenuCategoryBlock
+                    category={category}
+                    items={items}
+                    toggleAvailability={toggleAvailability}
+                    updateField={updateField}
+                    createProduct={createProduct}
+                    deleteProduct={deleteProduct}
+                    duplicateProduct={duplicateProduct}
+                    onConfigureWizard={onConfigureWizard}
+                    onCreateCampaign={handleCreateCampaign}
+                    renameCategory={renameCategory}
+                    deleteCategory={deleteCategory}
+                    activeBranchId={activeBranchId}
+                    categoriesConfig={categoriesConfig}
+                    notify={notify}
+                    onMoveItem={onMoveItem}
+                    onReorder={onReorder}
+                    categoryIndex={idx}
+                  />
               </motion.div>
             ))}
           </AnimatePresence>

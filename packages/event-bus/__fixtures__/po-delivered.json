@@ -1,0 +1,14 @@
+{
+  "eventType": "purchase_order.delivered",
+  "description": "Mercadería recibida en el restaurante",
+  "payload": {
+    "purchaseOrderId": "po_test_001",
+    "receivedBy": "admin@monteverde.com",
+    "deliveredAt": "2026-07-12T18:00:00.000Z"
+  },
+  "context": {
+    "branchId": "test-branch",
+    "userEmail": "admin@monteverde.com",
+    "userRole": "admin"
+  }
+}

@@ -1,27 +1,34 @@
-import { User, Printer, CheckCircle2, DollarSign } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Printer, CheckCircle2, DollarSign, Pencil } from 'lucide-react';
+import { confirmDialog } from '../../components/ConfirmDialog';
 import StatusBadge from '../../admin/components/StatusBadge';
 import { printTicket } from '../../lib/printTicket';
 
 import type { Order } from '../../worker/workerTypes';
 
+const iv = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } } };
+
 interface MozoOrderListProps {
   orders: Order[];
   onUpdateStatus: (orderId: string, status: string) => void;
   onCobrar: (order: Order) => void;
+  onEdit?: (order: Order) => void;
 }
 
-export default function MozoOrderList({ orders, onUpdateStatus, onCobrar }: MozoOrderListProps) {
+export default function MozoOrderList({ orders, onUpdateStatus, onCobrar, onEdit }: MozoOrderListProps) {
   if (orders.length === 0) {
     return null;
   }
 
   return (
     <div className="space-y-3">
+      <AnimatePresence mode="popLayout">
       {orders.map((order) => {
         const isPaid = order.payment_status === 'pagado';
 
         return (
-          <div key={order.id} className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm p-4">
+          <motion.div key={order.id} layout variants={iv} initial="hidden" animate="show" exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm p-4">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -46,6 +53,13 @@ export default function MozoOrderList({ orders, onUpdateStatus, onCobrar }: Mozo
               <div className="flex flex-col items-end gap-1.5">
                 <p className="text-lg font-black text-cm-text">S/ {(order.financials?.total || 0).toFixed(2)}</p>
                 <div className="flex gap-1.5">
+                  {onEdit && order.status !== 'cancelado' && order.payment_status !== 'pagado' && (
+                    <button onClick={() => onEdit(order)}
+                      className="p-1.5 rounded-lg bg-cm-accent/5 border border-cm-border text-cm-text-secondary hover:text-cm-accent hover:border-cm-accent/30 transition-colors"
+                      title="Editar pedido">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <button onClick={() => printTicket(order)}
                     className="p-1.5 rounded-lg bg-cm-accent/5 border border-cm-border text-cm-text-secondary hover:text-cm-accent hover:border-cm-accent/30 transition-colors"
                     title="Imprimir comanda">
@@ -80,7 +94,11 @@ export default function MozoOrderList({ orders, onUpdateStatus, onCobrar }: Mozo
             <div className="flex flex-wrap gap-2 items-center">
               <div className="flex gap-2 flex-1">
                 {order.status === 'listo' && (
-                  <button onClick={() => onUpdateStatus(order.id, 'entregado')}
+                  <button onClick={async () => {
+                    const ok = await confirmDialog('¿Entregar este pedido al cliente?', 'Entregar Pedido');
+                    if (!ok) return;
+                    onUpdateStatus(order.id, 'entregado');
+                  }}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-cm-success/10 text-cm-success text-xs font-bold rounded-lg hover:bg-cm-success/20 transition-colors">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Entregar
                   </button>
@@ -104,9 +122,10 @@ export default function MozoOrderList({ orders, onUpdateStatus, onCobrar }: Mozo
             <p className="text-[0.55rem] text-cm-text-tertiary mt-2">
               {order.createdAt ? new Date(order.createdAt).toLocaleString('es-PE') : '—'}
             </p>
-          </div>
+          </motion.div>
         );
       })}
+      </AnimatePresence>
     </div>
   );
 }

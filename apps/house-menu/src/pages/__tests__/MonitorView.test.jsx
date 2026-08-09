@@ -4,10 +4,10 @@ import { renderWithProviders } from '../../test/test-utils';
 
 vi.mock('../../context/BranchContext', () => ({
   useBranch: () => ({
-    branches: [{ id: 'branch-1', name: 'Sucursal Central' }],
-    activeBranchId: 'branch-1',
+    branches: [],
+    activeBranchId: null,
     setActiveBranchId: vi.fn(),
-    activeBranch: { id: 'branch-1', name: 'Sucursal Central' },
+    activeBranch: null,
     isLoading: false,
   }),
 }));

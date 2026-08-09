@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Award, ShoppingBag, TrendingUp, BarChart3, AlertCircle } from 'lucide-react';
 
 // ── Props ──
@@ -11,7 +12,7 @@ interface Props {
 
 export default function KPISection({ kpis, currentTime }: Props) {
   return (
-    <div className="bg-cm-surface border border-cm-border rounded-2xl p-5 shadow-cm-sm space-y-4">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="bg-cm-surface border border-cm-border rounded-2xl p-5 shadow-cm-sm space-y-4">
       <div className="flex items-center justify-between border-b border-cm-border/60 pb-3">
         <div>
           <span className="text-[10px] font-black text-cm-muted uppercase tracking-widest block mb-0.5">Tus Métricas</span>
@@ -41,6 +42,6 @@ export default function KPISection({ kpis, currentTime }: Props) {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }

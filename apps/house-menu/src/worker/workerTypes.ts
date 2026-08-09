@@ -54,6 +54,8 @@ export interface Order {
   dueTime?: number;
   payment_status?: string;
   payment_method?: string;
+  collectedBy?: string;
+  collectedAt?: string;
 }
 
 export interface CatalogProduct {

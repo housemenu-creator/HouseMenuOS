@@ -1,0 +1,67 @@
+{
+    "name": "TEST JSON Flow",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "test-json",
+                "httpMethod": "POST",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "t2-webhook",
+            "webhookId": "t2-webhook",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [250, 300]
+        },
+        {
+            "parameters": {
+                "jsCode": "const input = $input.first().json;\nreturn [{ json: { testVal: JSON.stringify(input) } }];"
+            },
+            "id": "t2-code",
+            "name": "Code",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [450, 300]
+        },
+        {
+            "parameters": {
+                "executeOnce": true,
+                "command": "echo '{{ $json.testVal }}'"
+            },
+            "id": "t2-exec",
+            "name": "Execute Command",
+            "type": "n8n-nodes-base.executeCommand",
+            "typeVersion": 1,
+            "position": [650, 300]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBodyType": "expression",
+                "responseBody": "={{ $json.stdout }}"
+            },
+            "id": "t2-respond",
+            "name": "Responder",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [850, 300]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [[{"node": "Code", "type": "main", "index": 0}]]
+        },
+        "Code": {
+            "main": [[{"node": "Execute Command", "type": "main", "index": 0}]]
+        },
+        "Execute Command": {
+            "main": [[{"node": "Responder", "type": "main", "index": 0}]]
+        }
+    },
+    "active": true,
+    "settings": {"executionOrder": "v1"},
+    "staticData": "{}",
+    "tags": []
+}

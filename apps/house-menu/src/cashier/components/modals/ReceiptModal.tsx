@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Printer, X } from 'lucide-react';
 import type { Order } from '../../types';
+import { printReceipt } from '../../../lib/printTicket';
 
 interface ReceiptModalProps {
   order: Order;
@@ -9,6 +10,11 @@ interface ReceiptModalProps {
 }
 
 export function ReceiptModal({ order, branchName, onClose }: ReceiptModalProps) {
+  const handlePrint = () => {
+    printReceipt(order, branchName || '').then(r => {
+      if (!r?.engine) window.print(); // fallback
+    });
+  };
   return (
     <AnimatePresence>
       <motion.div
@@ -81,7 +87,7 @@ export function ReceiptModal({ order, branchName, onClose }: ReceiptModalProps) 
 
             <div className="no-print flex gap-3 mt-5">
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="flex-1 py-2.5 border border-cm-border text-xs font-black text-cm-text rounded-xl hover:bg-cm-bg-alt/50 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <Printer size={14} /> Imprimir Ticket

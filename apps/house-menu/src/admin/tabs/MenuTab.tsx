@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, CheckCircle2, Trash2, Loader2, CalendarDays, RotateCcw,
   UtensilsCrossed, FileEdit, FolderOpen, Sparkles, Package,
-  ImageIcon,
+  ImageIcon, AlertTriangle, RefreshCw, ShoppingBag, DollarSign,
 } from 'lucide-react';
 import MenuBuilder from '../components/menu-builder/MenuBuilder';
 import WizardConfigModal from '../components/menu-builder/WizardConfigModal';
@@ -13,7 +13,37 @@ import { useMenuStats } from '../hooks/useMenuStats';
 import { useToast } from '../hooks/useToast';
 import { menuService } from '../../lib/menuService';
 import { dailyMenuService } from '../../lib/dailyMenuService';
+import { subscribeCOGS } from '../../lib/logisticsService';
 import type { MenuCatalog, MenuProduct, DailyMenu } from '../types';
+
+// ── Animated Counter ──
+function AnimatedCounter({ value, decimals = 0, duration = 800 }: { value: number; decimals?: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef<number | null>(null);
+  const startTime = useRef<number | null>(null);
+  const from = useRef(0);
+
+  useEffect(() => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    from.current = display;
+    startTime.current = null;
+    const step = (ts: number) => {
+      if (!startTime.current) startTime.current = ts;
+      const elapsed = ts - startTime.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - (1 - progress) * (1 - progress);
+      setDisplay(from.current + (value - from.current) * eased);
+      if (progress < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [value, duration]);
+
+  return <>{display.toFixed(decimals)}</>;
+}
+
+const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const itemVariants = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 
 // ── Types ──
 
@@ -33,6 +63,7 @@ interface StatCardProps {
   accent: 'cm-accent' | 'success' | 'amber' | 'info' | 'violet' | 'teal';
   dot?: boolean;
   dotColor?: string;
+  index?: number;
 }
 
 const ACCENT_CLASSES: Record<string, { bg: string; text: string; dot: string }> = {
@@ -44,12 +75,11 @@ const ACCENT_CLASSES: Record<string, { bg: string; text: string; dot: string }> 
   teal: { bg: 'bg-teal-500/10', text: 'text-teal-600', dot: 'bg-teal-500' },
 };
 
-function StatCard({ label, value, icon, accent, dot, dotColor }: StatCardProps) {
+function StatCard({ label, value, icon, accent, dot, dotColor, index = 0 }: StatCardProps) {
   const ac = ACCENT_CLASSES[accent] || ACCENT_CLASSES['cm-accent'];
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
+      variants={itemVariants}
       className="bg-cm-surface/80 backdrop-blur-sm rounded-xl border border-cm-border shadow-cm-sm p-4 flex items-start gap-3 hover:shadow-cm-md transition-shadow"
     >
       <div className={`p-2.5 rounded-full shrink-0 ${ac.bg} ${ac.text}`}>
@@ -60,7 +90,9 @@ function StatCard({ label, value, icon, accent, dot, dotColor }: StatCardProps) 
           {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotColor || ac.dot} shrink-0`} />}
           <p className="text-[0.6rem] font-semibold text-cm-text-secondary uppercase tracking-widest">{label}</p>
         </div>
-        <p className="text-2xl font-mono font-black text-cm-text mt-0.5 leading-none tabular-nums">{value}</p>
+        <p className="text-2xl font-mono font-black text-cm-text mt-0.5 leading-none tabular-nums">
+          <AnimatedCounter value={value} />
+        </p>
       </div>
     </motion.div>
   );
@@ -285,12 +317,18 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
   const [smartCreateOpen, setSmartCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(!catalog || !catalog.products);
+  const [error, setError] = useState<string | null>(null);
 
   const stats = useMenuStats(catalog);
   const { toast, notify } = useToast();
+  const [cogsData, setCogsData] = useState<Record<string, { costPerPortion: number; recipeId: string }>>({});
 
   useEffect(() => {
-    // Track catalog loading state
+    if (!activeBranchId) return;
+    return subscribeCOGS(activeBranchId, (data) => setCogsData(data));
+  }, [activeBranchId]);
+
+  useEffect(() => {
     setCatalogLoading(!catalog || !catalog.products);
   }, [catalog]);
 
@@ -447,16 +485,49 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
     }
   };
 
+  const deleteCategory = async (categoryName: string) => {
+    const count = Object.values(catalog.products || {}).filter((p: any) => p.category === categoryName).length;
+    if (!window.confirm(`¿Eliminar toda la categoría "${categoryName}" y sus ${count} producto(s)? No se puede deshacer.`)) return;
+    try {
+      const deleted = await menuService.deleteCategory(activeBranchId, categoryName);
+      notify(`Categoría "${categoryName}" eliminada (${deleted} producto(s))`);
+    } catch (err) {
+      notify('Error al eliminar categoría', 'error');
+    }
+  };
+
   const handleConfigureWizard = (productId: string) => {
     const product = catalog.products[productId];
     if (!product) return;
     setWizardProduct({ ...product, id: productId });
   };
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-cm-error/10 flex items-center justify-center mb-4">
+          <AlertTriangle className="w-8 h-8 text-cm-error" />
+        </div>
+        <h2 className="text-lg font-bold text-cm-text">Error al cargar menú</h2>
+        <p className="text-sm text-cm-muted font-medium mt-1">{error}</p>
+        <button onClick={() => setError(null)} className="mt-6 px-5 py-2.5 bg-cm-accent text-white rounded-xl text-sm font-bold hover:bg-cm-accent-hover transition-colors flex items-center gap-2">
+          <RefreshCw className="w-4 h-4" /> Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  const hasProducts = stats.totalProducts > 0;
+
   return (
-    <div className="space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
       {/* Header + Stats Dashboard */}
-      <div>
+      <motion.div variants={itemVariants}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-cm-text">Constructor de Menú</h2>
@@ -476,90 +547,118 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
           <StatsSkeleton />
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-            <StatCard
-              label="Total Productos"
-              value={stats.totalProducts}
-              icon={<UtensilsCrossed className="w-4 h-4" />}
-              accent="cm-accent"
-            />
-            <StatCard
-              label="Activos"
-              value={stats.activeProducts}
-              icon={<CheckCircle2 className="w-4 h-4" />}
-              accent="success"
-              dot
-            />
-            <StatCard
-              label="Borradores"
-              value={stats.draftProducts}
-              icon={<FileEdit className="w-4 h-4" />}
-              accent="amber"
-              dot
-              dotColor="bg-amber-500"
-            />
-            <StatCard
-              label="Categorías"
-              value={stats.totalCategories}
-              icon={<FolderOpen className="w-4 h-4" />}
-              accent="info"
-            />
-            <StatCard
-              label="Combos"
-              value={stats.wizardProducts}
-              icon={<Sparkles className="w-4 h-4" />}
-              accent="violet"
-            />
-            <StatCard
-              label="Stock"
-              value={stats.stockManaged}
-              icon={<Package className="w-4 h-4" />}
-              accent="teal"
-            />
+            <StatCard label="Total Productos" value={stats.totalProducts} icon={<UtensilsCrossed className="w-4 h-4" />} accent="cm-accent" />
+            <StatCard label="Activos" value={stats.activeProducts} icon={<CheckCircle2 className="w-4 h-4" />} accent="success" dot />
+            <StatCard label="Borradores" value={stats.draftProducts} icon={<FileEdit className="w-4 h-4" />} accent="amber" dot dotColor="bg-amber-500" />
+            <StatCard label="Categorías" value={stats.totalCategories} icon={<FolderOpen className="w-4 h-4" />} accent="info" />
+            <StatCard label="Combos" value={stats.wizardProducts} icon={<Sparkles className="w-4 h-4" />} accent="violet" />
+            <StatCard label="Stock" value={stats.stockManaged} icon={<Package className="w-4 h-4" />} accent="teal" />
           </div>
         )}
-      </div>
+        {/* COGS Summary Card */}
+        {!catalogLoading && (
+          <motion.div variants={itemVariants} className="bg-cm-surface/80 backdrop-blur-sm rounded-xl border border-cm-border shadow-cm-sm p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-cm-text-secondary font-semibold">
+                <DollarSign className="w-4 h-4 text-cm-accent" />
+                Costos y Márgenes
+              </div>
+              <div className="flex gap-4 text-xs">
+                <span className="text-cm-text-secondary">
+                  <span className="font-bold text-cm-text">{Object.keys(cogsData).length}</span> con receta
+                </span>
+                <span className="text-cm-text-secondary">
+                  <span className="font-bold text-cm-warning">{products.length - Object.keys(cogsData).length}</span> sin receta
+                </span>
+                {Object.keys(cogsData).length > 0 && (
+                  <span className="text-cm-text-secondary">
+                    Margen prom.{' '}
+                    <span className="font-bold text-cm-success">
+                      {(() => {
+                        const withCogs = products.filter(p => cogsData[p.id]?.costPerPortion);
+                        const avg = withCogs.reduce((s, p) => {
+                          const cost = cogsData[p.id]?.costPerPortion || 0;
+                          const price = p.base_price || 0;
+                          return s + (price > 0 ? ((price - cost) / price * 100) : 0);
+                        }, 0) / (withCogs.length || 1);
+                        return `${avg.toFixed(1)}%`;
+                      })()}
+                    </span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
 
       {activeBranchId ? (
         <>
-          <DailyMenuSection
-            dailyMenus={dailyMenus}
-            selectedDailyDate={selectedDailyDate}
-            onDateChange={setSelectedDailyDate}
-            onClearDate={() => setSelectedDailyDate(new Date().toISOString().split('T')[0])}
-            onToggleProduct={toggleProductInDailyMenu}
-            onRemove={removeDailyMenu}
-            onCreateEdit={() => {
-              setDailyMenuForm({
-                name: todayMenu?.name || '',
-                description: todayMenu?.description || '',
-                basePrice: todayMenu?.basePrice ? String(todayMenu.basePrice) : '',
-              });
-              setShowDailyMenuModal(true);
-            }}
-            products={products}
-            loading={catalogLoading}
-          />
+          {!hasProducts && !catalogLoading ? (
+            <motion.div variants={itemVariants} className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-cm-accent/10 flex items-center justify-center mb-4">
+                <ShoppingBag className="w-8 h-8 text-cm-accent" />
+              </div>
+              <h2 className="text-lg font-bold text-cm-text">Tu menú está vacío</h2>
+              <p className="text-sm text-cm-muted font-medium mt-1 max-w-sm">Creá tu primer producto usando Smart Create o el constructor manual.</p>
+              <button onClick={() => setSmartCreateOpen(true)} className="mt-6 px-5 py-2.5 bg-cm-accent text-white rounded-xl text-sm font-bold hover:bg-cm-accent-hover transition-colors flex items-center gap-2">
+                <Sparkles className="w-4 h-4" /> Crear producto
+              </button>
+            </motion.div>
+          ) : (
+            <>
+              <motion.div variants={itemVariants}>
+                <DailyMenuSection
+                  dailyMenus={dailyMenus}
+                  selectedDailyDate={selectedDailyDate}
+                  onDateChange={setSelectedDailyDate}
+                  onClearDate={() => setSelectedDailyDate(new Date().toISOString().split('T')[0])}
+                  onToggleProduct={toggleProductInDailyMenu}
+                  onRemove={removeDailyMenu}
+                  onCreateEdit={() => {
+                    setDailyMenuForm({
+                      name: todayMenu?.name || '',
+                      description: todayMenu?.description || '',
+                      basePrice: todayMenu?.basePrice ? String(todayMenu.basePrice) : '',
+                    });
+                    setShowDailyMenuModal(true);
+                  }}
+                  products={products}
+                  loading={catalogLoading}
+                />
+              </motion.div>
 
-          <MenuBuilder
-            products={catalog.products || {}}
-            toggleAvailability={toggleAvailability}
-            updateField={onUpdateField}
-            createProduct={createProduct}
-            deleteProduct={deleteProduct}
-            duplicateProduct={duplicateProduct}
-            onConfigureWizard={handleConfigureWizard}
-            activeBranchId={activeBranchId}
-            categoriesConfig={catalog.categories ?? {}}
-            notify={notify}
-            onMoveItem={handleMoveItem}
-            onReorder={handleReorder}
-            renameCategory={renameCategory}
-            createCategory={createCategory}
-            catalogLoading={catalogLoading}
-          />
+              <motion.div variants={itemVariants}>
+                <MenuBuilder
+                  products={catalog.products || {}}
+                  toggleAvailability={toggleAvailability}
+                  updateField={onUpdateField}
+                  createProduct={createProduct}
+                  deleteProduct={deleteProduct}
+                  duplicateProduct={duplicateProduct}
+                  onConfigureWizard={handleConfigureWizard}
+                  activeBranchId={activeBranchId}
+                  categoriesConfig={catalog.categories ?? {}}
+                  notify={notify}
+                  onMoveItem={handleMoveItem}
+                  onReorder={handleReorder}
+                  renameCategory={renameCategory}
+                  deleteCategory={deleteCategory}
+                  createCategory={createCategory}
+                  catalogLoading={catalogLoading}
+                />
+              </motion.div>
+            </>
+          )}
         </>
       ) : (
-        <p className="text-sm text-cm-text-secondary text-center py-8">Selecciona una sucursal para gestionar el menú</p>
+        <motion.div variants={itemVariants} className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-cm-accent/10 flex items-center justify-center mb-4">
+            <FolderOpen className="w-8 h-8 text-cm-accent" />
+          </div>
+          <h2 className="text-lg font-bold text-cm-text">Seleccioná una sucursal</h2>
+          <p className="text-sm text-cm-muted font-medium mt-1">Necesitás una sucursal activa para gestionar el menú.</p>
+        </motion.div>
       )}
 
       <WizardConfigModal
@@ -677,6 +776,6 @@ export default function MenuTab({ activeBranchId, catalog, dailyMenus, onUpdateF
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

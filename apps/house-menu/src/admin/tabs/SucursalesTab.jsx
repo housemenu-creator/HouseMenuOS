@@ -1,6 +1,31 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, MapPin, Phone, Clock3, Edit3, Trash2, Copy, Loader2, AlertTriangle, X, Hash, QrCode, Upload, CheckCircle, Smartphone, Image, Power, PowerOff } from 'lucide-react';
+import { Plus, MapPin, Phone, Clock3, Edit3, Trash2, Copy, Loader2, AlertTriangle, X, Hash, QrCode, Upload, CheckCircle, Smartphone, Image, Power, PowerOff, RefreshCw, Store } from 'lucide-react';
+
+// ── Animated Counter ──
+function AnimCounter({ value, decimals = 0, duration = 800 }) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef(null);
+  const st = useRef(null);
+  const from = useRef(0);
+  useEffect(() => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    from.current = display; st.current = null;
+    const step = (ts) => {
+      if (!st.current) st.current = ts;
+      const p = Math.min((ts - st.current) / duration, 1);
+      const e = 1 - (1 - p) * (1 - p);
+      setDisplay(from.current + (value - from.current) * e);
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [value, duration]);
+  return <>{display.toFixed(decimals)}</>;
+}
+
+const cv = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
+const iv = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 import { ref, update } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { branchService } from '../../lib/branchService';
@@ -54,6 +79,8 @@ export default function SucursalesTab({ branches }) {
     },
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [cloneSource, setCloneSource] = useState('');
   const [cloneTarget, setCloneTarget] = useState('');
@@ -77,7 +104,7 @@ export default function SucursalesTab({ branches }) {
   const handleToggleActive = async (branch) => {
     const newState = branch.active !== false ? false : true;
     const action = newState ? 'reactivar' : 'desactivar';
-    if (!window.confirm(`¿Estás seguro de querer ${action} la sucursal "${branch.name}"?`)) return;
+    if (!window.confirm(`¿Estás seguro de querer ${action} la sucursal "${branch.name || branch.id}"?`)) return;
     try {
       const result = await branchService.setBranchActive(branch.id, newState);
       if (!result.success) alert('Error al cambiar el estado de la sucursal');
@@ -281,40 +308,57 @@ export default function SucursalesTab({ branches }) {
     setCloneLoading(false);
   };
 
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 className="w-6 h-6 animate-spin text-cm-accent" />
+    </div>
+  );
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-3">
+      <AlertTriangle className="w-10 h-10 text-cm-error" />
+      <p className="text-sm text-cm-text-secondary text-center">{error}</p>
+      <button onClick={() => window.location.reload()} className="flex items-center gap-1.5 text-xs font-bold text-cm-accent hover:underline">
+        <RefreshCw className="w-3.5 h-3.5" /> Reintentar
+      </button>
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <motion.div variants={cv} initial="hidden" animate="show" className="space-y-4">
+      <motion.div variants={iv} className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-cm-text">Sucursales</h2>
         <button onClick={() => openBranchForm()} className="flex items-center gap-2 px-4 py-2 bg-cm-accent text-white text-sm font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors">
           <Plus className="w-4 h-4" /> Nueva sucursal
         </button>
-      </div>
+      </motion.div>
 
       {/* Search */}
-      <div className="relative">
-        <input type="text" placeholder="Buscar por nombre, dirección, provincia o distrito..." value={branchSearch} onChange={e => setBranchSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-cm-border rounded-xl text-sm font-semibold text-cm-text bg-cm-surface focus:outline-none focus:border-cm-accent transition-colors" />
-        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-muted" />
-      </div>
+      <motion.div variants={iv}>
+        <div className="relative">
+          <input type="text" placeholder="Buscar por nombre, dirección, provincia o distrito..." value={branchSearch} onChange={e => setBranchSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-cm-border rounded-xl text-sm font-semibold text-cm-text bg-cm-surface focus:outline-none focus:border-cm-accent transition-colors" />
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cm-muted" />
+        </div>
+      </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <motion.div variants={iv} className="grid grid-cols-3 gap-3">
         <div className="bg-cm-surface rounded-xl border border-cm-border p-3 text-center">
-          <p className="text-2xl font-black text-cm-accent">{branches.length}</p>
+          <p className="text-2xl font-black text-cm-accent"><AnimCounter value={branches.length} /></p>
           <p className="text-[10px] uppercase tracking-wider text-cm-muted font-semibold">Total</p>
         </div>
         <div className="bg-cm-success/5 rounded-xl border border-cm-success/20 p-3 text-center">
-          <p className="text-2xl font-black text-cm-success">{branches.filter(b => b.deliveryEnabled).length}</p>
+          <p className="text-2xl font-black text-cm-success"><AnimCounter value={branches.filter(b => b.deliveryEnabled).length} /></p>
           <p className="text-[10px] uppercase tracking-wider text-cm-muted font-semibold">Con Delivery</p>
         </div>
         <div className="bg-cm-warning/5 rounded-xl border border-cm-warning/20 p-3 text-center">
-          <p className="text-2xl font-black text-cm-warning">{branches.filter(b => b.isHeadquarters).length}</p>
+          <p className="text-2xl font-black text-cm-warning"><AnimCounter value={branches.filter(b => b.isHeadquarters).length} /></p>
           <p className="text-[10px] uppercase tracking-wider text-cm-muted font-semibold">Casa Matriz</p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Map preview - showing all branches with coordinates */}
       {branches.filter(b => b.coordinates?.lat && b.coordinates?.lng).length > 0 && (
-        <div className="bg-cm-surface rounded-xl border border-cm-border p-3">
+        <motion.div variants={iv} className="bg-cm-surface rounded-xl border border-cm-border p-3">
           <p className="text-xs font-bold text-cm-text-secondary uppercase tracking-wider mb-2">Mapa de sucursales</p>
           <div className="rounded-lg overflow-hidden border border-cm-border">
             <iframe
@@ -327,11 +371,11 @@ export default function SucursalesTab({ branches }) {
               src={`https://www.google.com/maps?q=${branches.filter(b => b.coordinates?.lat).map(b => `${b.coordinates.lat},${b.coordinates.lng}`).join('|')}&output=embed`}
             />
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Branch cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <motion.div variants={iv} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {branches
           .filter(b => !branchSearch
             || b.name?.toLowerCase().includes(branchSearch.toLowerCase())
@@ -348,7 +392,7 @@ export default function SucursalesTab({ branches }) {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className={`font-bold truncate ${isActive ? 'text-cm-text' : 'text-cm-muted'}`}>{b.name}</h3>
+                    <h3 className={`font-bold truncate ${isActive ? 'text-cm-text' : 'text-cm-muted'}`}>{b.name || b.id}</h3>
                     {b.isHeadquarters && <span className="text-[9px] font-black bg-cm-warning/10 text-cm-warning px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">Matriz</span>}
                     {!isActive && <span className="text-[9px] font-black bg-cm-muted/20 text-cm-muted px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">Inactiva</span>}
                     {isActive && b.id === activeBranchId && <span className="text-[9px] font-black bg-cm-accent/10 text-cm-accent px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">Activa</span>}
@@ -364,7 +408,7 @@ export default function SucursalesTab({ branches }) {
                     {isActive ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                   </button>
                   {!isActive && (
-                    <button onClick={() => { setDeleteTarget({ id: b.id, name: b.name }); setDeleteConfirmName(''); }}
+                    <button onClick={() => { setDeleteTarget({ id: b.id, name: b.name || b.id }); setDeleteConfirmName(''); }}
                       className="p-1.5 text-cm-muted hover:text-cm-error hover:bg-cm-error/10 rounded-lg transition-colors" title="Eliminar permanentemente">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -390,14 +434,14 @@ export default function SucursalesTab({ branches }) {
           </div>
           );
           })}
-      </div>
+      </motion.div>
 
-      {branches.length === 0 && (
-        <div className="text-center py-12 text-cm-muted border border-dashed border-cm-border rounded-xl">
-          <MapPin className="w-12 h-12 mx-auto mb-3 opacity-30" />
+      {branches.length === 0 && !loading && (
+        <motion.div variants={iv} className="text-center py-12 text-cm-muted border border-dashed border-cm-border rounded-xl">
+          <Store className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="font-semibold">No hay sucursales</p>
           <p className="text-xs mt-1">Crea tu primera sucursal</p>
-        </div>
+        </motion.div>
       )}
 
       {/* Clone Catalog Modal */}
@@ -420,14 +464,14 @@ export default function SucursalesTab({ branches }) {
                   <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Origen</label>
                   <select value={cloneSource} onChange={e => setCloneSource(e.target.value)} className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent">
                     <option value="">Seleccionar</option>
-                    {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    {branches.map(b => <option key={b.id} value={b.id}>{b.name || b.id}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-cm-text-secondary mb-1 uppercase tracking-wider">Destino</label>
                   <select value={cloneTarget} onChange={e => setCloneTarget(e.target.value)} className="w-full px-3 py-2 border border-cm-border rounded-lg text-sm font-semibold text-cm-text focus:outline-none focus:border-cm-accent">
                     <option value="">Seleccionar</option>
-                    {branches.filter(b => b.id !== cloneSource).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    {branches.filter(b => b.id !== cloneSource).map(b => <option key={b.id} value={b.id}>{b.name || b.id}</option>)}
                   </select>
                 </div>
               </div>
@@ -840,6 +884,6 @@ export default function SucursalesTab({ branches }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

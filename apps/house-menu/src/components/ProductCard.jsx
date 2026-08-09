@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, UtensilsCrossed, Star } from 'lucide-react';
 
 function ProductCard({ productId, product, onSelect }) {
   const isOutOfStock = !product.available || (product.trackStock && (product.stock ?? 0) <= 0);
+  const showLowStockWarning = !isOutOfStock && product.trackStock && (product.stock ?? 0) > 0 && (product.stock ?? 0) <= 5;
   const priceDisplay = (product.base_price ?? product.price ?? 0).toFixed(2);
   const isWizard = product.isWizard || (product.steps && product.steps.length > 0);
 
@@ -21,51 +22,69 @@ function ProductCard({ productId, product, onSelect }) {
 
   return (
     <motion.div
-      whileTap={isOutOfStock ? {} : { scale: 0.985 }}
+      whileHover={isOutOfStock ? {} : { y: -4 }}
+      whileTap={isOutOfStock ? {} : { scale: 0.98 }}
       onClick={handleOpen}
-      className={`relative flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all select-none
-        ${isOutOfStock ? 'opacity-50 pointer-events-none' : 'hover:bg-cm-surface/60'}
-        ${isRecommended ? 'bg-gradient-to-r from-yellow-500/[0.04] to-transparent' : ''}
-      `}
+      className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 group border ${
+        isOutOfStock ? 'opacity-50 border-cm-border/30' :
+        isRecommended ? 'border-cm-accent/20 bg-gradient-to-b from-cm-accent/[0.02] to-transparent' :
+        'border-cm-border/40 bg-cm-surface/60 hover:border-cm-accent/25 hover:shadow-lg hover:shadow-cm-accent/5'
+      }`}
     >
-      {/* Separator line (every card except first) */}
-      <div className="absolute top-0 left-[88px] right-4 h-px bg-cm-border/30" />
-
-      {/* Image — 80×80 rounded */}
-      <div className="relative shrink-0 w-20 h-20">
+      {/* Image — 4:3 aspect */}
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-cm-bg-alt">
         {product.image ? (
           <img
             src={product.image}
             alt={product.name}
-            className={`w-full h-full object-cover rounded-[14px] border border-cm-border/40 ${isOutOfStock ? 'grayscale' : ''}`}
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${isOutOfStock ? 'grayscale' : ''}`}
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full rounded-[14px] bg-cm-surface/80 border border-cm-border/40 flex items-center justify-center">
-            <span className="text-[8px] font-black text-cm-muted uppercase tracking-widest text-center leading-tight px-1">
-              Sin img
-            </span>
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cm-accent/5 to-cm-bg-alt">
+            <UtensilsCrossed className="w-8 h-8 text-cm-muted/20" />
           </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute -top-1.5 -left-1.5 flex flex-col gap-0.5">
+        {/* Overlay gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-cm-bg/60 to-transparent pointer-events-none" />
+
+        {/* Badges — top left */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
           {isNew && (
-            <span className="text-[7px] font-black px-1.5 py-0.5 bg-blue-500 text-white rounded-full uppercase tracking-wider shadow-sm leading-none">
+            <motion.span initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+              className="text-[8px] font-black px-2 py-1 bg-blue-500 text-white rounded-full uppercase tracking-wider shadow-lg leading-none"
+            >
               Nuevo
-            </span>
+            </motion.span>
           )}
           {promoDiscount && (
-            <span className="text-[7px] font-black px-1.5 py-0.5 bg-red-500 text-white rounded-full uppercase tracking-wider shadow-sm leading-none animate-pulse">
+            <motion.span initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.05 }}
+              className="text-[8px] font-black px-2 py-1 bg-red-500 text-white rounded-full uppercase tracking-wider shadow-lg leading-none animate-pulse"
+            >
               -{promoDiscount}%
-            </span>
+            </motion.span>
+          )}
+          {showLowStockWarning && (
+            <motion.span initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}
+              className="text-[8px] font-black px-2 py-1 bg-cm-accent text-white rounded-full uppercase tracking-wider shadow-lg leading-none animate-pulse"
+            >
+              ¡Solo quedan {product.stock}!
+            </motion.span>
           )}
         </div>
 
+        {/* Recommended crown */}
+        {isRecommended && (
+          <div className="absolute top-3 right-3 z-10">
+            <Star className="w-5 h-5 text-cm-accent fill-cm-accent drop-shadow-lg" />
+          </div>
+        )}
+
         {/* Out of stock overlay */}
         {isOutOfStock && (
-          <div className="absolute inset-0 rounded-[14px] bg-black/40 flex items-center justify-center">
-            <span className="text-[8px] font-black text-white uppercase tracking-wider bg-black/60 px-2 py-0.5 rounded-full">
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px]">
+            <span className="text-[10px] font-black text-white uppercase tracking-wider bg-black/60 px-3 py-1.5 rounded-full shadow-lg">
               Agotado
             </span>
           </div>
@@ -73,66 +92,61 @@ function ProductCard({ productId, product, onSelect }) {
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0 pr-1">
-        <div className="flex items-start gap-2">
-          <h3 className="text-sm font-bold text-cm-text leading-tight truncate">
-            {product.name}
-          </h3>
-          {isRecommended && (
-            <span className="text-[10px] shrink-0 mt-0.5">👑</span>
-          )}
-        </div>
+      <div className="p-3.5">
+        <h3 className="text-sm font-bold text-cm-text leading-tight line-clamp-2 group-hover:text-cm-accent transition-colors">
+          {product.name}
+        </h3>
 
         {product.description && (
-          <p className="text-xs text-cm-text-secondary/70 leading-tight mt-0.5 line-clamp-1">
+          <p className="text-[11px] text-cm-text-secondary/70 leading-relaxed mt-1 line-clamp-1">
             {product.description}
           </p>
         )}
 
         {/* Dietary badges */}
         {(isVegan || isSpicy || isGlutenFree) && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
+          <div className="flex flex-wrap gap-1 mt-2">
             {isVegan && (
-              <span className="text-[7px] font-black px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20 leading-none">
+              <span className="text-[7px] font-black px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20 leading-none">
                 🌱 Vegano
               </span>
             )}
             {isSpicy && (
-              <span className="text-[7px] font-black px-1.5 py-0.5 bg-orange-500/10 text-orange-600 rounded-full border border-orange-500/20 leading-none">
+              <span className="text-[7px] font-black px-1.5 py-0.5 bg-orange-500/10 text-orange-400 rounded-full border border-orange-500/20 leading-none">
                 🌶️ Picante
               </span>
             )}
             {isGlutenFree && (
-              <span className="text-[7px] font-black px-1.5 py-0.5 bg-sky-500/10 text-sky-600 rounded-full border border-sky-500/20 leading-none">
+              <span className="text-[7px] font-black px-1.5 py-0.5 bg-sky-500/10 text-sky-400 rounded-full border border-sky-500/20 leading-none">
                 🌾 Sin Gluten
               </span>
             )}
           </div>
         )}
 
-        {/* Price */}
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-base font-black text-cm-accent tracking-tight">
-            S/ {priceDisplay}
-          </span>
-          {isWizard && (
-            <span className="text-[8px] font-bold text-cm-text-tertiary">desde</span>
+        {/* Price + CTA */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-cm-border/20">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-base font-black text-cm-accent tracking-tight">
+              S/ {priceDisplay}
+            </span>
+            {isWizard && (
+              <span className="text-[8px] font-bold text-cm-text-tertiary">desde</span>
+            )}
+          </div>
+          {!isOutOfStock && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => { e.stopPropagation(); handleOpen(); }}
+              className="w-8 h-8 rounded-xl bg-cm-accent/10 border border-cm-accent/20 flex items-center justify-center text-cm-accent hover:bg-cm-accent hover:text-white transition-all group/btn"
+              aria-label="Personalizar producto"
+            >
+              <Plus className="w-4 h-4 transition-transform group-hover/btn:rotate-90" />
+            </motion.button>
           )}
         </div>
       </div>
-
-      {/* + Button */}
-      {!isOutOfStock && (
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={(e) => { e.stopPropagation(); handleOpen(); }}
-          className="shrink-0 w-9 h-9 rounded-full bg-cm-accent/10 border border-cm-accent/25 flex items-center justify-center text-cm-accent hover:bg-cm-accent/20 transition-colors"
-          aria-label="Personalizar producto"
-        >
-          <Plus className="w-4 h-4" />
-        </motion.button>
-      )}
     </motion.div>
   );
 }

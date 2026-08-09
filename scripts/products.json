@@ -1,0 +1,548 @@
+[
+  {
+    "id": "-OvcCecc2OM2yLzppqQT",
+    "name": "Arma tu Menú",
+    "category": "Nuestras Expiencias",
+    "base_price": 13.5
+  },
+  {
+    "id": "-OvwYuQSnKF32STPGRG6",
+    "name": "Arma tu Causa",
+    "category": "Nuestras Expiencias",
+    "base_price": 10
+  },
+  {
+    "id": "-Ow9QMKll8MfSFMNNgqk",
+    "name": "Seco de Cabrito",
+    "category": "Promos del Día",
+    "base_price": 20
+  },
+  {
+    "id": "-Ow9Qf5wjd203yPe4TpB",
+    "name": "Tallarines Verdes con Pollo al Horno",
+    "category": "Promos del Día",
+    "base_price": 0
+  },
+  {
+    "id": "-Ow9QyybS3aAHHj53ESo",
+    "name": "Tallarines con Pollo al Horno ",
+    "category": "Promos del Día",
+    "base_price": 0
+  },
+  {
+    "id": "-Ow9RXJRSf6DjufpwaoW",
+    "name": "Milanesa de Pollo",
+    "category": "Promos del Día",
+    "base_price": 20
+  },
+  {
+    "id": "-Ow9SFdPFTKLlMKyYacW",
+    "name": "Plato de Ejemplo",
+    "category": "Tu Almuerzo Fit",
+    "base_price": 0
+  },
+  {
+    "id": "-Ow9SKTfIpssT2lfMQdN",
+    "name": "Plato de Ejemplo",
+    "category": "Trio de Pastas",
+    "base_price": 0
+  },
+  {
+    "id": "-Ow9SN6ur9EeKNRQg903",
+    "name": "Ceviches",
+    "category": "Pescados",
+    "base_price": 20
+  },
+  {
+    "id": "-Ow9SP4Iy6o-pIb3Agn7",
+    "name": "Plato de Ejemplo",
+    "category": "Pollos",
+    "base_price": 0
+  },
+  {
+    "id": "-Ow9STrii5xICln2qeI0",
+    "name": "Plato de Ejemplo",
+    "category": "Res",
+    "base_price": 0
+  },
+  {
+    "id": "-OwnW-hU2Vxp8KcHtHVs",
+    "name": "Chicharrones",
+    "category": "Pescados",
+    "base_price": 20
+  },
+  {
+    "id": "-Ows7e7cpzlDYr5qV3HR",
+    "name": "Lomo Saltado E2E v2",
+    "category": "Sandwichs",
+    "base_price": 30
+  },
+  {
+    "id": "-OxYsriKqSHMwsqrRWvr",
+    "name": "Nuevo Plato",
+    "category": "Nuestras Expiencias",
+    "base_price": 0
+  },
+  {
+    "id": "-OxfzrCrClKzdJIKjhm6",
+    "name": "Plato de Ejemplo",
+    "category": "HAMBURGUESAS",
+    "base_price": 0
+  },
+  {
+    "id": "-OxfzztNLhKW67H8RI20",
+    "name": "ALITAS ",
+    "category": "PIQUEOS",
+    "base_price": 0
+  },
+  {
+    "id": "-Oxg-3bAzTZeNMnvLASx",
+    "name": "SALCHIPAPAS",
+    "category": "PIQUEOS",
+    "base_price": 0
+  },
+  {
+    "id": "-Oxg-Agu82k6I_47_7GJ",
+    "name": "ENCHILADAS",
+    "category": "PIQUEOS",
+    "base_price": 0
+  },
+  {
+    "id": "-Oxg-FP2vlsPO-P3dauV",
+    "name": "Plato de Ejemplo",
+    "category": "CAFE",
+    "base_price": 0
+  },
+  {
+    "id": "-Oxg-GdnPlHXLG6ktVJn",
+    "name": "Plato de Ejemplo",
+    "category": "JUGOS",
+    "base_price": 0
+  },
+  {
+    "id": "-Oxg-N4ppm7hw3W6Kotx",
+    "name": "Plato de Ejemplo",
+    "category": "BEBIDAS",
+    "base_price": 0
+  },
+  {
+    "id": "-Oxg-PirfzP_T-A5S1Jz",
+    "name": "Plato de Ejemplo",
+    "category": "CREMAS",
+    "base_price": 0
+  },
+  {
+    "id": "-OxlpVktiUpafWx_K8JQ",
+    "name": "Pollo al Horno",
+    "category": "Opciones del Día",
+    "base_price": 18
+  },
+  {
+    "id": "-OxlpVo6QlrcETkMnbOq",
+    "name": "Pollo al Horno con Tallarines",
+    "category": "Opciones del Día",
+    "base_price": 18
+  },
+  {
+    "id": "-OxlpVrJD9HUl3f_Afwo",
+    "name": "Lomo Saltado",
+    "category": "Opciones del Día",
+    "base_price": 18
+  },
+  {
+    "id": "-OxlpVuVKTSoq5X5mqBa",
+    "name": "Pollo a la Plancha Fit",
+    "category": "Almuerzo Fit",
+    "base_price": 19
+  },
+  {
+    "id": "-OxlpVxhfvgoswX8LZ2S",
+    "name": "Bisteck Frito Fit",
+    "category": "Almuerzo Fit",
+    "base_price": 19
+  },
+  {
+    "id": "-OxlpW1VSfbAv6Z64yqf",
+    "name": "Chuleta de Chancho",
+    "category": "Carnes y Saltados",
+    "base_price": 24
+  },
+  {
+    "id": "-OxlpW4hs1cR7ZdPVrBB",
+    "name": "Bisteck a lo Pobre",
+    "category": "Carnes y Saltados",
+    "base_price": 19
+  },
+  {
+    "id": "-OxlpWB5KogTiasOvU9M",
+    "name": "Filete de Chancho",
+    "category": "Carnes y Saltados",
+    "base_price": 19
+  },
+  {
+    "id": "-OxlpWEISyl7nz8mTAWx",
+    "name": "Apanado de Res",
+    "category": "Carnes y Saltados",
+    "base_price": 21
+  },
+  {
+    "id": "-OxlpWHVQbtKLFwcfy0D",
+    "name": "Bisteck Frito",
+    "category": "Carnes y Saltados",
+    "base_price": 21
+  },
+  {
+    "id": "-OxlpWKh9ixEPqLqV99P",
+    "name": "Lomo Saltado a lo Pobre",
+    "category": "Carnes y Saltados",
+    "base_price": 24
+  },
+  {
+    "id": "-OxlpWNu7Ef-4rFgZu4T",
+    "name": "Pechuga a la Plancha",
+    "category": "Parrilla y Pollos",
+    "base_price": 20
+  },
+  {
+    "id": "-OxlpWR5y-uwKT3uPtt4",
+    "name": "Pollo Saltado",
+    "category": "Parrilla y Pollos",
+    "base_price": 16
+  },
+  {
+    "id": "-OxlpW_d7-3KEI4OWXNq",
+    "name": "Chicharrón de Pollo 100gr",
+    "category": "Parrilla y Pollos",
+    "base_price": 16
+  },
+  {
+    "id": "-OxlpWcgR7VBJNGgIk8N",
+    "name": "Chicharrón de Pollo 200gr",
+    "category": "Parrilla y Pollos",
+    "base_price": 16
+  },
+  {
+    "id": "-OxlpWg5nXGBMy70DNaN",
+    "name": "Pollo Saltado a lo Pobre",
+    "category": "Parrilla y Pollos",
+    "base_price": 17
+  },
+  {
+    "id": "-OxlpWjIRLYgr5eVORYv",
+    "name": "Ceviche de Pota",
+    "category": "Ceviches",
+    "base_price": 20
+  },
+  {
+    "id": "-OxlpWmVDQO1mHm2_ufI",
+    "name": "Ceviche de Filete",
+    "category": "Ceviches",
+    "base_price": 25
+  },
+  {
+    "id": "-OxlpWphBAS5pczd60RW",
+    "name": "Ceviche de Congrio",
+    "category": "Ceviches",
+    "base_price": 30
+  },
+  {
+    "id": "-OxlpWstqL3OWmYUsL6-",
+    "name": "Ceviche Mixto",
+    "category": "Ceviches",
+    "base_price": 30
+  },
+  {
+    "id": "-OxlpWw53fy7WmTIaxG9",
+    "name": "Ceviche + Chicharrón (Filete)",
+    "category": "Ceviches",
+    "base_price": 35
+  },
+  {
+    "id": "-OxlpWzApJNXZ0-AVgAq",
+    "name": "Ceviche + Chicharrón (Congrio)",
+    "category": "Ceviches",
+    "base_price": 40
+  },
+  {
+    "id": "-OxlpX1Vd_l4UjGHbUN7",
+    "name": "Ceviche + Chicharrón (Mixto)",
+    "category": "Ceviches",
+    "base_price": 40
+  },
+  {
+    "id": "-OxlpX4dLKFdof6ROXCd",
+    "name": "Combo Ceviche + Chicharrón",
+    "category": "Ceviches",
+    "base_price": 45
+  },
+  {
+    "id": "-OxlpX7t6M2PaZ_UMJ6I",
+    "name": "Pescado Frito",
+    "category": "Ceviches",
+    "base_price": 30
+  },
+  {
+    "id": "-OxlpXB6Yjf3qYQnyLhF",
+    "name": "Café Pasado 8oz",
+    "category": "Bebidas Calientes",
+    "base_price": 5.5
+  },
+  {
+    "id": "-OxlpXEJ3rnCsE72FqYO",
+    "name": "Café Pasado 16oz",
+    "category": "Bebidas Calientes",
+    "base_price": 8
+  },
+  {
+    "id": "-OxlpXHVyKiFTxDjV4er",
+    "name": "Espresso",
+    "category": "Bebidas Calientes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpXKhbgHQNKh9HCMb",
+    "name": "Americano",
+    "category": "Bebidas Calientes",
+    "base_price": 7
+  },
+  {
+    "id": "-OxlpXNt8dD_hUvRio0X",
+    "name": "Café Macchiato",
+    "category": "Bebidas Calientes",
+    "base_price": 7.5
+  },
+  {
+    "id": "-OxlpXR55NEOSujIQy2P",
+    "name": "Café Latte",
+    "category": "Bebidas Calientes",
+    "base_price": 8.5
+  },
+  {
+    "id": "-OxlpXUIh5n-OmT2cT1Q",
+    "name": "Cappuccino",
+    "category": "Bebidas Calientes",
+    "base_price": 8.5
+  },
+  {
+    "id": "-OxlpXXD1tQum_0eAUq2",
+    "name": "Café Mocha",
+    "category": "Bebidas Calientes",
+    "base_price": 9
+  },
+  {
+    "id": "-OxlpXbEpt8k1hDg4YW8",
+    "name": "Long Coffee",
+    "category": "Bebidas Calientes",
+    "base_price": 8.5
+  },
+  {
+    "id": "-OxlpXeVYMoFLnTUQHWy",
+    "name": "2 Cafés Pasados",
+    "category": "Bebidas Calientes",
+    "base_price": 10
+  },
+  {
+    "id": "-OxlpXhh3DsBVXzhAL8-",
+    "name": "Iced Coffee",
+    "category": "Bebidas Frías",
+    "base_price": 6.5
+  },
+  {
+    "id": "-OxlpXkuVCyAtcoZ0kLo",
+    "name": "Iced Latte",
+    "category": "Bebidas Frías",
+    "base_price": 9
+  },
+  {
+    "id": "-OxlpXo6KLO_lwRY8v0_",
+    "name": "Frappuccino",
+    "category": "Bebidas Frías",
+    "base_price": 9
+  },
+  {
+    "id": "-OxlpXrIVMRGrOF7VJY8",
+    "name": "Affogato",
+    "category": "Bebidas Frías",
+    "base_price": 9
+  },
+  {
+    "id": "-OxlpXuWenGPkfCLSVCR",
+    "name": "Jugo de Papaya 8oz",
+    "category": "Jugos Naturales",
+    "base_price": 5
+  },
+  {
+    "id": "-OxlpXxhau_oBRyadNh8",
+    "name": "Jugo de Piña 8oz",
+    "category": "Jugos Naturales",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpY-tTB6o5-w7MNjN",
+    "name": "Jugo de Melón 8oz",
+    "category": "Jugos Naturales",
+    "base_price": 5
+  },
+  {
+    "id": "-OxlpY35uDVJTQgbNHpq",
+    "name": "Jugo de Fresa 8oz",
+    "category": "Jugos Naturales",
+    "base_price": 7
+  },
+  {
+    "id": "-OxlpY6ENEqc3LGspiLK",
+    "name": "Jugo Surtido 8oz",
+    "category": "Jugos Naturales",
+    "base_price": 8
+  },
+  {
+    "id": "-OxlpY9VBXswi8dCOn8r",
+    "name": "Milkshake de Fresa",
+    "category": "Milkshakes",
+    "base_price": 15
+  },
+  {
+    "id": "-OxlpYChJhlmSDCixOIe",
+    "name": "Milkshake de Oreo",
+    "category": "Milkshakes",
+    "base_price": 15
+  },
+  {
+    "id": "-OxlpYFtW6QROH4-M8Vf",
+    "name": "Limonada 500ml",
+    "category": "Bebidas Refrescantes",
+    "base_price": 2.5
+  },
+  {
+    "id": "-OxlpYJ5llg9Kt-1TSRp",
+    "name": "Limonada 1L",
+    "category": "Bebidas Refrescantes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpYMI3u6PInOzqNm9",
+    "name": "Maracuyá 500ml",
+    "category": "Bebidas Refrescantes",
+    "base_price": 2.5
+  },
+  {
+    "id": "-OxlpYPWUm-n_92ml_4V",
+    "name": "Maracuyá 1L",
+    "category": "Bebidas Refrescantes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpYShUiLUfiR7zCVk",
+    "name": "Chicha Morada 500ml",
+    "category": "Bebidas Refrescantes",
+    "base_price": 2.5
+  },
+  {
+    "id": "-OxlpYVuOPnFyn3e4BKP",
+    "name": "Chicha Morada 1L",
+    "category": "Bebidas Refrescantes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpYZ5uC3VVbWhDI3j",
+    "name": "Cebada 500ml",
+    "category": "Bebidas Refrescantes",
+    "base_price": 2.5
+  },
+  {
+    "id": "-OxlpYbFyvyzh-OPjpr_",
+    "name": "Cebada 1L",
+    "category": "Bebidas Refrescantes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpYeV-Th2JUx2_8j9",
+    "name": "Jamaica 500ml",
+    "category": "Bebidas Refrescantes",
+    "base_price": 2.5
+  },
+  {
+    "id": "-OxlpYhhvjPwmmEQESgW",
+    "name": "Jamaica 1L",
+    "category": "Bebidas Refrescantes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpYku2BAhaNNvBpFg",
+    "name": "Manzana 500ml",
+    "category": "Bebidas Refrescantes",
+    "base_price": 2.5
+  },
+  {
+    "id": "-OxlpYo67SwLINTD8f1c",
+    "name": "Manzana 1L",
+    "category": "Bebidas Refrescantes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlpYrI1vRjYGbGnK--",
+    "name": "Huevo Frito",
+    "category": "Adicionales",
+    "base_price": 2
+  },
+  {
+    "id": "-OxlpYuVLYRgrNY-40BK",
+    "name": "Plátanos Fritos",
+    "category": "Adicionales",
+    "base_price": 2
+  },
+  {
+    "id": "-OxlpYxhQuU-Ia4a8lUD",
+    "name": "Huevo y Plátanos Fritos",
+    "category": "Adicionales",
+    "base_price": 3
+  },
+  {
+    "id": "-OxlpZ-ulOXOGMJ_2vMv",
+    "name": "Ensalada Fresca",
+    "category": "Adicionales",
+    "base_price": 5
+  },
+  {
+    "id": "-OxlpZ2sHhiLisX_bw0T",
+    "name": "Descarte",
+    "category": "Adicionales",
+    "base_price": 2
+  },
+  {
+    "id": "-OxlxgCtTnIeV9iTfnBX",
+    "name": "Pollo Personal",
+    "category": "Parrilla y Pollos",
+    "base_price": 18
+  },
+  {
+    "id": "-OxlxgGHm5zJIsCpMeKJ",
+    "name": "Fuente de Chicharrones",
+    "category": "Parrilla y Pollos",
+    "base_price": 25
+  },
+  {
+    "id": "-OxlxgJUxpCJ3jPhQF3j",
+    "name": "Karambola 500ml",
+    "category": "Bebidas Refrescantes",
+    "base_price": 2.5
+  },
+  {
+    "id": "-OxlxgMfzYtqYd9PORFd",
+    "name": "Karambola 1L",
+    "category": "Bebidas Refrescantes",
+    "base_price": 6
+  },
+  {
+    "id": "-OxlxgPtagLokT4g2Lkj",
+    "name": "Club Sandwich Clásico",
+    "category": "Especiales",
+    "base_price": 12
+  },
+  {
+    "id": "-OxlxgT40VrVtsxoCf62",
+    "name": "Combo Club Sandwich",
+    "category": "Especiales",
+    "base_price": 40
+  }
+]

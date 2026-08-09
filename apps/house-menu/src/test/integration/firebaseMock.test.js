@@ -179,15 +179,14 @@ describe('chatService', () => {
   beforeEach(async () => {
     store = createStore();
     pushCounter = 0;
-    vi.resetModules();
   });
 
   it('sends and retrieves a message', async () => {
     const { sendMessage, subscribeMessages } = await import('../../lib/chatService.js');
-    await sendMessage(B, { text: 'Hola', sender: 'kitchen', senderName: 'Cocina' });
+    await sendMessage(B, 'general', { text: 'Hola', sender: 'kitchen', senderName: 'Cocina' });
 
     const msgs = await new Promise((resolve) => {
-      subscribeMessages(B, (m) => resolve(m));
+      subscribeMessages(B, 'general', (m) => resolve(m));
     });
     expect(msgs).toHaveLength(1);
     expect(msgs[0].text).toBe('Hola');
@@ -196,11 +195,11 @@ describe('chatService', () => {
 
   it('orders messages by timestamp', async () => {
     const { sendMessage, subscribeMessages } = await import('../../lib/chatService.js');
-    await sendMessage(B, { text: 'A', sender: 'kitchen', senderName: 'Cocina' });
-    await sendMessage(B, { text: 'B', sender: 'dispatch', senderName: 'Despacho' });
+    await sendMessage(B, 'general', { text: 'A', sender: 'kitchen', senderName: 'Cocina' });
+    await sendMessage(B, 'general', { text: 'B', sender: 'dispatch', senderName: 'Despacho' });
 
     const msgs = await new Promise((resolve) => {
-      subscribeMessages(B, (m) => resolve(m));
+      subscribeMessages(B, 'general', (m) => resolve(m));
     });
     expect(msgs).toHaveLength(2);
     expect(msgs[0].text).toBe('A');
@@ -209,25 +208,25 @@ describe('chatService', () => {
 
   it('tracks readBy for sender', async () => {
     const { sendMessage, subscribeMessages } = await import('../../lib/chatService.js');
-    await sendMessage(B, { text: 'Leer', sender: 'kitchen', senderName: 'Cocina' });
+    await sendMessage(B, 'general', { text: 'Leer', sender: 'kitchen', senderName: 'Cocina' });
 
     const msgs = await new Promise((resolve) => {
-      subscribeMessages(B, (m) => resolve(m));
+      subscribeMessages(B, 'general', (m) => resolve(m));
     });
     expect(msgs[0].readBy.kitchen).toBe(true);
   });
 
   it('marks message as read by another user', async () => {
     const { sendMessage, subscribeMessages, markMessageRead } = await import('../../lib/chatService.js');
-    await sendMessage(B, { text: 'Nuevo', sender: 'dispatch', senderName: 'Despacho' });
+    await sendMessage(B, 'general', { text: 'Nuevo', sender: 'dispatch', senderName: 'Despacho' });
 
     const msgs = await new Promise((resolve) => {
-      subscribeMessages(B, (m) => resolve(m));
+      subscribeMessages(B, 'general', (m) => resolve(m));
     });
     const msgId = msgs[0].id;
-    await markMessageRead(B, msgId, 'kitchen');
+    await markMessageRead(B, 'general', msgId, 'kitchen');
 
-    const stored = store.get(`branches/${B}/chat/${msgId}`);
+    const stored = store.get(`branches/${B}/chat/general/${msgId}`);
     expect(stored.readBy.dispatch).toBe(true);
     expect(stored.readBy.kitchen).toBe(true);
   });

@@ -1,0 +1,5 @@
+{
+  "n8n": {
+    "url": "http://localhost:5678/webhook/house-event"
+  }
+}

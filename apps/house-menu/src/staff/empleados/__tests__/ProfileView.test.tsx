@@ -34,14 +34,17 @@ describe('ProfileView', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('shows loading skeleton on mount', () => {
-    mockSubscribe.mockImplementation(() => () => {});
+    mockSubscribe.mockImplementation((_branchId: string, _uid: string, cb: (data: any) => void) => {
+      Promise.resolve().then(() => cb(null));
+      return () => {};
+    });
     render(<ProfileView uid={UID} branchId={BRANCH_ID} />);
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it('renders populated profile', () => {
-    mockSubscribe.mockImplementation((_uid: string, cb: (data: any) => void) => {
+it('renders populated profile', () => {
+    mockSubscribe.mockImplementation((_branchId: string, _uid: string, cb: (data: any) => void) => {
       cb(mockProfile);
       return () => {};
     });
@@ -54,8 +57,8 @@ describe('ProfileView', () => {
     expect(screen.getByText('carlos@house.com')).toBeDefined();
   });
 
-  it('shows empty state when no data returned', () => {
-    mockSubscribe.mockImplementation((_uid: string, cb: (data: any) => void) => {
+it('shows empty state when no data returned', () => {
+    mockSubscribe.mockImplementation((_branchId: string, _uid: string, cb: (data: any) => void) => {
       cb(null);
       return () => {};
     });
@@ -69,8 +72,8 @@ describe('ProfileView', () => {
     expect(screen.getByText('Reintentar')).toBeDefined();
   });
 
-  it('does not show contact section when phone/email missing', () => {
-    mockSubscribe.mockImplementation((_uid: string, cb: (data: any) => void) => {
+it('does not show contact section when phone/email missing', () => {
+    mockSubscribe.mockImplementation((_branchId: string, _uid: string, cb: (data: any) => void) => {
       cb({ name: 'Test', role: 'admin', active: true });
       return () => {};
     });

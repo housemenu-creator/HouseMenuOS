@@ -91,7 +91,8 @@ export default function AdminView() {
   useFCM({ branchId: activeBranchId, userId: user?.email });
 
   // ── Derivados ──
-  const activeBranchName = branches.find(b => b.id === activeBranchId)?.name || 'Sede Principal';
+  const currentBranch = branches.find(b => b.id === activeBranchId);
+  const activeBranchName = currentBranch?.name?.trim() || currentBranch?.id || 'Sede Principal';
 
   const kpiData = useMemo(() => {
     if (!allOrders?.length) return { revenue: 0, avgTicket: 0, projected: 0, activeOrders: 0 };

@@ -25,7 +25,7 @@ vi.mock('../../lib/ordersService', () => ({
 
 vi.mock('../../lib/deliveryService', () => ({
   deliveryService: {
-    updateDriver: vi.fn(),
+    updateDriver: vi.fn(() => Promise.resolve({ success: true })),
     confirmDelivery: vi.fn(() => Promise.resolve({ success: true })),
   },
 }));

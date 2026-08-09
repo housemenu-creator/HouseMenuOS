@@ -128,7 +128,7 @@ describe('isFirstRun', () => {
   });
 
   it('returns false when RTDB has tenants with employees', async () => {
-    store.set('tenants/tnt_abc/employees/uid1', { email: 'admin@test.com', role: 'admin' });
+    store.set('branches_config/branch-1/name', 'Local Centro');
     const { isFirstRun } = await import('./onboardingService');
     expect(await isFirstRun()).toBe(false);
   });

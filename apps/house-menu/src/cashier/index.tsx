@@ -2,7 +2,7 @@
 // Orchestrates hooks → passes props to presenter
 
 import { useMemo, useState, useCallback } from 'react';
-import { ref, update } from 'firebase/database';
+import { ref, update, serverTimestamp } from 'firebase/database';
 import { realtimeDB } from '@house/db';
 import { useAuth } from '../context/AuthContext';
 import { useBranch } from '../context/BranchContext';
@@ -111,6 +111,21 @@ export default function CashierView() {
   const handleVerify = async (orderId: string) => {
     if (!branchId) return { success: false };
     return await ordersService.verifyPayment(branchId, orderId, userEmail);
+  };
+
+  const handlePayContraentrega = async (orderId: string) => {
+    if (!branchId) return;
+    const orderRef = ref(realtimeDB, `branches/${branchId}/orders/${orderId}`);
+    await update(orderRef, {
+      payment_method: 'Contraentrega',
+      payment_status: 'pagado',
+      paidAt: serverTimestamp(),
+      collectedAt: serverTimestamp(),
+      paidBy: userEmail,
+      collectedBy: userEmail,
+      collectedByName: 'Cajero',
+      updatedAt: serverTimestamp(),
+    });
   };
 
   const handleSplit = async (orderId: string, splits: Array<{ name: string; items: number[]; method: string }>) => {
@@ -231,6 +246,7 @@ export default function CashierView() {
       onRefund={handleRefund}
       onTransfer={handleTransfer}
       onVerify={handleVerify}
+      onPayContraentrega={handlePayContraentrega}
       onSplit={handleSplit}
       onOpenSession={sessionState.openSession}
       onCloseSession={sessionState.closeSession}

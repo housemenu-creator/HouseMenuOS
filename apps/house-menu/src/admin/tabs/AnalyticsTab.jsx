@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { useBranch } from '../../context/BranchContext';
 import {
   TrendingUp, ShoppingCart, Users, Clock, DollarSign, ArrowUpDown,
   ChefHat, Bike, Medal, AlertTriangle, Download, FileText, BarChart3
@@ -36,7 +38,9 @@ function downloadCSV(content, filename) {
 }
 
 export default function AnalyticsTab({ allOrders }) {
-  const [period, setPeriod] = useState('today');
+  const { activeBranchId } = useBranch();
+  console.log('[AnalyticsTab] allOrders recibidas:', allOrders.length, 'primer item:', allOrders[0]);
+  const [period, setPeriod] = useState('week');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [chartPeriod, setChartPeriod] = useState('hour'); // hour|day|month

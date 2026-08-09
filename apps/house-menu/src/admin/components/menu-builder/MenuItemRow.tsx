@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   ImageIcon, MoreVertical, Sparkles, Settings2, Copy, Trash2,
@@ -10,6 +10,7 @@ import InlineEdit from '../InlineEdit';
 import { PromptModal, ConfirmModal } from '../ConfirmModal';
 import { storageService } from '../../../lib/storageService';
 import { useBranch } from '../../../context/BranchContext';
+import { subscribeCOGS } from '../../../lib/logisticsService';
 import { useDragReorder } from '../../hooks/useDragReorder';
 import type { MenuProduct } from '../../types';
 
@@ -57,6 +58,14 @@ export default function MenuItemRow({
   total,
 }: MenuItemRowProps) {
   const { activeBranchId } = useBranch();
+  const [recipeStatus, setRecipeStatus] = useState<'loading' | 'yes' | 'no'>('loading');
+  useEffect(() => {
+    if (!activeBranchId) return;
+    return subscribeCOGS(activeBranchId, (data) => {
+      setRecipeStatus(data[item.id] ? 'yes' : 'no');
+    });
+  }, [activeBranchId, item.id]);
+
   const isAvailable = item.available !== false;
   const isWizard = item.isWizard === true;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -237,6 +246,11 @@ export default function MenuItemRow({
               onSave={(val: string) => updateField(item.id, 'name', val)}
               className="font-bold text-sm text-cm-text truncate block"
             />
+            {recipeStatus === 'yes' ? (
+              <span className="text-[0.45rem] font-semibold bg-cm-success/10 text-cm-success px-1 py-0.5 rounded ml-1 shrink-0">Receta</span>
+            ) : recipeStatus === 'no' ? (
+              <span className="text-[0.45rem] font-semibold bg-cm-warning/10 text-cm-warning px-1 py-0.5 rounded ml-1 shrink-0">Sin receta</span>
+            ) : null}
           </div>
 
           {/* Description — truncated single line */}

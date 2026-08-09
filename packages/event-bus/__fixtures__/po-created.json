@@ -1,0 +1,18 @@
+{
+  "eventType": "purchase_order.created",
+  "description": "OC creada para Distribuidora La Inmaculada",
+  "payload": {
+    "purchaseOrderId": "po_test_001",
+    "supplierId": "prov_dist_001",
+    "items": [
+      { "productId": "prod_papa_001", "productName": "Papa Amarilla", "quantity": 25, "unit": "kg", "unitPrice": 2.50, "total": 62.50 },
+      { "productId": "prod_ceb_001", "productName": "Cebolla Roja", "quantity": 10, "unit": "kg", "unitPrice": 3.00, "total": 30.00 }
+    ],
+    "total": 92.50
+  },
+  "context": {
+    "branchId": "test-branch",
+    "userEmail": "n8n@house.com",
+    "userRole": "system"
+  }
+}

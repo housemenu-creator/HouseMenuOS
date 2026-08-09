@@ -200,6 +200,29 @@ export const menuService = {
   },
 
   /**
+   * Elimina una categoría completa: todos sus productos + imagen
+   */
+  async deleteCategory(branchId, categoryName) {
+    const productsRef = ref(db, catalogProductsPath(branchId));
+    const snapshot = await get(productsRef);
+    const deletes = [];
+    if (snapshot.exists()) {
+      const products = snapshot.val();
+      Object.entries(products).forEach(([id, p]) => {
+        if (p.category === categoryName) {
+          deletes.push(remove(ref(db, catalogPath(branchId, id))));
+        }
+      });
+    }
+    // Eliminar imagen de categoría si existe
+    const slug = getCategorySlug(categoryName);
+    const categoryRef = ref(db, catalogCategoryPath(branchId, slug));
+    deletes.push(remove(categoryRef));
+    await Promise.all(deletes);
+    return deletes.length - 1; // -1 por el remove de la imagen
+  },
+
+  /**
    * Guarda o actualiza la imagen de una categoría
    */
   async updateCategoryImage(branchId, categoryName, imageUrl) {

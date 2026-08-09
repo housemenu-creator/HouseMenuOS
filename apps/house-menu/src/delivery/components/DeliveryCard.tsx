@@ -1,5 +1,7 @@
-import { MapPin, Package, CheckCircle2, Navigation, Clock, AlertTriangle, Phone, ImageIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MapPin, Package, CheckCircle2, Navigation, Clock, AlertTriangle, Phone, ImageIcon, DollarSign, Truck } from 'lucide-react';
 import { calculateWaitingTime, formatWaitingTime, getWaitingUrgency } from '../../lib/deliveryService';
+import { getPaymentStatusConfig } from '../../lib/paymentMethods';
 import type { Order } from '../../worker/workerTypes';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -12,20 +14,42 @@ interface DeliveryCardProps {
   order: Order;
   onPickup: (orderId: string) => void;
   onDeliver: (orderId: string) => void;
+  onCobrar?: (orderId: string) => void;
 }
 
-export default function DeliveryCard({ order, onPickup, onDeliver }: DeliveryCardProps) {
+export default function DeliveryCard({ order, onPickup, onDeliver, onCobrar }: DeliveryCardProps) {
   const waitingMs = calculateWaitingTime(order.updatedAt || order.createdAt);
   const urgency = getWaitingUrgency(waitingMs);
 
+  const ps = order.payment_status || 'pendiente';
+  const payCfg = getPaymentStatusConfig(ps);
+  const isContraentrega = ps === 'contraentrega';
+
   return (
-    <div className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm p-4">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+      whileTap={{ scale: 0.99 }}
+      className="bg-cm-surface rounded-xl border border-cm-border shadow-cm-sm p-4">
       <div className="flex items-start justify-between mb-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-xs text-cm-text-secondary">#{(order.id || '').slice(-4).toUpperCase()}</span>
             <span className={`text-[0.55rem] font-bold px-1.5 py-0.5 rounded-full border ${STATUS_BADGE[order.status] || 'bg-cm-muted/10 text-cm-muted'}`}>
               {order.status === 'en_camino' ? 'En ruta' : order.status === 'listo' ? 'Para recoger' : order.status === 'entregado' ? 'Entregado' : order.status}
+            </span>
+            {/* Payment Status Badge */}
+            <span className={`text-[0.5rem] font-bold px-1.5 py-0.5 rounded-full border ${payCfg.bg} ${payCfg.text} ${payCfg.border}`}>
+              {isContraentrega ? (
+                <span className="flex items-center gap-0.5">
+                  <Truck className="w-2.5 h-2.5" />
+                  {payCfg.label}
+                </span>
+              ) : (
+                payCfg.label
+              )}
             </span>
           </div>
           <p className="font-bold text-cm-text mt-1 truncate">{order.customerName || '—'}</p>
@@ -90,10 +114,18 @@ export default function DeliveryCard({ order, onPickup, onDeliver }: DeliveryCar
           </button>
         )}
         {order.status === 'en_camino' && (
-          <button onClick={() => onDeliver(order.id)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-cm-success text-white text-xs font-bold rounded-lg hover:bg-cm-success/80 transition-colors">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Marcar como Entregado
-          </button>
+          <>
+            <button onClick={() => onDeliver(order.id)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-cm-success text-white text-xs font-bold rounded-lg hover:bg-cm-success/80 transition-colors">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Marcar como Entregado
+            </button>
+            {isContraentrega && onCobrar && (
+              <button onClick={() => onCobrar(order.id)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-cm-warning text-white text-xs font-bold rounded-lg hover:bg-cm-warning/80 transition-colors">
+                <DollarSign className="w-3.5 h-3.5" /> Cobrar Contraentrega
+              </button>
+            )}
+          </>
         )}
         {order.location && order.status === 'en_camino' && (
           <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.location)}`} target="_blank" rel="noopener noreferrer"
@@ -114,6 +146,6 @@ export default function DeliveryCard({ order, onPickup, onDeliver }: DeliveryCar
           {new Date(order.createdAt).toLocaleString('es-PE')}
         </p>
       )}
-    </div>
+    </motion.div>
   );
 }

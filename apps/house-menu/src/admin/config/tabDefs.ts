@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ClipboardList, UtensilsCrossed, Package, Store, Users,
   DollarSign, TrendingUp, Warehouse, Truck, Receipt, Megaphone,
-  Settings, ShieldCheck, History, Calendar, BarChart3, Sparkles,
+  Settings, ShieldCheck, History, Calendar, BarChart3, Sparkles, Activity, Bot,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -33,4 +33,6 @@ export const TAB_DEFS: Record<string, TabDef> = {
   audit: { label: 'Auditoría', icon: History, perm: 'system:audit' },
   reservations: { label: 'Reservas', icon: Calendar, perm: 'orders:read' },
   branding: { label: 'Theme', icon: Sparkles, perm: 'config:manage' },
+  pipeline: { label: 'Pipeline', icon: Activity, perm: 'system:audit' },
+  bot: { label: 'Bot IA', icon: Bot, perm: 'config:manage' },
 };

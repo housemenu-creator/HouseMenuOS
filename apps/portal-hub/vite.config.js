@@ -9,7 +9,7 @@ const monoRoot = path.resolve(__dirname, '../../');
 
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: command === 'build' ? '/empleados/' : '/',
+  base: '/',
   server: {
     port: 5177,
     host: true
@@ -24,7 +24,7 @@ export default defineConfig(({ command }) => ({
     preserveSymlinks: true,
   },
   optimizeDeps: {
-    exclude: ['@house/db', '@house/store', '@house/tokens', '@house/ui'],
+    exclude: ['@house/store', '@house/tokens', '@house/ui'],
   },
   build: {
     rollupOptions: {

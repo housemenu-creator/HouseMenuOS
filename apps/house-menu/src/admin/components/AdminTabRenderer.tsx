@@ -18,7 +18,7 @@ const FiscalManager = lazy(() => import('../components/FiscalManager'));
 const UserManager = lazy(() => import('../components/UserManager'));
 const MarketingTab = lazy(() => import('../tabs/MarketingTab'));
 const AnalyticsTab = lazy(() => import('../tabs/AnalyticsTab'));
-const CustomersTab = lazy(() => import('../tabs/CustomersTab'));
+const CrmView = lazy(() => import('./crm/CrmView'));
 const CustomerAnalyticsTab = lazy(() => import('../tabs/CustomerAnalyticsTab'));
 const LogisticsTab = lazy(() => import('../tabs/LogisticsTab'));
 const EmployeesTab = lazy(() => import('../tabs/EmployeesTab'));
@@ -27,6 +27,8 @@ const RolesTab = lazy(() => import('../tabs/RolesTab'));
 const AuditTab = lazy(() => import('../tabs/AuditTab'));
 const ReservationsTab = lazy(() => import('../tabs/ReservationsTab'));
 const BrandingTab = lazy(() => import('../tabs/BrandingTab'));
+const PipelineTab = lazy(() => import('../tabs/PipelineTab'));
+const BotTab = lazy(() => import('../tabs/BotTab'));
 
 // ── Props ──
 
@@ -98,7 +100,7 @@ function tabContent(activeTab: string, can: (perm: string) => boolean, d: TabDat
     case 'analytics':
       return <AnalyticsTab allOrders={d.allOrders} />;
     case 'customers':
-      return <CustomersTab allOrders={d.allOrders} />;
+      return <CrmView activeBranchId={d.activeBranchId} allOrders={d.allOrders} analyticsTab={CustomerAnalyticsTab} />;
     case 'customer-analytics':
       return <CustomerAnalyticsTab />;
     case 'logistics':
@@ -115,6 +117,10 @@ function tabContent(activeTab: string, can: (perm: string) => boolean, d: TabDat
       return <SystemConfigTab />;
     case 'branding':
       return <BrandingTab />;
+    case 'pipeline':
+      return <PipelineTab branchId={d.activeBranchId} />;
+    case 'bot':
+      return <BotTab />;
     default:
       return null;
   }
