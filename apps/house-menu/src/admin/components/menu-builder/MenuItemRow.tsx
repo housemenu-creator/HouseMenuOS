@@ -150,17 +150,22 @@ export default function MenuItemRow({
     setShowImagePrompt(false);
   };
 
-  const handleImageClick = () => {
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset input so the same file can be selected again later
+    e.target.value = '';
     if (!file || !activeBranchId) return;
     setUploading(true);
     try {
       const result = await storageService.uploadProductImage(activeBranchId, item.id, file);
-      updateField(item.id, 'image', result.url);
+      await updateField(item.id, 'image', result.url);
+      notify?.('Imagen subida correctamente', 'success');
     } catch (err) {
       console.error('Error uploading image:', err);
       notify?.('Error al subir imagen', 'error');
@@ -211,7 +216,7 @@ export default function MenuItemRow({
         </div>
 
         {/* Thumbnail — larger rounded-lg with upload overlay */}
-        <div className="relative shrink-0">
+        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
           <div
             onClick={uploading ? undefined : handleImageClick}
             className="w-12 h-12 rounded-lg bg-cm-border flex items-center justify-center cursor-pointer overflow-hidden border border-cm-border hover:border-cm-accent transition-all relative group/thumb"
@@ -229,7 +234,14 @@ export default function MenuItemRow({
               <Upload className="w-4 h-4" />
             </div>
           </div>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
 
         {/* Content area */}
