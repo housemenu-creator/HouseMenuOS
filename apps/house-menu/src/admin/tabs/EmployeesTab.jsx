@@ -4,7 +4,7 @@ import {
   Users, UserPlus, Search, Edit3, Trash2, X, Clock, Target, Calendar,
   CheckCircle2, XCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
   Phone, Mail, Briefcase, DollarSign, Hash, LogIn, LogOut, Star,
-  UserCheck, UserX, Inbox, PauseCircle, Sun,
+  UserCheck, UserX, Inbox, PauseCircle, Sun, Sparkles,
 } from 'lucide-react';
 import { useBranch } from '../../context/BranchContext';
 import { useAuth } from '../../context/AuthContext';
@@ -75,6 +75,21 @@ function statusInfo(emp) {
 }
 
 const DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+function calculateEmployeeHours(schedule) {
+  if (!schedule) return 0;
+  let totalMinutes = 0;
+  DAYS.forEach(day => {
+    const entry = schedule[day];
+    if (entry && entry.active && entry.start && entry.end) {
+      const [sh, sm] = entry.start.split(':').map(Number);
+      const [eh, em] = entry.end.split(':').map(Number);
+      const diff = (eh * 60 + em) - (sh * 60 + sm);
+      if (diff > 0) totalMinutes += diff;
+    }
+  });
+  return totalMinutes / 60;
+}
 
 const SECTIONS = [
   { key: 'employees', label: 'Empleados', icon: Users },
@@ -332,15 +347,15 @@ function ScheduleEditor({ employeeId, userId, onClose }) {
   const applyPreset = (preset) => {
     setWeek(prev => prev.map(d => {
       const time = preset.data[d.day];
-      if (time) return { ...d, active: true, start: time[0], end: time[1] };
-      return { ...d, active: false, start: '', end: '' };
+      if (time) return { ...d, active: true, start: time[0], end: time[1], station: d.station || '' };
+      return { ...d, active: false, start: '', end: '', station: '' };
     }));
   };
 
   const applySameTime = () => {
     const active = week.find(d => d.active);
     if (!active) return;
-    setWeek(prev => prev.map(d => d.active ? { ...d, start: active.start, end: active.end } : d));
+    setWeek(prev => prev.map(d => d.active ? { ...d, start: active.start, end: active.end, station: active.station || '' } : d));
   };
 
   const handleSave = async () => {
@@ -368,9 +383,9 @@ function ScheduleEditor({ employeeId, userId, onClose }) {
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="bg-cm-surface rounded-xl shadow-cm-lg p-6 w-full max-w-lg" initial={{ scale: 0.95 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
+      <motion.div className="bg-cm-surface rounded-xl shadow-cm-lg p-6 w-full max-w-xl" initial={{ scale: 0.95 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-cm-text">Horario semanal</h3>
+          <h3 className="text-lg font-bold text-cm-text">Horario semanal y Funciones</h3>
           <button onClick={onClose} className="p-1 text-cm-text-tertiary hover:text-cm-text rounded-lg"><X className="w-5 h-5" /></button>
         </div>
 
@@ -384,20 +399,23 @@ function ScheduleEditor({ employeeId, userId, onClose }) {
           ))}
         </div>
 
-        {/* Day toggles + time inputs */}
-        <div className="space-y-1.5 max-h-72 overflow-y-auto">
+        {/* Day toggles + time inputs + station */}
+        <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
           {week.map((d, i) => (
             <div key={d.day} className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${d.active ? 'bg-cm-accent/5 border-cm-accent/20' : 'bg-cm-bg-alt border-cm-border/50'}`}>
               <button onClick={() => toggleDay(i)}
-                className={`w-7 h-7 rounded-md text-xs font-black transition-colors ${d.active ? 'bg-cm-accent text-white' : 'bg-cm-border/50 text-cm-text-tertiary'}`}>
+                className={`w-7 h-7 rounded-md text-xs font-black transition-colors shrink-0 ${d.active ? 'bg-cm-accent text-white' : 'bg-cm-border/50 text-cm-text-tertiary'}`}>
                 {DAY_LABELS[d.day]}
               </button>
-              <span className={`w-16 text-xs font-semibold capitalize ${d.active ? 'text-cm-text' : 'text-cm-text-tertiary'}`}>{d.day}</span>
+              <span className={`w-16 text-xs font-semibold capitalize shrink-0 ${d.active ? 'text-cm-text' : 'text-cm-text-tertiary'}`}>{d.day}</span>
               <input type="time" value={d.start} disabled={!d.active} onChange={e => updateTime(i, 'start', e.target.value)}
-                className="w-24 px-2 py-1 border border-cm-border rounded-md text-xs font-semibold text-cm-text bg-cm-surface disabled:opacity-30 focus:outline-none focus:border-cm-accent" />
-              <span className="text-[0.55rem] text-cm-text-tertiary">→</span>
+                className="w-24 px-2 py-1 border border-cm-border rounded-md text-xs font-semibold text-cm-text bg-cm-surface disabled:opacity-30 focus:outline-none focus:border-cm-accent shrink-0" />
+              <span className="text-[0.55rem] text-cm-text-tertiary shrink-0">→</span>
               <input type="time" value={d.end} disabled={!d.active} onChange={e => updateTime(i, 'end', e.target.value)}
-                className="w-24 px-2 py-1 border border-cm-border rounded-md text-xs font-semibold text-cm-text bg-cm-surface disabled:opacity-30 focus:outline-none focus:border-cm-accent" />
+                className="w-24 px-2 py-1 border border-cm-border rounded-md text-xs font-semibold text-cm-text bg-cm-surface disabled:opacity-30 focus:outline-none focus:border-cm-accent shrink-0" />
+              
+              <input type="text" value={d.station || ''} disabled={!d.active} placeholder="Estación / Función (ej: Terraza)" onChange={e => updateTime(i, 'station', e.target.value)}
+                className="flex-1 min-w-[120px] px-2.5 py-1 border border-cm-border rounded-md text-xs font-semibold text-cm-text bg-cm-surface disabled:opacity-30 focus:outline-none focus:border-cm-accent" />
             </div>
           ))}
         </div>
@@ -406,7 +424,7 @@ function ScheduleEditor({ employeeId, userId, onClose }) {
         {week.filter(d => d.active).length > 1 && (
           <button onClick={applySameTime}
             className="mt-3 w-full text-[0.6rem] font-semibold text-cm-accent hover:text-cm-accent-hover py-1.5 border border-dashed border-cm-accent/30 rounded-lg hover:bg-cm-accent/5 transition-colors">
-            Copiar horario del primer día activo a todos
+            Copiar horario y estación del primer día activo a todos
           </button>
         )}
 
@@ -848,27 +866,211 @@ export default function EmployeesTab({ allOrders }) {
 
   const renderSchedules = () => {
     const withSchedule = employees.filter(e => getEmpStatus(e) !== 'inactive');
+
+    // Mapeo corto de días para el encabezado de la cuadrícula
+    const shortDayLabels = {
+      lunes: 'Lun',
+      martes: 'Mar',
+      miércoles: 'Mié',
+      jueves: 'Jue',
+      viernes: 'Vie',
+      sábado: 'Sáb',
+      domingo: 'Dom'
+    };
+
+    // Estaciones/Roles recomendados por IA (Simulado según PLAN_MAESTRO_V2.md)
+    const RECOMMENDATIONS = {
+      lunes: { mozo: 2, kitchen: 1, cajero: 1, demand: 'Baja' },
+      martes: { mozo: 2, kitchen: 1, cajero: 1, demand: 'Baja' },
+      miércoles: { mozo: 2, kitchen: 1, cajero: 1, demand: 'Baja' },
+      jueves: { mozo: 3, kitchen: 2, cajero: 1, demand: 'Media' },
+      viernes: { mozo: 5, kitchen: 3, cajero: 1, demand: 'Pico (Alta)' },
+      sábado: { mozo: 5, kitchen: 3, cajero: 1, demand: 'Pico (Alta)' },
+      domingo: { mozo: 4, kitchen: 2, cajero: 1, demand: 'Alta' },
+    };
+
+    const getScheduledCountByDayAndRole = (day, roleVal) => {
+      return employees.filter(emp => {
+        if (getEmpStatus(emp) === 'inactive') return false;
+        if (emp.role !== roleVal) return false;
+        const dayEntry = emp.schedule?.[day];
+        return dayEntry && dayEntry.active;
+      }).length;
+    };
+
     return (
-      <div>
-        <p className="text-sm text-cm-text-secondary mb-4">Gestiona los horarios semanales de cada empleado</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {withSchedule.length === 0 && (
-            <div className="col-span-full text-center py-12">
-              <Calendar className="w-10 h-10 text-cm-text-tertiary mx-auto mb-3" />
-              <p className="text-sm text-cm-text-secondary">No hay empleados activos</p>
-            </div>
-          )}
-          {withSchedule.map(emp => (
-            <div key={emp.id} className="bg-cm-surface rounded-xl border border-cm-border p-4 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-cm-text">{emp.name}</p>
-                <p className="text-xs text-cm-text-tertiary mt-0.5 capitalize">{emp.role}</p>
-              </div>
-              <button onClick={() => setScheduleEmp(emp)} className="px-3 py-1.5 bg-cm-accent/10 text-cm-accent text-xs font-bold rounded-lg hover:bg-cm-accent/20 transition-colors">
-                Editar horario
-              </button>
-            </div>
-          ))}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-cm-text-secondary">Planifica visualmente los turnos, horarios y estaciones de trabajo del personal.</p>
+          </div>
+        </div>
+
+        {/* Cuadrícula Visual de Horarios */}
+        <div className="bg-cm-surface border border-cm-border rounded-2xl overflow-hidden shadow-cm-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-cm-border bg-cm-bg-alt/50">
+                  <th className="py-3 px-4 text-xs font-bold text-cm-text-secondary uppercase tracking-wider w-56 sticky left-0 bg-cm-surface z-10">Empleado</th>
+                  {DAYS.map(day => (
+                    <th key={day} className="py-3 px-3 text-xs font-bold text-cm-text-secondary uppercase tracking-wider text-center">{shortDayLabels[day]}</th>
+                  ))}
+                  <th className="py-3 px-4 text-xs font-bold text-cm-text-secondary uppercase tracking-wider text-center w-24">Horas/Sem</th>
+                  <th className="py-3 px-4 text-xs font-bold text-cm-text-secondary uppercase tracking-wider text-center w-16">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-cm-border/50">
+                {withSchedule.length === 0 ? (
+                  <tr>
+                    <td colSpan={DAYS.length + 3} className="py-12 text-center text-sm text-cm-text-secondary">
+                      <Calendar className="w-10 h-10 text-cm-text-tertiary mx-auto mb-3" />
+                      No hay empleados activos configurados
+                    </td>
+                  </tr>
+                ) : (
+                  withSchedule.map(emp => {
+                    const totalHours = calculateEmployeeHours(emp.schedule);
+                    return (
+                      <tr key={emp.id} className="hover:bg-cm-bg-alt/20 transition-colors">
+                        {/* Celda del empleado (Sticky) */}
+                        <td className="py-3 px-4 sticky left-0 bg-cm-surface z-10 border-r border-cm-border/30">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-cm-text text-sm truncate">{emp.name}</p>
+                            <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-cm-accent/5 text-cm-accent text-[9px] font-bold uppercase rounded tracking-wider">
+                              {ROLES.find(r => r.value === emp.role)?.label || emp.role}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Celdas de días */}
+                        {DAYS.map(day => {
+                          const sched = emp.schedule?.[day];
+                          const isActive = sched && sched.active;
+                          return (
+                            <td key={day} className="py-2.5 px-2 border-r border-cm-border/30 last:border-r-0">
+                              {isActive ? (
+                                <div className="p-1.5 rounded-lg bg-cm-accent/5 border border-cm-accent/15 text-center space-y-0.5 group relative hover:bg-cm-accent/10 transition-colors cursor-pointer" onClick={() => setScheduleEmp(emp)}>
+                                  <p className="text-[10px] font-bold text-cm-accent">{sched.start} - {sched.end}</p>
+                                  {sched.station ? (
+                                    <span className="inline-block px-1.5 py-0.5 text-[8px] font-bold text-cm-text bg-cm-border rounded max-w-full truncate" title={sched.station}>
+                                      {sched.station}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-block text-[8px] text-cm-text-tertiary italic">Sin estación</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="py-3 text-center text-[10px] font-semibold text-cm-text-tertiary select-none">
+                                  Libre
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+
+                        {/* Horas Totales */}
+                        <td className="py-3 px-4 text-center border-l border-cm-border/30">
+                          <span className={`text-xs font-bold ${totalHours > 45 ? 'text-cm-error' : totalHours > 0 ? 'text-cm-text' : 'text-cm-text-tertiary'}`}>
+                            {totalHours.toFixed(1)}h
+                          </span>
+                        </td>
+
+                        {/* Editar */}
+                        <td className="py-3 px-4 text-center">
+                          <button onClick={() => setScheduleEmp(emp)} className="p-1.5 text-cm-text-tertiary hover:text-cm-accent hover:bg-cm-accent/10 rounded-lg transition-all" title="Editar Horario">
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Panel Predictivo de Personal IA */}
+        <div className="bg-cm-surface border border-cm-border rounded-2xl p-5 shadow-cm-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-cm-accent animate-pulse" />
+            <h3 className="font-bold text-cm-text text-base">Optimización de Dotación de Personal (IA)</h3>
+            <span className="text-[9px] font-black uppercase bg-cm-accent text-white px-1.5 py-0.5 rounded tracking-widest ml-2">Predictive Ops</span>
+          </div>
+          <p className="text-xs text-cm-text-secondary mb-4">
+            Compara la dotación planificada contra el personal sugerido por la IA para cubrir el volumen estimado de pedidos y ventas por sucursal.
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            {DAYS.map(day => {
+              const rec = RECOMMENDATIONS[day];
+              const schedMozos = getScheduledCountByDayAndRole(day, 'mozo');
+              const schedKitchen = getScheduledCountByDayAndRole(day, 'kitchen');
+              const schedCajero = getScheduledCountByDayAndRole(day, 'cajero');
+
+              // Evaluar optimización de dotación
+              const totalSched = schedMozos + schedKitchen + schedCajero;
+              const totalRec = rec.mozo + rec.kitchen + rec.cajero;
+
+              let statusLabel = 'Óptimo';
+              let statusBg = 'bg-cm-success/5 border-cm-success/20 text-cm-success';
+              let details = [];
+
+              if (schedMozos < rec.mozo) details.push(`Falta ${rec.mozo - schedMozos} Mozo(s)`);
+              if (schedKitchen < rec.kitchen) details.push(`Falta ${rec.kitchen - schedKitchen} Cocina`);
+              if (schedCajero < rec.cajero) details.push(`Falta Cajero`);
+
+              let overstaffDetails = [];
+              if (schedMozos > rec.mozo) overstaffDetails.push(`Sobra ${schedMozos - rec.mozo} Mozo(s)`);
+              if (schedKitchen > rec.kitchen) overstaffDetails.push(`Sobra ${schedKitchen - rec.kitchen} Cocina`);
+
+              if (details.length > 0) {
+                statusLabel = 'Subdotado';
+                statusBg = 'bg-cm-error/5 border-cm-error/25 text-cm-error';
+              } else if (overstaffDetails.length > 0) {
+                statusLabel = 'Sobredotado';
+                statusBg = 'bg-cm-warning/5 border-cm-warning/25 text-cm-warning';
+              }
+
+              return (
+                <div key={day} className={`rounded-xl border p-3 flex flex-col justify-between min-h-[140px] transition-all hover:shadow-cm-sm ${statusBg}`}>
+                  <div>
+                    <p className="text-xs font-black capitalize text-cm-text">{day}</p>
+                    <p className="text-[9px] text-cm-text-tertiary mt-0.5 font-semibold">Demanda: {rec.demand}</p>
+                  </div>
+
+                  <div className="my-2.5 space-y-1 text-[9px] font-bold text-cm-text-secondary">
+                    <p className="flex justify-between">
+                      <span>Mozos:</span> <span>{schedMozos} / {rec.mozo}</span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>Cocina:</span> <span>{schedKitchen} / {rec.kitchen}</span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>Caja:</span> <span>{schedCajero} / {rec.cajero}</span>
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-cm-border/10">
+                    <span className="text-[9px] font-black uppercase tracking-wider block text-center mb-1">
+                      {statusLabel}
+                    </span>
+                    {details.length > 0 && (
+                      <p className="text-[8px] leading-tight text-center font-semibold text-cm-error-hover">
+                        {details.join(', ')}
+                      </p>
+                    )}
+                    {details.length === 0 && overstaffDetails.length > 0 && (
+                      <p className="text-[8px] leading-tight text-center font-semibold text-cm-warning-hover">
+                        {overstaffDetails.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -902,6 +1104,39 @@ export default function EmployeesTab({ allOrders }) {
             const duration = record?.clockIn ? Date.now() - record.clockIn : 0;
             const hrs = Math.floor(duration / 3600000);
             const mins = Math.floor((duration % 3600000) / 60000);
+
+            // Get today's schedule config
+            const DAY_MAP = ['domingo', 'lunes', 'martes', 'mi??rcoles', 'jueves', 'viernes', 's??bado', 'domingo'];
+            const todayName = DAY_MAP[new Date().getDay()];
+            const sched = emp.schedule?.[todayName];
+            const hasSched = sched && sched.active;
+
+            let punchStatus = null;
+            if (record?.clockIn && sched?.start) {
+              const [sh, sm] = sched.start.split(':').map(Number);
+              const schedDate = new Date(record.clockIn);
+              schedDate.setHours(sh, sm, 0, 0);
+              const diffMins = Math.round((record.clockIn - schedDate.getTime()) / 60000);
+              if (diffMins > 10) {
+                punchStatus = { label: `Tardanza (+${diffMins}m)`, color: 'text-cm-error bg-cm-error/10 border-cm-error/25' };
+              } else {
+                punchStatus = { label: 'A tiempo', color: 'text-cm-success bg-cm-success/10 border-cm-success/25' };
+              }
+            } else if (!record?.clockIn && hasSched) {
+              const [sh, sm] = sched.start.split(':').map(Number);
+              const nowTime = new Date();
+              const schedDate = new Date();
+              schedDate.setHours(sh, sm, 0, 0);
+              const diffMins = Math.round((nowTime.getTime() - schedDate.getTime()) / 60000);
+              if (diffMins > 30) {
+                punchStatus = { label: 'Ausente', color: 'text-cm-error bg-cm-error/10 border-cm-error/25' };
+              } else {
+                punchStatus = { label: 'No ha ingresado', color: 'text-cm-text-tertiary bg-cm-bg-alt border-cm-border' };
+              }
+            } else if (!hasSched && !record?.clockIn) {
+              punchStatus = { label: 'D??a Libre', color: 'text-cm-text-secondary bg-cm-bg-alt border-cm-border border-dashed' };
+            }
+
             return (
               <div key={emp.id} className={`bg-cm-surface rounded-xl border p-4 transition-colors ${isActive ? 'border-cm-success/40' : 'border-cm-border'}`}>
                 <div className="flex items-start justify-between mb-2">
@@ -921,6 +1156,23 @@ export default function EmployeesTab({ allOrders }) {
                     </span>
                   ) : null}
                 </div>
+
+                {/* Comparaci??n de Horario de hoy */}
+                {punchStatus && (
+                  <div className="mt-2.5 mb-2.5 p-1.5 rounded-lg border text-[9px] flex flex-col gap-0.5 bg-cm-bg-alt/40 border-cm-border/50">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-cm-text-secondary font-semibold">Horario:</span>
+                      <span className={`px-1.5 py-0.2 rounded font-bold uppercase text-[8px] border ${punchStatus.color}`}>
+                        {punchStatus.label}
+                      </span>
+                    </div>
+                    {hasSched && (
+                      <p className="text-cm-text-tertiary font-semibold">
+                        Plan: {sched.start} - {sched.end} {sched.station ? `(Estaci??n: ${sched.station})` : '(Sin estaci??n)'}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Area / Station */}
                 {record?.area && (
