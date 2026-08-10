@@ -180,8 +180,20 @@ Responde EXCLUSIVAMENTE con JSON válido:
 Ignora: totales, impuestos, datos del proveedor, número de documento, fechas.
 Si no se detecta unidad, usa "unidad".`;
 
+/** True when the Gemini failure is a quota/billing issue that local OCR can cover. */
+function isQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes('429') ||
+    msg.includes('403') ||
+    /quota|credits?|billing|depleted/i.test(msg)
+  );
+}
+
 /**
  * Extrae líneas de productos de una boleta/factura (imagen) usando Gemini Flash.
+ * Si Gemini falla por cuota (429/403) y el entorno lo permite, cae a OCR local
+ * (Tesseract.js) para no bloquear la recepción. Al recuperar cuota, vuelve solo.
  * @param imageBase64 - Imagen en base64 (con o sin prefijo data:image)
  * @param expectedItems - Items esperados de la orden, para guiar la extracción
  */
@@ -196,24 +208,34 @@ export async function extractVoucher(
   const context = `Items esperados en la orden (para guiar la extracción):\n` +
     expectedItems.map(i => `- ${i.name}: ${i.quantity} ${i.unit} x S/ ${i.unitCost.toFixed(2)}`).join('\n');
 
-  const result = await geminiRequest(SYSTEM_EXTRACT_VOUCHER, [
-    { inline_data: { mime_type: 'image/jpeg', data: base64 } },
-    { text: context },
-    { text: 'Extrae las líneas de productos en formato JSON.' },
-  ]);
+  try {
+    const result = await geminiRequest(SYSTEM_EXTRACT_VOUCHER, [
+      { inline_data: { mime_type: 'image/jpeg', data: base64 } },
+      { text: context },
+      { text: 'Extrae las líneas de productos en formato JSON.' },
+    ]);
 
-  return {
-    items: Array.isArray(result.items)
-      ? result.items.map((it: any) => ({
-          name: String(it.name || ''),
-          quantity: Number(it.quantity) || 0,
-          unit: String(it.unit || 'unidad'),
-          unitCost: Number(it.unitCost) || 0,
-          confidence: Math.max(0, Math.min(1, Number(it.confidence) || 0.5)),
-        }))
-      : [],
-    rawText: result.rawText,
-  };
+    return {
+      items: Array.isArray(result.items)
+        ? result.items.map((it: any) => ({
+            name: String(it.name || ''),
+            quantity: Number(it.quantity) || 0,
+            unit: String(it.unit || 'unidad'),
+            unitCost: Number(it.unitCost) || 0,
+            confidence: Math.max(0, Math.min(1, Number(it.confidence) || 0.5)),
+          }))
+        : [],
+      rawText: result.rawText,
+    };
+  } catch (err) {
+    if (isQuotaError(err)) {
+      const { extractVoucherLocal, canRunLocalOcr } = await import('./voucherOcrLocal');
+      if (canRunLocalOcr()) {
+        return extractVoucherLocal(imageBase64, expectedItems);
+      }
+    }
+    throw err;
+  }
 }
 
 export const AI_STEPS_EXTRACT_VOUCHER: AIProcessingStep[] = [
