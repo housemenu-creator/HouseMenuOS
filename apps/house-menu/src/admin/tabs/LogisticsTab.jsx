@@ -26,6 +26,7 @@ import { extractVoucher, AI_STEPS_EXTRACT_VOUCHER } from '../../lib/aiService';
 import { fuzzyMatch } from '../../lib/voucherMatch';
 import { downscaleImage } from '../../lib/imageUtils';
 import InlineEdit from '../components/InlineEdit';
+import DirectVoucherModal from '../components/logistics/DirectVoucherModal';
 
 const SECTIONS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -1420,6 +1421,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
   const [receiveQtys, setReceiveQtys] = useState({});
   const [receiveCosts, setReceiveCosts] = useState({}); // costos editables por línea (prefill OCR / manual)
   const [receiving, setReceiving] = useState(false);
+  const [directIntake, setDirectIntake] = useState(false);
   // ── Voucher upload state ──
   const [voucherFile, setVoucherFile] = useState(null); // data URL listo para extracción OCR
   const [voucherUploading, setVoucherUploading] = useState(false);
@@ -1941,6 +1943,11 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
               className="w-44 pl-7 pr-2 py-1.5 bg-cm-surface border border-cm-border rounded-lg text-xs text-cm-text placeholder:text-cm-text-tertiary" />
           </div>
           <span className="text-xs text-cm-text-secondary">{filteredOrders.length} de {orders.length}</span>
+          {voucherOcrEnabled() && (
+            <button onClick={() => setDirectIntake(true)} className="flex items-center gap-1.5 px-3 py-2 bg-cm-surface border border-cm-border text-cm-text text-xs font-semibold rounded-lg hover:bg-cm-bg-alt transition-colors">
+              <Upload className="w-3.5 h-3.5" /> Ingresar boleta
+            </button>
+          )}
           <button onClick={() => { resetForm(); setShowForm(true); }} className="flex items-center gap-1.5 px-3 py-2 bg-cm-accent text-white text-xs font-semibold rounded-lg hover:bg-cm-accent-hover transition-colors">
             <Plus className="w-3.5 h-3.5" /> Nueva orden
           </button>
@@ -2531,6 +2538,22 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
             </div>
           </div>
         </div>
+      )}
+
+      {directIntake && (
+        <DirectVoucherModal
+          branchId={branchId}
+          userEmail={userEmail}
+          ingredients={ingredients}
+          ingredientsLoading={loading}
+          onClose={() => setDirectIntake(false)}
+          onDone={(result) => {
+            setDirectIntake(false);
+            const parts = ['Boleta registrada'];
+            if (result?.total) parts.push(fmtCurrency(result.total));
+            if (result?.newIngredients?.length) parts.push(`${result.newIngredients.length} insumo(s) nuevo(s)`);
+            toast(parts.join(' · '));
+          }} />
       )}
     </div>
   );

@@ -532,6 +532,119 @@ export async function receivePurchaseOrder(branchId, orderId, actor, quantities,
   return { success: true, priceChanges };
 }
 
+/* ─── COMPRA DIRECTA (boleta/factura sin OC) ─── */
+
+let directPurchaseInFlight = false;
+
+/**
+ * Registra una compra directa desde una boleta/factura escaneada (sin OC previa).
+ * Los insumos nuevos ya fueron aprobados línea por línea por el admin — nunca se
+ * crean automáticamente items no aprobados (decisión b). Orden de commit:
+ * crear insumos aprobados (stock 0, sin kardex intermedio) → movimientos de
+ * entrada → actualización batch de costos → audit. Si la creación de algún
+ * insumo falla, nada se registra.
+ */
+export async function recordDirectPurchase(branchId, payload, actor) {
+  if (directPurchaseInFlight) {
+    return { success: false, error: 'Operación en curso' };
+  }
+  directPurchaseInFlight = true;
+  try {
+    const matched = payload.matched || [];
+    const newIngredients = payload.newIngredients || [];
+    if (!matched.length && !newIngredients.length) {
+      return { success: false, error: 'No hay líneas para registrar' };
+    }
+
+    // 1) Validar insumos existentes + leer unidad/costo actuales
+    const existing = [];
+    for (const line of matched) {
+      const snap = await get(ref(db, `${LOG(branchId)}/ingredients/${line.ingredientId}`));
+      const ing = snap.val();
+      if (!ing) return { success: false, error: `Insumo no encontrado: ${line.ingredientId}` };
+      if (Number(line.qty) <= 0) return { success: false, error: `Cantidad inválida para ${ing.name || line.ingredientId}` };
+      existing.push({ line, ing });
+    }
+
+    // 2) Crear insumos aprobados (fallo → nada se registra). Guard de
+    // duplicados: si el nombre ya existe, se rechaza (no se duplica inventario).
+    const created = [];
+    const ingsSnap = await get(ref(db, `${LOG(branchId)}/ingredients`));
+    const existingNames = new Set(
+      Object.values(ingsSnap.val() || {}).map(i => String(i?.name || '').toLowerCase())
+    );
+    for (const ni of newIngredients) {
+      const name = String(ni.name || '').trim();
+      if (!name) return { success: false, error: 'Nombre requerido para el insumo nuevo' };
+      if (existingNames.has(name.toLowerCase())) {
+        return { success: false, error: `Ya existe el insumo "${name}" — usalo de la lista o ajustá el nombre` };
+      }
+      const res = await createIngredient(branchId, { name, unit: ni.unit || 'unidad', cost: Number(ni.cost) || 0 }, actor);
+      if (!res.success) return { success: false, error: res.error || 'No se pudo crear el insumo' };
+      created.push({ ni, id: res.id });
+      existingNames.add(name.toLowerCase());
+    }
+
+    const refPrefix = `VOUCHER-${String(payload.intakeId || Date.now()).slice(-6)}`;
+    const costUpdates = {};
+    let total = 0;
+
+    // 3) Movimientos de kardex (entrada/Compra). Costo efectivo: el de la
+    // boleta si vino (cost > 0); si no, el costo actual del insumo se conserva.
+    for (const { line, ing } of existing) {
+      const unitCost = Number(line.cost) > 0 ? Number(line.cost) : Number(ing.cost || 0);
+      const qty = Number(line.qty);
+      total += qty * unitCost;
+      await registerMovement(branchId, {
+        ingredientId: line.ingredientId,
+        type: 'entrada',
+        quantity: qty,
+        unit: ing.unit || 'unidad',
+        reason: 'Compra',
+        reference: refPrefix,
+        cost: qty * unitCost,
+        createdBy: 'system',
+      });
+      if (Number(line.cost) > 0 && Math.abs(Number(ing.cost || 0) - Number(line.cost)) > 0.01) {
+        costUpdates[`${LOG(branchId)}/ingredients/${line.ingredientId}/cost`] = Number(line.cost);
+      }
+    }
+    for (const { ni, id } of created) {
+      const unitCost = Number(ni.cost) || 0;
+      const qty = Math.max(1, Number(ni.qty) || 1);
+      total += qty * unitCost;
+      await registerMovement(branchId, {
+        ingredientId: id,
+        type: 'entrada',
+        quantity: qty,
+        unit: ni.unit || 'unidad',
+        reason: 'Compra',
+        reference: refPrefix,
+        cost: qty * unitCost,
+        createdBy: 'system',
+      });
+    }
+
+    // 4) Actualización batch de costos (multi-path, un solo write)
+    if (Object.keys(costUpdates).length) {
+      await update(ref(db), costUpdates);
+    }
+
+    auditLog('logistics.direct_purchase.recorded', {
+      branchId,
+      intakeId: payload.intakeId,
+      lineCount: existing.length + created.length,
+      newIngredientCount: created.length,
+      voucherFileName: payload.voucherFileName || '',
+      total,
+    }, actor);
+
+    return { success: true, total, newIngredients: created.map(({ id, ni }) => ({ id, name: ni.name })) };
+  } finally {
+    directPurchaseInFlight = false;
+  }
+}
+
 export async function attachVoucher(branchId, orderId, voucherData) {
   const updates = {
     voucherUrl: voucherData.voucherUrl,
