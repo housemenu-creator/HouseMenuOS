@@ -390,6 +390,10 @@ export async function createPurchaseOrder(branchId, data, actor) {
     orderedAt: nowISO(),
     receivedAt: null,
   };
+  // Campos aditivos de voucher (no-op si no vienen)
+  if (data.voucherUrl) order.voucherUrl = data.voucherUrl;
+  if (data.voucherFileName) order.voucherFileName = data.voucherFileName;
+  if (data.uploadedAt) order.uploadedAt = data.uploadedAt;
   await set(newRef, order);
   auditLog('logistics.purchase_order.created', { branchId, orderId: newRef.key, supplierName: order.supplierName, total: order.total, itemCount: Object.keys(items).length }, actor);
   return { success: true, id: newRef.key };
@@ -438,19 +442,24 @@ export async function updatePurchaseOrder(branchId, orderId, data, actor) {
     return { success: false, error: 'Solo se pueden editar órdenes pendientes' };
   }
   const { items, total } = buildOrderItems(data.items);
-  await update(ref(db, `${LOG(branchId)}/purchase_orders/${orderId}`), {
+  const updates = {
     supplierId: data.supplierId || existing.supplierId,
     supplierName: data.supplierName || existing.supplierName,
     items,
     total,
     notes: data.notes ?? existing.notes,
     updatedAt: nowISO(),
-  });
+  };
+  // Campos aditivos de voucher (no-op si no vienen)
+  if (data.voucherUrl) updates.voucherUrl = data.voucherUrl;
+  if (data.voucherFileName) updates.voucherFileName = data.voucherFileName;
+  if (data.uploadedAt) updates.uploadedAt = data.uploadedAt;
+  await update(ref(db, `${LOG(branchId)}/purchase_orders/${orderId}`), updates);
   auditLog('logistics.purchase_order.updated', { branchId, orderId, supplierName: data.supplierName || existing.supplierName, total }, actor);
   return { success: true };
 }
 
-export async function receivePurchaseOrder(branchId, orderId, actor, quantities) {
+export async function receivePurchaseOrder(branchId, orderId, actor, quantities, costs) {
   const orderRef = ref(db, `${LOG(branchId)}/purchase_orders/${orderId}`);
 
   // Lock atómico: marca recibida SOLO si sigue pendiente. Si otro recibo
@@ -475,6 +484,13 @@ export async function receivePurchaseOrder(branchId, orderId, actor, quantities)
       : Number(item.quantity);
     if (qty <= 0) continue;
 
+    // Costo unitario efectivo: el confirmado en la recepción (boleta OCR /
+    // edición manual), o el del PO por defecto. La boleta es la fuente de
+    // verdad del costo real pagado → alimenta kardex y price-change.
+    const unitCost = costs && costs[item.ingredientId] !== undefined
+      ? Number(costs[item.ingredientId])
+      : Number(item.unitCost || 0);
+
     await registerMovement(branchId, {
       ingredientId: item.ingredientId,
       type: 'entrada',
@@ -482,19 +498,19 @@ export async function receivePurchaseOrder(branchId, orderId, actor, quantities)
       unit: item.unit,
       reason: 'Compra',
       reference: `PO-${orderId.slice(-6)}`,
-      cost: qty * Number(item.unitCost || 0),
+      cost: qty * unitCost,
       createdBy: 'system',
     });
 
     // Detectar cambio de precio
     const ingSnap = await get(ref(db, `${LOG(branchId)}/ingredients/${item.ingredientId}`));
     const ing = ingSnap.val();
-    if (ing && Math.abs(Number(ing.cost || 0) - Number(item.unitCost)) > 0.01) {
+    if (ing && Math.abs(Number(ing.cost || 0) - unitCost) > 0.01) {
       priceChanges.push({
         ingredientId: item.ingredientId,
         name: item.name,
         oldCost: ing.cost || 0,
-        newCost: Number(item.unitCost),
+        newCost: unitCost,
       });
     }
   }
@@ -514,6 +530,19 @@ export async function receivePurchaseOrder(branchId, orderId, actor, quantities)
   auditLog('logistics.purchase_order.received', { branchId, orderId, supplierName: order.supplierName, total: order.total, priceChanges: priceChanges.length }, actor);
 
   return { success: true, priceChanges };
+}
+
+export async function attachVoucher(branchId, orderId, voucherData) {
+  const updates = {
+    voucherUrl: voucherData.voucherUrl,
+    voucherFileName: voucherData.voucherFileName,
+    uploadedAt: voucherData.uploadedAt || nowISO(),
+    updatedAt: nowISO(),
+  };
+  // update() = merge — no sobreescribe items/status del PO
+  await update(ref(db, `${LOG(branchId)}/purchase_orders/${orderId}`), updates);
+  auditLog('logistics.purchase_order.voucher_attached', { branchId, orderId, fileName: voucherData.voucherFileName }, 'system');
+  return { success: true };
 }
 
 export async function cancelPurchaseOrder(branchId, orderId, actor, reason) {

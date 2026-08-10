@@ -150,6 +150,79 @@ export async function suggestCampaign(
   };
 }
 
+export interface VoucherLineItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  unitCost: number;
+  confidence: number; // 0-1
+}
+
+export interface VoucherExtractionResult {
+  items: VoucherLineItem[];
+  rawText?: string;
+}
+
+const SYSTEM_EXTRACT_VOUCHER = `Eres un experto en lectura de boletas/facturas peruanas (SUNAT).
+Analiza la imagen y extrae SOLO las líneas de productos comprados.
+Responde EXCLUSIVAMENTE con JSON válido:
+{
+  "items": [
+    {
+      "name": "Nombre del producto tal como aparece",
+      "quantity": numero_cantidad,
+      "unit": "kg|gr|unidad|litro|ml|docena",
+      "unitCost": precio_unitario_en_soles,
+      "confidence": 0_a_1
+    }
+  ]
+}
+Ignora: totales, impuestos, datos del proveedor, número de documento, fechas.
+Si no se detecta unidad, usa "unidad".`;
+
+/**
+ * Extrae líneas de productos de una boleta/factura (imagen) usando Gemini Flash.
+ * @param imageBase64 - Imagen en base64 (con o sin prefijo data:image)
+ * @param expectedItems - Items esperados de la orden, para guiar la extracción
+ */
+export async function extractVoucher(
+  imageBase64: string,
+  expectedItems: Array<{ name: string; quantity: number; unit: string; unitCost: number }>
+): Promise<VoucherExtractionResult> {
+  const base64 = imageBase64.includes('base64,')
+    ? imageBase64.split('base64,')[1]
+    : imageBase64;
+
+  const context = `Items esperados en la orden (para guiar la extracción):\n` +
+    expectedItems.map(i => `- ${i.name}: ${i.quantity} ${i.unit} x S/ ${i.unitCost.toFixed(2)}`).join('\n');
+
+  const result = await geminiRequest(SYSTEM_EXTRACT_VOUCHER, [
+    { inline_data: { mime_type: 'image/jpeg', data: base64 } },
+    { text: context },
+    { text: 'Extrae las líneas de productos en formato JSON.' },
+  ]);
+
+  return {
+    items: Array.isArray(result.items)
+      ? result.items.map((it: any) => ({
+          name: String(it.name || ''),
+          quantity: Number(it.quantity) || 0,
+          unit: String(it.unit || 'unidad'),
+          unitCost: Number(it.unitCost) || 0,
+          confidence: Math.max(0, Math.min(1, Number(it.confidence) || 0.5)),
+        }))
+      : [],
+    rawText: result.rawText,
+  };
+}
+
+export const AI_STEPS_EXTRACT_VOUCHER: AIProcessingStep[] = [
+  { label: 'Subiendo imagen...', status: 'pending' },
+  { label: 'Analizando boleta con IA...', status: 'current' },
+  { label: 'Extrayendo líneas de productos', status: 'pending' },
+  { label: 'Emparejando con tu orden', status: 'pending' },
+];
+
 export const AI_STEPS_DESCRIBE: AIProcessingStep[] = [
   { label: 'Analizando imagen...', status: 'current' },
   { label: 'Reconociendo ingredientes', status: 'pending' },

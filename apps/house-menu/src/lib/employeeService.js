@@ -189,20 +189,20 @@ function scheduleRef(branchId, employeeId) {
 
 export async function getSchedule(branchId, employeeId) {
   const snap = await get(scheduleRef(branchId, employeeId));
-  if (!snap.exists()) return DAYS.map(d => ({ day: d, start: '', end: '', active: false }));
+  if (!snap.exists()) return DAYS.map(d => ({ day: d, start: '', end: '', active: false, station: '' }));
   const saved = snap.val();
   // Merge with full week — ensure `day` is always present
-  return DAYS.map(d => ({ day: d, ...(saved[d] || { start: '', end: '', active: false }) }));
+  return DAYS.map(d => ({ day: d, start: '', end: '', active: false, station: '', ...(saved[d] || {}) }));
 }
 
 export async function saveSchedule(branchId, employeeId, weekData, userId) {
-  // weekData is array of { day, start, end, active }
+  // weekData is array of { day, start, end, active, station }
   const obj = {};
   for (const entry of weekData) {
     if (entry.active && entry.start && entry.end) {
-      obj[entry.day] = { start: entry.start, end: entry.end, active: true };
+      obj[entry.day] = { start: entry.start, end: entry.end, active: true, station: entry.station || '' };
     } else {
-      obj[entry.day] = { start: '', end: '', active: false };
+      obj[entry.day] = { start: '', end: '', active: false, station: '' };
     }
   }
   // Save to branch path (admin reads from here)

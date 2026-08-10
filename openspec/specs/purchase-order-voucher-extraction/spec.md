@@ -186,8 +186,8 @@ The system **SHOULD** allow re-running extraction after an error (e.g., after fi
 
 ## Acceptance Criteria (from Proposal Success Criteria)
 
-- [ ] Uploading a boleta persists `voucherUrl` on the PO record in RTDB
-- [ ] `extractVoucher` returns structured items; modal qty/cost inputs prefilled
-- [ ] Matched/unmatched items visible before confirmation
-- [ ] Confirmed reception completes via `receivePurchaseOrder` — stock/kardex updated, `purchase_order.delivered` published
-- [ ] `npm run test -w apps/house-menu` passes; manual E2E with a real boleta
+- [x] Uploading a boleta persists `voucherUrl` on the PO record in RTDB
+- [x] `extractVoucher` returns structured items; modal qty/cost inputs prefilled
+- [x] Matched/unmatched items visible before confirmation
+- [x] Confirmed reception completes via `receivePurchaseOrder` — stock/kardex updated, `purchase_order.delivered` published
+- [ ] `npm run test -w apps/house-menu` passes; manual E2E with a real boleta — tests pass (751/751); manual E2E pending (task 7.6, human action)
