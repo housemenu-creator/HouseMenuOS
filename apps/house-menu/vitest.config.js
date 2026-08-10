@@ -14,6 +14,7 @@ export default defineConfig({
     testTimeout: 15_000,
     env: {
       VITE_ENCRYPTION_PEPPER: 'house_portal_os_dev_pepper_2026_segura',
+      VITE_ENABLE_VOUCHER_OCR: 'true',
     },
     setupFiles: ['./src/test/env-setup.js', './src/test/setup.js'],
     include: ['src/**/*.test.{js,jsx,ts,tsx}'],

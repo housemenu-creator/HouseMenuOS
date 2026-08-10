@@ -48,6 +48,10 @@ function fileToDataURL(file) {
   });
 }
 
+// 8.1 — Rollout gradual: la UI de voucher OCR solo se muestra con VITE_ENABLE_VOUCHER_OCR=true.
+// Se lee en cada render para permitir pruebas con stubEnv.
+const voucherOcrEnabled = () => import.meta.env.VITE_ENABLE_VOUCHER_OCR === 'true';
+
 // Fallback categories while DB config loads (kept in sync by migration)
 const DEFAULT_CATEGORIES = [
   'Verduras', 'Abarrotes', 'Condimentos', 'Frutas', 'Proteinas',
@@ -1426,9 +1430,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
   const [voucherError, setVoucherError] = useState(null);
   // ── OCR extraction state (Phase 3 + 4) ──
   const [extractionState, setExtractionState] = useState('idle'); // idle | extracting | done | error
-  const [extractedItems, setExtractedItems] = useState([]);
   const [extractionError, setExtractionError] = useState(null);
-  const [extractionMeta, setExtractionMeta] = useState(null); // { total, ruc, serie } si la IA los devuelve
   const [matchedItems, setMatchedItems] = useState([]);
   const [unmatchedItems, setUnmatchedItems] = useState([]);
   const [unmatchedEdits, setUnmatchedEdits] = useState({}); // drafts de qty/costo de items sin match
@@ -1643,9 +1645,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
   // 3.x/4.x — Limpia TODO el estado OCR (cierre/apertura del modal)
   const clearExtraction = () => {
     setExtractionState('idle');
-    setExtractedItems([]);
     setExtractionError(null);
-    setExtractionMeta(null);
     setMatchedItems([]);
     setUnmatchedItems([]);
     setUnmatchedEdits({});
@@ -1683,10 +1683,6 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
 
     try {
       const result = await extractVoucher(voucherFile, expectedItems);
-      setExtractedItems(result.items || []);
-      setExtractionMeta(result.total || result.ruc || result.serie
-        ? { total: result.total, ruc: result.ruc, serie: result.serie }
-        : null);
 
       if (!result.items || result.items.length === 0) {
         setExtractionState('done');
@@ -1729,9 +1725,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
   // 4.8 — Re-escanear / Reintentar: limpia resultados y vuelve a extraer
   const rescanVoucher = () => {
     setExtractionState('idle');
-    setExtractedItems([]);
     setExtractionError(null);
-    setExtractionMeta(null);
     setMatchedItems([]);
     setUnmatchedItems([]);
     setUnmatchedEdits({});
@@ -1794,13 +1788,16 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
       const n = Number(v);
       if (!isNaN(n) && n > 0) quantities[id] = n;
     }
-    const result = await receivePurchaseOrder(branchId, receiveOrder.id, userEmail, quantities);
+    const result = await receivePurchaseOrder(branchId, receiveOrder.id, userEmail, quantities, receiveCosts);
     setReceiving(false);
     if (!result?.success) {
       toast(result?.error || 'No se pudo recibir la orden');
       return;
     }
-    toast('Orden recibida');
+    // 5.4 — Confirmación exitosa, con info del voucher si se subió uno
+    toast(voucherFileName
+      ? `Orden recibida correctamente · voucher ${voucherFileName}`
+      : 'Orden recibida correctamente');
     const orderId = receiveOrder.id;
     setReceiveOrder(null);
     setReceiveQtys({});
@@ -2393,7 +2390,8 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
                 );
               })()}
             </div>
-            {/* Voucher upload */}
+            {/* Voucher upload — gated por VITE_ENABLE_VOUCHER_OCR (8.1) */}
+            {voucherOcrEnabled() && (
             <div className="space-y-2">
               <div
                 onDragOver={e => e.preventDefault()}
@@ -2480,6 +2478,7 @@ function PurchaseOrdersSection({ branchId, userEmail, purchaseOrders: orders, su
                 </div>
               )}
             </div>
+            )}
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-cm-text-secondary">Total a recibir</span>
               <span className="text-sm font-bold text-cm-text">

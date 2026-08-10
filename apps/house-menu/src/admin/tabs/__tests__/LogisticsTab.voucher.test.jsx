@@ -412,7 +412,7 @@ describe('ReceiveOrderModal — OCR extraction + fuzzy match + prefill', () => {
       expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-2', 'admin@house.com', {
         'ing-papa': 15,
         'ing-tomate': 5,
-      });
+      }, expect.anything());
     });
 
     // Modal cerrado → reabrir limpia el estado OCR
@@ -421,5 +421,130 @@ describe('ReceiveOrderModal — OCR extraction + fuzzy match + prefill', () => {
     expect(screen.queryByText('Analizar boleta')).toBeNull();
     expect(screen.queryByText('Emparejado')).toBeNull();
     expect(screen.getByLabelText('Cantidad Papa')).toHaveValue(10);
+  });
+});
+
+// ── Phase 5 + 6: confirmation wiring + graceful degradation ──
+describe('ReceiveOrderModal — confirmación y degradación', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.subscribeIngredients.mockImplementation((_b, cb) => { cb([]); return () => {}; });
+    mocks.subscribeRecipes.mockImplementation((_b, cb) => { cb([]); return () => {}; });
+    mocks.subscribeSuppliers.mockImplementation((_b, cb) => { cb(mockSuppliers); return () => {}; });
+    mocks.subscribePurchaseOrders.mockImplementation((_b, cb) => { cb([pendingPo2]); return () => {}; });
+    mocks.subscribeMovements.mockImplementation((_b, cb) => { cb([]); return () => {}; });
+    mocks.uploadVoucher.mockResolvedValue({ url: 'https://download.url/voucher.jpg', path: 'branches/branch-1/vouchers/po-2_123' });
+    mocks.attachVoucher.mockResolvedValue({ success: true });
+  });
+
+  it('6.1 — recepción manual sin voucher funciona end-to-end + toast 5.4 sin info de voucher', async () => {
+    mocks.receivePurchaseOrder.mockResolvedValue({ success: true, priceChanges: [] });
+    await openReceiveModal(); // pendingPo2: Papa (10) + Tomate (5)
+
+    // Sin subir voucher: se editan cantidades a mano
+    fireEvent.change(screen.getByLabelText('Cantidad Papa'), { target: { value: '7' } });
+    fireEvent.click(screen.getByText('Confirmar recepción'));
+
+    await waitFor(() => {
+      expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-2', 'admin@house.com', { 'ing-papa': 7, 'ing-tomate': 5 }, expect.anything());
+    });
+    await waitFor(() => { expect(screen.getByText('Orden recibida correctamente')).toBeDefined(); });
+    await waitFor(() => { expect(screen.queryByText('Confirmar recepción')).toBeNull(); });
+  });
+
+  it('5.1/6.1 — fallo de extracción NO bloquea la confirmación: recepción manual con valores pedidos', async () => {
+    mocks.extractVoucher.mockRejectedValue(new Error('Gemini API error: 500'));
+    mocks.receivePurchaseOrder.mockResolvedValue({ success: true, priceChanges: [] });
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+    await waitFor(() => {
+      expect(screen.getAllByText('Error al procesar la boleta. Intenta de nuevo.').length).toBeGreaterThan(0);
+    });
+
+    // Sin prefill: confirmar usa las cantidades pedidas (10 y 5)
+    fireEvent.click(screen.getByText('Confirmar recepción'));
+    await waitFor(() => {
+      expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-2', 'admin@house.com', { 'ing-papa': 10, 'ing-tomate': 5 }, expect.anything());
+    });
+  });
+
+  it('5.4 — el toast de confirmación incluye el nombre del voucher si se subió uno', async () => {
+    mocks.extractVoucher.mockResolvedValue({ items: [] });
+    mocks.receivePurchaseOrder.mockResolvedValue({ success: true, priceChanges: [] });
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+    await waitFor(() => { expect(screen.getByText('No se detectaron productos. Revisa la foto.')).toBeDefined(); });
+
+    fireEvent.click(screen.getByText('Confirmar recepción'));
+    await waitFor(() => {
+      expect(screen.getByText('Orden recibida correctamente · voucher boleta.jpg')).toBeDefined();
+    });
+  });
+
+  it('6.2 — timeout de extracción → toast "Tiempo agotado" y modal usable', async () => {
+    mocks.extractVoucher.mockRejectedValue(Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }));
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Tiempo agotado. Verifica tu conexión.').length).toBeGreaterThan(0);
+    });
+    expect(screen.getByText('Reintentar extracción')).toBeDefined();
+    expect(screen.getByText('Confirmar recepción')).toBeDefined();
+    expect(screen.getByLabelText('Cantidad Tomate')).toHaveValue(5);
+  });
+
+  it('6.2 — respuesta malformada de Gemini → "Respuesta inválida de IA" + Reintentar', async () => {
+    mocks.extractVoucher.mockRejectedValue(new SyntaxError('Unexpected token < in JSON'));
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Respuesta inválida de IA. Intenta de nuevo.').length).toBeGreaterThan(0);
+    });
+    expect(screen.getByText('Reintentar extracción')).toBeDefined();
+  });
+
+  it('6.4 — falla de red (offline): error genérico, entrada manual intacta y confirmación OK', async () => {
+    mocks.extractVoucher.mockRejectedValue(new TypeError('Failed to fetch'));
+    mocks.receivePurchaseOrder.mockResolvedValue({ success: true, priceChanges: [] });
+    await uploadVoucherForExtraction();
+
+    fireEvent.click(screen.getByText('Analizar boleta'));
+    await waitFor(() => {
+      expect(screen.getAllByText('OCR extraction failed: Failed to fetch').length).toBeGreaterThan(0);
+    });
+
+    // NFR-5: la entrada manual funciona sin red
+    fireEvent.change(screen.getByLabelText('Cantidad Papa'), { target: { value: '9' } });
+    fireEvent.click(screen.getByText('Confirmar recepción'));
+    await waitFor(() => {
+      expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-2', 'admin@house.com', { 'ing-papa': 9, 'ing-tomate': 5 }, expect.anything());
+    });
+  });
+
+  it('8.1 — con VITE_ENABLE_VOUCHER_OCR off la UI de voucher no se muestra; recepción manual intacta', async () => {
+    vi.stubEnv('VITE_ENABLE_VOUCHER_OCR', 'false');
+    try {
+      mocks.receivePurchaseOrder.mockResolvedValue({ success: true, priceChanges: [] });
+      await openReceiveModal();
+
+      expect(screen.queryByLabelText(/Subir voucher/)).toBeNull();
+      expect(screen.queryByText(/Subir voucher/)).toBeNull();
+      expect(screen.queryByText('Analizar boleta')).toBeNull();
+
+      // El flujo manual sigue completo
+      fireEvent.change(screen.getByLabelText('Cantidad Papa'), { target: { value: '3' } });
+      fireEvent.click(screen.getByText('Confirmar recepción'));
+      await waitFor(() => {
+        expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-2', 'admin@house.com', { 'ing-papa': 3, 'ing-tomate': 5 }, expect.anything());
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

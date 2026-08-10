@@ -67,3 +67,30 @@ apps/house-menu/src/
 └── components/
     └── CartDrawer.jsx        ← Selector de zonas de delivery con precio dinámico
 ```
+
+## 2026-08-09: Voucher OCR — Recepción de órdenes de compra
+
+### Objetivo
+Automatizar la recepción de órdenes de compra con la boleta del proveedor: subir voucher → OCR (Gemini Flash) → fuzzy match → prefill → confirmación humana vía `receivePurchaseOrder` (sin cambios).
+
+### Logros
+- **Subida de voucher**: JPG/PNG/WebP ≤ 5MB a Storage en `branches/{bid}/vouchers/{oid}_{ts}`; metadata (`voucherUrl`, `voucherFileName`, `uploadedAt`) persistida en el PO de forma aditiva; preview + progreso en el modal
+- **Extracción OCR**: `extractVoucher()` (Gemini 2.0 Flash, JSON mode, contexto con items esperados, downscale ≤ 2048px, timeout 8s, matriz de errores completa)
+- **Fuzzy match**: `normalizeForMatch` (acentos, unidades, artículos) + score Jaccard/contención, one-to-one greedy, umbral 0.6; items sin match van a "Revisar manualmente"
+- **Prefill con confirmación humana**: cantidades/costos prefilled con badge "Emparejado"; los edits del usuario siempre ganan (userTouched); totales en tiempo real
+- **Confirmación**: "Confirmar recepción" usa `receiveQtys` (prefill + manual) → `receivePurchaseOrder` intacto (lock atómico, kardex, evento `purchase_order.delivered`); los campos de voucher sobreviven a la recepción; la doble recepción aborta sin duplicar movimientos
+- **Degradación total**: sin voucher / sin API key / timeout / fallo de red → toast de error + entrada manual idéntica; "Reintentar extracción" re-ejecuta; toast de éxito incluye el nombre del voucher
+- **Rollout gradual**: feature flag `VITE_ENABLE_VOUCHER_OCR=true` (off por defecto; activado en test env)
+- **Testing**: 749 tests verdes (87 archivos) — suites nuevas de fuzzyMatch, extractVoucher, attachVoucher/storage, modal completo, y recepción (conservación de voucher + doble recepción)
+
+### Archivos clave
+```
+apps/house-menu/src/
+├── lib/aiService.ts              ← extractVoucher + AI_STEPS_EXTRACT_VOUCHER
+├── lib/voucherMatch.js           ← normalizeForMatch + fuzzyMatch (puros)
+├── lib/logisticsService.js       ← attachVoucher + campos aditivos en create/update PO
+├── lib/storageService.js         ← uploadVoucher + validateVoucherFile (verificados)
+├── admin/tabs/LogisticsTab.jsx   ← ReceiveOrderModal: upload, extracción, prefill, confirmación, flag 8.1
+└── src/lib|admin/tabs/__tests__/ ← fuzzyMatch, aiService.extractVoucher, logisticsService.voucher,
+                                    storageService.voucher, LogisticsTab.voucher, logisticsService.receivePurchaseOrder
+```

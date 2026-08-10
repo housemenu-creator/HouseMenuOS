@@ -72,31 +72,31 @@ Chain strategy: stacked-to-main
 
 ## Phase 5: ReceiveOrderModal — Confirmation Wiring
 
-- [ ] 5.1 On "Confirmar recepción" click: build `confirmedQuantities` from `receiveQtys` state (includes both OCR-prefilled and manual entries) → call existing `logisticsService.receivePurchaseOrder(branchId, orderId, actor, confirmedQuantities)` — **do not modify this function**
-- [ ] 5.2 Verify PO record retains `voucherUrl`, `voucherFileName`, `uploadedAt` after reception (additive fields, no overwrite)
-- [ ] 5.3 Double-receipt guard: rely on existing `receivePurchaseOrder` atomic lock — no new code, just verify behavior unchanged
-- [ ] 5.4 Toast success "Orden recibida correctamente" on completion, close modal
+- [x] 5.1 On "Confirmar recepción" click: build `confirmedQuantities` from `receiveQtys` state (includes both OCR-prefilled and manual entries) → call existing `logisticsService.receivePurchaseOrder(branchId, orderId, actor, confirmedQuantities)` — **do not modify this function**
+- [x] 5.2 Verify PO record retains `voucherUrl`, `voucherFileName`, `uploadedAt` after reception (additive fields, no overwrite)
+- [x] 5.3 Double-receipt guard: rely on existing `receivePurchaseOrder` atomic lock — no new code, just verify behavior unchanged
+- [x] 5.4 Toast success "Orden recibida correctamente" on completion, close modal
 
 **Acceptance**: Spec scenarios "Confirmation — receivePurchaseOrder runs, stock moves, event published", "Double-receipt attempt — atomic lock aborts (no regression)"
 **Rollback 5.1–5.4**: Revert confirmation handler only.
 
 ## Phase 6: Graceful Degradation
 
-- [ ] 6.1 Manual reception path: if no voucher uploaded OR extraction failed/skipped, `receiveQtys` starts empty → user enters all manually → "Confirmar recepción" works identically
-- [ ] 6.2 Extraction error states: missing API key → toast "IA no configurada. Ingresa cantidades manualmente."; API error → "Error al procesar la boleta. Intenta de nuevo."; timeout → "Tiempo agotado. Verifica tu conexión."; empty items → "No se detectaron productos. Revisa la foto." — all keep modal open
-- [ ] 6.3 "Reintentar extracción" button visible on error → re-runs Phase 3
-- [ ] 6.4 Offline: manual entry works without network; upload/extraction show appropriate network errors
+- [x] 6.1 Manual reception path: if no voucher uploaded OR extraction failed/skipped, `receiveQtys` starts empty → user enters all manually → "Confirmar recepción" works identically
+- [x] 6.2 Extraction error states: missing API key → toast "IA no configurada. Ingresa cantidades manualmente."; API error → "Error al procesar la boleta. Intenta de nuevo."; timeout → "Tiempo agotado. Verifica tu conexión."; empty items → "No se detectaron productos. Revisa la foto." — all keep modal open
+- [x] 6.3 "Reintentar extracción" button visible on error → re-runs Phase 3
+- [x] 6.4 Offline: manual entry works without network; upload/extraction show appropriate network errors
 
 **Acceptance**: Spec scenarios "Manual reception without OCR works end-to-end", "Re-run extraction after error", NFR-5
 **Rollback 6.1–6.4**: Revert error handling, retry logic.
 
 ## Phase 7: Testing
 
-- [ ] 7.1 Unit: `apps/house-menu/src/lib/__tests__/fuzzyMatch.test.js` — test `normalizeForMatch` (accents, units, case, punctuation) and `fuzzyMatch` (match: "Tomate 1kg"↔"tomate", "Limon"↔"Limón", "Cilantro (manojo)"↔"cilantro"; no-match: "Papas"↔"Papa"; plural mismatch; one-to-one greedy)
-- [ ] 7.2 Unit: `apps/house-menu/src/lib/__tests__/aiService.extractVoucher.test.ts` — mock `geminiRequest`, verify base64 prefix stripping, expectedItems context passed, JSON parse, confidence clamping 0–1, empty items handling, error propagation
-- [ ] 7.3 Integration: `apps/house-menu/src/lib/__tests__/logisticsService.voucher.test.js` — mock RTDB `update`, verify `attachVoucher` writes correct fields, calls `auditLog`, `createPurchaseOrder`/`updatePurchaseOrder` accept additive voucher fields
-- [ ] 7.4 Integration: `apps/house-menu/src/lib/__tests__/storageService.voucher.test.js` — mock Firebase Storage `ref` + `uploadBytesResumable`, verify path format `branches/{bid}/vouchers/{oid}_{ts}`, progress callback fired, URL resolved
-- [ ] 7.5 Integration: `apps/house-menu/src/admin/tabs/__tests__/LogisticsTab.voucher.test.jsx` — RTL + jsdom, mock `uploadVoucher`, `extractVoucher`, `attachVoucher`, `fuzzyMatch`; verify: file select → upload → extract → match → prefill → "Confirmar recepción" calls `receivePurchaseOrder` with confirmed quantities
+- [x] 7.1 Unit: `apps/house-menu/src/lib/__tests__/fuzzyMatch.test.js` — test `normalizeForMatch` (accents, units, case, punctuation) and `fuzzyMatch` (match: "Tomate 1kg"↔"tomate", "Limon"↔"Limón", "Cilantro (manojo)"↔"cilantro"; no-match: "Papas"↔"Papa"; plural mismatch; one-to-one greedy)
+- [x] 7.2 Unit: `apps/house-menu/src/lib/__tests__/aiService.extractVoucher.test.ts` — mock `geminiRequest`, verify base64 prefix stripping, expectedItems context passed, JSON parse, confidence clamping 0–1, empty items handling, error propagation
+- [x] 7.3 Integration: `apps/house-menu/src/lib/__tests__/logisticsService.voucher.test.js` — mock RTDB `update`, verify `attachVoucher` writes correct fields, calls `auditLog`, `createPurchaseOrder`/`updatePurchaseOrder` accept additive voucher fields
+- [x] 7.4 Integration: `apps/house-menu/src/lib/__tests__/storageService.voucher.test.js` — mock Firebase Storage `ref` + `uploadBytesResumable`, verify path format `branches/{bid}/vouchers/{oid}_{ts}`, progress callback fired, URL resolved
+- [x] 7.5 Integration: `apps/house-menu/src/admin/tabs/__tests__/LogisticsTab.voucher.test.jsx` — RTL + jsdom, mock `uploadVoucher`, `extractVoucher`, `attachVoucher`, `fuzzyMatch`; verify: file select → upload → extract → match → prefill → "Confirmar recepción" calls `receivePurchaseOrder` with confirmed quantities
 - [ ] 7.6 E2E (manual): Test with real Peruvian boleta photo — upload → extract → verify matched items → confirm → verify stock movements in RTDB, `purchase_order.delivered` event, voucher fields persisted
 
 **Acceptance**: All spec scenarios covered by at least one test; `npm run test -w apps/house-menu` passes
@@ -104,9 +104,9 @@ Chain strategy: stacked-to-main
 
 ## Phase 8: Polish / Cleanup
 
-- [ ] 8.1 Add optional feature flag guard: wrap voucher UI in `if (import.meta.env.VITE_ENABLE_VOUCHER_OCR === 'true')` for gradual rollout (default false)
-- [ ] 8.2 Ensure all new strings use existing i18n pattern (if any) or consistent Spanish labels
-- [ ] 8.3 Verify no TypeScript errors, ESLint passes (`npm run lint -w apps/house-menu`)
-- [ ] 8.4 Update `walkthrough.md` with feature summary and key files
+- [x] 8.1 Add optional feature flag guard: wrap voucher UI in `if (import.meta.env.VITE_ENABLE_VOUCHER_OCR === 'true')` for gradual rollout (default false)
+- [x] 8.2 Ensure all new strings use existing i18n pattern (if any) or consistent Spanish labels
+- [x] 8.3 Verify no TypeScript errors, ESLint passes (`npm run lint -w apps/house-menu`)
+- [x] 8.4 Update `walkthrough.md` with feature summary and key files
 
 **Rollback 8.1–8.4**: Revert flag wrapper, lint fixes.

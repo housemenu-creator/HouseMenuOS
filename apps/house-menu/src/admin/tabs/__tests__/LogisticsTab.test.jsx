@@ -525,7 +525,7 @@ describe('PurchaseOrdersSection', () => {
 
     fireEvent.click(screen.getByText('Confirmar recepción'));
     await waitFor(() => {
-      expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-1', 'admin@house.com', { 'ing-papa': 8, 'ing-carne': 5 });
+      expect(mocks.receivePurchaseOrder).toHaveBeenCalledWith('branch-1', 'po-1', 'admin@house.com', { 'ing-papa': 8, 'ing-carne': 5 }, expect.anything());
     });
     // El modal se cierra
     await waitFor(() => { expect(screen.queryByText('Confirmar recepción')).toBeNull(); });
