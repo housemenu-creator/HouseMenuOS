@@ -103,10 +103,9 @@ export default function AdminTopBar({
                   onClick={onMegaMenuToggle}
                   className="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-cm-text-secondary hover:text-cm-text hover:bg-cm-bg-alt transition-all"
                 >
+                  <Grid className="w-3.5 h-3.5 text-cm-muted shrink-0" />
                   <span>Más</span>
-                  <span className="text-[10px] text-cm-muted font-semibold px-1 py-0.5 rounded-full bg-cm-bg-alt border border-cm-border leading-none">
-                    +{availableTabs.length - inlineTabs.length}
-                  </span>
+                  <ChevronDown className="w-3 h-3 text-cm-muted group-hover:translate-y-0.5 transition-transform" />
                 </button>
               </>
             )}
