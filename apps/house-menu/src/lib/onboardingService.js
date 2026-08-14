@@ -1,7 +1,7 @@
 import { ref, get, set, update } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
 import { getDefaultRoles } from './permissions';
-import { hashPin } from './crypto';
+import { hashPin, pinLookupKey } from './crypto';
 import { nowISO } from './format';
 import { setTenantId } from './tenantService';
 import { generateSlug, isSlugAvailable } from './slugService';
@@ -77,6 +77,7 @@ export async function completeSetup({ anonUid, tenant, admin, branch }) {
     }
 
     const pinHash = await hashPin(admin.pin);
+    const lookup = await pinLookupKey(admin.pin);
     const now = nowISO();
 
     // ── Employee record (keyed by anonUid → passes auth.uid === $uid) ──
@@ -85,6 +86,7 @@ export async function completeSetup({ anonUid, tenant, admin, branch }) {
         name: admin.name,
         email: admin.email,
         pinHash,
+        pinLookupKey: lookup,
         active: true,
         createdAt: now,
         updatedAt: now,
@@ -159,6 +161,7 @@ export async function completeSetup({ anonUid, tenant, admin, branch }) {
     const payload = {
       // Tenant tree
       [`tenants/${tenantId}/employees/${anonUid}`]: employee,
+      [`tenants/${tenantId}/pin_lookup/${lookup}`]: anonUid,
       [`tenants/${tenantId}/roles`]: defaultRoles,
       // Branch tree
       [`branches/${branchId}/config`]: branchConfig,

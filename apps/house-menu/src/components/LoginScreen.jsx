@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LogIn, Loader2, AlertCircle, Mail } from 'lucide-react';
+import { LogIn, Loader2, AlertCircle, Mail, UserPlus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logo from '../assets/logo.jpg';
 import { useAuth } from '../context/AuthContext';
 import WorkspaceSelector from './WorkspaceSelector';
@@ -15,6 +16,7 @@ export default function LoginScreen({
   onClearError,
   firebaseReady,
   devUsers,
+  registerLink = true,
 }) {
   const { pendingWorkspaces } = useAuth();
 
@@ -140,6 +142,18 @@ export default function LoginScreen({
           )}
           {isLoading ? 'VERIFICANDO...' : 'INGRESAR'}
         </button>
+
+        {registerLink && (
+          <div className="pt-1">
+            <Link
+              to="/registro"
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold text-cm-muted hover:text-cm-accent transition-colors py-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              ¿Sos trabajador? Registrate
+            </Link>
+          </div>
+        )}
       </form>
     </div>
   );

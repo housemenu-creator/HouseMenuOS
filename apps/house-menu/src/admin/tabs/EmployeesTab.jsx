@@ -1106,7 +1106,7 @@ export default function EmployeesTab({ allOrders }) {
             const mins = Math.floor((duration % 3600000) / 60000);
 
             // Get today's schedule config
-            const DAY_MAP = ['domingo', 'lunes', 'martes', 'mi??rcoles', 'jueves', 'viernes', 's??bado', 'domingo'];
+            const DAY_MAP = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
             const todayName = DAY_MAP[new Date().getDay()];
             const sched = emp.schedule?.[todayName];
             const hasSched = sched && sched.active;
@@ -1134,7 +1134,7 @@ export default function EmployeesTab({ allOrders }) {
                 punchStatus = { label: 'No ha ingresado', color: 'text-cm-text-tertiary bg-cm-bg-alt border-cm-border' };
               }
             } else if (!hasSched && !record?.clockIn) {
-              punchStatus = { label: 'D??a Libre', color: 'text-cm-text-secondary bg-cm-bg-alt border-cm-border border-dashed' };
+              punchStatus = { label: 'Día Libre', color: 'text-cm-text-secondary bg-cm-bg-alt border-cm-border border-dashed' };
             }
 
             return (
@@ -1157,7 +1157,7 @@ export default function EmployeesTab({ allOrders }) {
                   ) : null}
                 </div>
 
-                {/* Comparaci??n de Horario de hoy */}
+                {/* Comparación de Horario de hoy */}
                 {punchStatus && (
                   <div className="mt-2.5 mb-2.5 p-1.5 rounded-lg border text-[9px] flex flex-col gap-0.5 bg-cm-bg-alt/40 border-cm-border/50">
                     <div className="flex justify-between items-center gap-2">
@@ -1168,7 +1168,7 @@ export default function EmployeesTab({ allOrders }) {
                     </div>
                     {hasSched && (
                       <p className="text-cm-text-tertiary font-semibold">
-                        Plan: {sched.start} - {sched.end} {sched.station ? `(Estaci??n: ${sched.station})` : '(Sin estaci??n)'}
+                        Plan: {sched.start} - {sched.end} {sched.station ? `(Estación: ${sched.station})` : '(Sin estación)'}
                       </p>
                     )}
                   </div>

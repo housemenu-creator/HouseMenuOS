@@ -22,6 +22,7 @@ const CrmView = lazy(() => import('./crm/CrmView'));
 const CustomerAnalyticsTab = lazy(() => import('../tabs/CustomerAnalyticsTab'));
 const LogisticsTab = lazy(() => import('../tabs/LogisticsTab'));
 const EmployeesTab = lazy(() => import('../tabs/EmployeesTab'));
+const ApplicationsTab = lazy(() => import('../tabs/ApplicationsTab'));
 const SystemConfigTab = lazy(() => import('../tabs/config'));
 const RolesTab = lazy(() => import('../tabs/RolesTab'));
 const AuditTab = lazy(() => import('../tabs/AuditTab'));
@@ -107,6 +108,8 @@ function tabContent(activeTab: string, can: (perm: string) => boolean, d: TabDat
       return <LogisticsTab />;
     case 'employees':
       return <EmployeesTab allOrders={d.allOrders} />;
+    case 'applications':
+      return <ApplicationsTab />;
     case 'roles':
       return <RolesTab />;
     case 'audit':

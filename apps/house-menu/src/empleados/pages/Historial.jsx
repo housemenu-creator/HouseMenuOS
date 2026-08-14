@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarDays, Clock, AlertTriangle } from 'lucide-react';
 import AnimatedCounter from '@house/ui/src/components/AnimatedCounter';
-import { subscribeAttendanceHistory } from '../../lib/empleadoService';
+import { subscribeEmployeeAttendanceHistory } from '../../lib/employeeService';
 
-function formatTime(iso) {
-  if (!iso) return '--:--';
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+function formatTime(ts) {
+  if (!ts) return '--:--';
+  return new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 
 function calcDuration(clockIn, clockOut) {
@@ -19,14 +19,16 @@ export default function Historial({ employee, branchId }) {
   const [records, setRecords] = useState([]);
   const [state, setState] = useState('loading');
 
+  const userId = employee?.userId || employee?.id;
+
   useEffect(() => {
     if (!employee?.id) { setState('error'); return; }
-    const unsub = subscribeAttendanceHistory(employee.id, branchId, (data) => {
+    const unsub = subscribeEmployeeAttendanceHistory(userId, (data) => {
       setRecords(data);
       setState(data.length === 0 ? 'empty' : 'populated');
     });
     return () => unsub();
-  }, [employee.id, branchId]);
+  }, [employee.id, userId]);
 
   const totalDays = records.length;
   const totalHours = records.reduce((acc, r) => r.clockIn && r.clockOut ? acc + (new Date(r.clockOut) - new Date(r.clockIn)) : acc, 0);
@@ -61,7 +63,7 @@ export default function Historial({ employee, branchId }) {
             {records.map((r) => (
               <div key={r.date} className="bg-cm-surface border border-cm-border rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${r.status === 'presente' ? 'bg-cm-success' : 'bg-cm-warning'}`} />
+                  <div className={`w-2 h-2 rounded-full ${r.state === 'completed' || r.state === 'active' ? 'bg-cm-success' : 'bg-cm-warning'}`} />
                   <div>
                     <div className="text-sm font-semibold text-cm-text">{new Date(r.date + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
                     <div className="text-xs text-cm-text-secondary flex items-center gap-2 mt-0.5"><Clock className="w-3 h-3" />{formatTime(r.clockIn)} — {formatTime(r.clockOut)}</div>
@@ -69,7 +71,7 @@ export default function Historial({ employee, branchId }) {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-semibold text-cm-text">{calcDuration(r.clockIn, r.clockOut)}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-cm-text-secondary mt-0.5">{r.status || 'completado'}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-cm-text-secondary mt-0.5">{r.state === 'completed' ? 'completado' : r.state === 'active' ? 'en curso' : (r.state || 'completado')}</div>
                 </div>
               </div>
             ))}

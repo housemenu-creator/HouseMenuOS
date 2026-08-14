@@ -15,6 +15,7 @@ import { useBranch } from './context/BranchContext';
 
 const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterForm = lazy(() => import('./components/RegisterForm'));
 const LandingView = lazy(() => import('./pages/LandingView'));
 const CustomerView = lazy(() => import('./pages/CustomerView'));
 const KitchenView = lazy(() => import('./pages/KitchenView'));
@@ -93,6 +94,7 @@ export default function App() {
                 {/* ── Onboarding (sin layout, full page) ── */}
                 <Route path="/onboarding" element={<SuspenseBoundary message="Error en el onboarding"><OnboardingWizard /></SuspenseBoundary>} />
                 <Route path="/login" element={<SuspenseBoundary message="Error en el inicio de sesión"><LoginPage /></SuspenseBoundary>} />
+                <Route path="/registro" element={<SuspenseBoundary message="Error en el registro"><RegisterForm /></SuspenseBoundary>} />
 
                 {/* ── Rutas de Cliente SaaS con Resolución de Tenant /r/:slug ── */}
                 <Route path="/r/:slug" element={<TenantResolver />}>

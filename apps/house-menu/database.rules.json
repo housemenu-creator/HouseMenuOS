@@ -26,12 +26,18 @@
         ".read": "auth != null",
         ".write": "auth != null",
         "config": {
-          ".read": true
+          ".read": true,
+          ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
         },
         "sessions": {
           "$token": {
             ".read": "auth.uid === root.child('tenants').child($tenantId).child('sessions').child($token).child('userId').val()",
             ".write": "auth != null"
+          }
+        },
+        "pin_lookup": {
+          "$lookup": {
+            ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
           }
         },
         "employees": {
@@ -69,6 +75,13 @@
           "$roleId": {
             ".read": "auth != null",
             ".write": "root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin'"
+          }
+        },
+        "applications": {
+          ".read": "auth != null && (root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin')",
+          "$uid": {
+            ".read": "auth != null && (auth.uid === $uid || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin')",
+            ".write": "auth != null && ((auth.uid === $uid && !data.exists()) || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'admin' || root.child('tenants').child($tenantId).child('employees').child(auth.uid).child('role').val() === 'superadmin')"
           }
         },
         "cuentas": {
@@ -148,10 +161,19 @@
           }
         },
         "attendance": {
+          ".read": "auth != null",
+          ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')",
           "$employeeId": {
-            ".write": "$employeeId === auth.uid || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin'",
             "$date": {
               ".validate": "newData.hasChildren(['clockIn'])"
+            }
+          }
+        },
+        "employees": {
+          "$employeeId": {
+            "pin": {
+              ".read": "auth != null",
+              ".write": "auth != null && (root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'admin' || root.child('branches').child($branchId).child('_role_cache').child(auth.uid).val() === 'superadmin')"
             }
           }
         },
@@ -198,10 +220,7 @@
     "customers": {
       ".read": "auth != null",
       "$customerId": {
-        // Legacy push-key records can be written by any auth user.
-        // UID-based records are owned by that user.
-        // Points mutations use transactions relaying on the rules-auth check.
-        ".write": "auth != null && ($customerId === auth.uid || $customerId.length > 20)",
+        ".write": "auth != null && ($customerId === auth.uid || $customerId.length >= 20)",
         "fcmTokens": {
           "$deviceId": {
             ".write": "auth != null && $customerId === auth.uid"

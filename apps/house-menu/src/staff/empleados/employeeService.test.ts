@@ -57,6 +57,8 @@ vi.mock('firebase/database', () => ({
 }));
 
 const BRANCH = 'b1';
+const TENANT = 'default';
+const empPath = (uid: string, ...rest: string[]) => `tenants/${TENANT}/employees/${uid}${rest.length ? '/' + rest.join('/') : ''}`;
 
 describe('empleados employeeService', () => {
   beforeEach(() => {
@@ -78,7 +80,7 @@ describe('empleados employeeService', () => {
 
   it('getEmployee returns employee data for existing uid', async () => {
     const employeeData = { name: 'Test User', role: 'admin', active: true };
-    store.set(`branches/${BRANCH}/employees/test-uid`, employeeData);
+    store.set(empPath('test-uid'), employeeData);
 
     const { getEmployee } = await import('./employeeService');
     const result = await getEmployee(BRANCH, 'test-uid');
@@ -104,7 +106,7 @@ describe('empleados employeeService', () => {
 
     await clockIn(BRANCH, 'uid-123');
 
-    const record = store.get(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`);
+    const record = store.get(empPath('uid-123', 'attendance', '2026-06-15'));
     expect(record).toBeDefined();
     expect((record as Record<string, unknown>).date).toBe('2026-06-15');
     expect(typeof (record as Record<string, unknown>).clockIn).toBe('number');
@@ -114,12 +116,12 @@ describe('empleados employeeService', () => {
   it('clockIn does not overwrite existing attendance record', async () => {
     vi.setSystemTime(new Date('2026-06-15T14:30:00.000Z'));
     const existing = { clockIn: 1000, clockOut: null, date: '2026-06-15' };
-    store.set(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`, existing);
+    store.set(empPath('uid-123', 'attendance', '2026-06-15'), existing);
 
     const { clockIn } = await import('./employeeService');
     const result = await clockIn(BRANCH, 'uid-123');
 
-    const record = store.get(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`) as Record<string, unknown>;
+    const record = store.get(empPath('uid-123', 'attendance', '2026-06-15')) as Record<string, unknown>;
     expect(record.clockIn).toBe(1000); // unchanged
   });
 
@@ -127,7 +129,7 @@ describe('empleados employeeService', () => {
 
   it('clockOut sets clockOut on existing attendance record', async () => {
     vi.setSystemTime(new Date('2026-06-15T14:30:00.000Z'));
-    store.set(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`, {
+    store.set(empPath('uid-123', 'attendance', '2026-06-15'), {
       clockIn: 1000, clockOut: null, date: '2026-06-15',
     });
 
@@ -135,7 +137,7 @@ describe('empleados employeeService', () => {
     const { clockOut } = await import('./employeeService');
     await clockOut(BRANCH, 'uid-123');
 
-    const record = store.get(`branches/${BRANCH}/employees/uid-123/attendance/2026-06-15`) as Record<string, unknown>;
+    const record = store.get(empPath('uid-123', 'attendance', '2026-06-15')) as Record<string, unknown>;
     expect(record.clockOut).toBe(Date.now());
   });
 
@@ -160,7 +162,7 @@ describe('empleados employeeService', () => {
       lunes: { start: '09:00', end: '18:00', active: true },
       martes: { start: '09:00', end: '18:00', active: true },
     };
-    store.set(`branches/${BRANCH}/employees/scheduled-uid/schedule`, scheduleData);
+    store.set(empPath('scheduled-uid', 'schedule'), scheduleData);
 
     const { getSchedule } = await import('./employeeService');
     const result = await getSchedule(BRANCH, 'scheduled-uid');
@@ -197,15 +199,15 @@ describe('empleados employeeService', () => {
 
   // ── Data path verification (unified model) ───────────
 
-  it('uses branches/{branch}/employees/{uid} paths (not tenants)', async () => {
+  it('uses tenants/{tenant}/employees/{uid} paths (not branches)', async () => {
     const { getEmployee } = await import('./employeeService');
-    store.set(`branches/${BRANCH}/employees/uid-456`, { name: 'Branch User' });
+    store.set(empPath('uid-456'), { name: 'Tenant User' });
 
     const result = await getEmployee(BRANCH, 'uid-456');
-    expect(result).toMatchObject({ uid: 'uid-456', name: 'Branch User' });
+    expect(result).toMatchObject({ uid: 'uid-456', name: 'Tenant User' });
 
-    // Verify tenants path is NOT used
-    const tenantsData = store.get('tenants');
-    expect(tenantsData).toBeUndefined();
+    // Verify branches path is NOT used
+    const branchesData = store.get('branches');
+    expect(branchesData).toBeUndefined();
   });
 });

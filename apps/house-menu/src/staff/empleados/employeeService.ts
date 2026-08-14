@@ -1,8 +1,8 @@
 /**
  * Employee Service — Portal Empleados data layer for house-menu.
  *
- * Reads/writes from branches/{branchId}/employees/{uid}
- * using the unified auth model (keyed by Firebase UID).
+ * Reads/writes from tenants/{tenantId}/employees/{uid}
+ * using the unified auth model (keyed by tenant employee key).
  *
  * Extended with:
  *  - Shift state machine (pending→active→completed→verified)
@@ -12,21 +12,21 @@
  *  - Incident reporting
  *  - Handover notes
  *
- * HISTORICAL NOTE: previously used tenants/{tenantId}/employees/{uid}.
- * Unified to branches/ to match admin employeeService.js.
+ * UNIFIED: source of truth is tenants/{tenantT}/employees/{uid}.
+ * branchId is kept in the signatures only for backward compatibility
+ * with callers — data no longer lives under branches/.
+ * ponytail: admin still writes goals to branches/{b}/employees/{pushId}/goals;
+ * sync to tenant (by userId) when goals are migrated.
  */
 
-import { ref, get, set, update, push, onValue, runTransaction, serverTimestamp } from 'firebase/database';
+import { ref, get, set, update, push, onValue, runTransaction } from 'firebase/database';
 import { realtimeDB as db } from '@house/db';
+import { tenantPath } from '../../lib/tenantService';
 
 // ── Helpers ────────────────────────────────────────────
 
-function employeesRoot(branchId: string) {
-  return `branches/${branchId}/employees`;
-}
-
-function employeePath(branchId: string, uid: string) {
-  return `branches/${branchId}/employees/${uid}`;
+function employeePath(_branchId: string, uid: string) {
+  return tenantPath(`employees/${uid}`);
 }
 
 function todayStr() {

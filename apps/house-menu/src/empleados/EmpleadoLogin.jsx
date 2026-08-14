@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, AlertCircle, Loader2 } from 'lucide-react';
-import { getEmployeeByPin } from '../lib/empleadoService';
+import { loginPortalByPin } from '../lib/empleadoService';
 import { useBranch } from '../context/BranchContext';
+import { useTenant } from '../context/TenantContext';
 
 export default function EmpleadoLogin({ onAuthenticated }) {
   const [pin, setPin] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const inputRef = useRef(null);
   const { activeBranchId } = useBranch();
+  const { tenantId } = useTenant();
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -18,9 +21,9 @@ export default function EmpleadoLogin({ onAuthenticated }) {
     if (!pin.trim()) return;
     setLoading(true); setError('');
     try {
-      const emp = await getEmployeeByPin(pin.trim(), activeBranchId);
+      const emp = await loginPortalByPin(pin.trim(), activeBranchId, tenantId, email.trim() || null);
       if (emp) { onAuthenticated(emp); }
-      else { setError('PIN incorrecto'); setPin(''); inputRef.current?.focus(); }
+      else { setError('PIN incorrecto'); setPin(''); setEmail(''); inputRef.current?.focus(); }
     } catch { setError('Error al conectar'); }
     finally { setLoading(false); }
   };
@@ -29,7 +32,8 @@ export default function EmpleadoLogin({ onAuthenticated }) {
   const handleDelete = () => { setPin(p => p.slice(0, -1)); setError(''); };
 
   useEffect(() => {
-    if (pin.length === 6 && !loading) {
+    // Auto-submit at 4 digits (legacy migrated PINs) or 6 (newer longer PINs).
+    if ((pin.length === 4 || pin.length === 6) && !loading) {
       const t = setTimeout(() => handleSubmit(), 200);
       return () => clearTimeout(t);
     }
@@ -61,6 +65,22 @@ export default function EmpleadoLogin({ onAuthenticated }) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {error === 'PIN duplicado, usá email' && (
+          <div className="mb-4">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Tu email para identificarte"
+              autoComplete="email"
+              className="w-full rounded-[--cm-radius-md] bg-cm-surface border border-cm-border px-4 py-2.5 text-sm text-cm-text placeholder:text-cm-text-secondary/50 focus:border-cm-accent focus:outline-none"
+            />
+            <button onClick={handleSubmit} disabled={loading || !email.trim()} className="mt-2 w-full rounded-[--cm-radius-md] bg-cm-primary text-cm-text py-2.5 text-sm font-medium disabled:opacity-40">
+              Continuar
+            </button>
+          </div>
+        )}
 
         {loading && <div className="flex justify-center mb-4"><Loader2 className="w-6 h-6 text-cm-accent animate-spin" /></div>}
 

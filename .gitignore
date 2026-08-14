@@ -88,3 +88,6 @@ logs/
 apps/housepysbot/data/
 apps/housepysbot/backup-orders-*.json
 ruvector.db
+
+# local RTDB snapshots
+backups/

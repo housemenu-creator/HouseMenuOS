@@ -39,7 +39,7 @@ export const ROLE_REGISTRY = {
     permissions: { ...allPermissions(), 'system:audit': true, 'system:manage': true },
     loginScreen: { title: 'Admin Hub', subtitle: 'Gestión del Sistema · House', icon: Settings },
     defaultUser: { email: 'super@house.local', name: 'Super Admin', pin: 'super' },
-    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'settings', 'roles', 'audit', 'reservations', 'branding', 'pipeline', 'bot'],
+    adminTabs: ['dashboard', 'orders', 'menu', 'inventory', 'caja', 'finanzas', 'sucursales', 'delivery', 'fiscal', 'users', 'marketing', 'analytics', 'customers', 'logistics', 'employees', 'applications', 'settings', 'roles', 'audit', 'reservations', 'branding', 'pipeline', 'bot'],
   },
   admin: {
     name: 'Administrador',

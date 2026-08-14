@@ -83,6 +83,7 @@ vi.mock('firebase/database', () => ({
 vi.mock('./crypto', () => ({
   hashPin: vi.fn(async (pin) => `mock_hash_${pin}`),
   verifyPinHash: vi.fn(async (pin, hash) => hash === `mock_hash_${pin}`),
+  pinLookupKey: vi.fn(async (pin) => `lookup_${pin}`),
 }));
 
 // Mock permissions to return predictable roles
@@ -197,6 +198,18 @@ describe('completeSetup', () => {
     expect(emp.profile.name).toBe('Juan Pérez');
     expect(emp.profile.pinHash).toBe('mock_hash_7245');
     expect(emp.branches[result.branchId]).toBe(true);
+  });
+
+  it('creates O(1) pin_lookup index and stores pinLookupKey', async () => {
+    const { completeSetup } = await import('./onboardingService');
+    const result = await completeSetup(VALID_PARAMS);
+
+    // Portal PIN login resolves via tenants/{t}/pin_lookup/{lookup}
+    const lookup = store.get(`tenants/${result.tenantId}/pin_lookup/lookup_7245`);
+    expect(lookup).toBe('anon_test_123');
+    // Employee stores the key for PIN rotation (updateUser)
+    const emp = store.get(`tenants/${result.tenantId}/employees/anon_test_123`);
+    expect(emp.profile.pinLookupKey).toBe('lookup_7245');
   });
 
   it('creates roles from defaults', async () => {

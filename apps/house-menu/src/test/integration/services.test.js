@@ -633,5 +633,130 @@ describe('authService', () => {
       expect(employee.profile.pinHash).toMatch(/^[a-f0-9]{32}:[a-f0-9]{64}$/);
       expect(employee.profile.pin).toBeNull();
     });
+
+    it('createUser writes pin_lookup index for O(1) portal login', async () => {
+      const { createUser } = await import('../../lib/authService.js');
+      const { pinLookupKey } = await import('../../lib/crypto.js');
+      const r = await createUser({ email: 'lookup@rest.com', name: 'Lookup', role: 'kitchen', pin: '2468' });
+      const lookup = await pinLookupKey('2468');
+      expect(store.get(`tenants/default/pin_lookup/${lookup}`)).toBe(r.userId);
+      const employee = store.get(`tenants/default/employees/${r.userId}`);
+      expect(employee.profile.pinLookupKey).toBe(lookup);
+    });
+
+    it('updateUser keeps pin_lookup index in sync (swap old key for new)', async () => {
+      const { createUser, updateUser } = await import('../../lib/authService.js');
+      const { pinLookupKey } = await import('../../lib/crypto.js');
+      const r = await createUser({ email: 'rotate@rest.com', name: 'Rotate', role: 'kitchen', pin: '1111' });
+      const oldKey = await pinLookupKey('1111');
+      expect(store.get(`tenants/default/pin_lookup/${oldKey}`)).toBe(r.userId);
+      await updateUser(r.userId, { pin: '2222' });
+      const newKey = await pinLookupKey('2222');
+      expect(store.get(`tenants/default/pin_lookup/${newKey}`)).toBe(r.userId);
+      // stale key removed (mock stores null; Firebase deletes — both acceptable)
+      expect(store.get(`tenants/default/pin_lookup/${oldKey}`)).toBeFalsy();
+    });
+
+    it('verifyPinByIndex logs in a portal employee by PIN only via lookup', async () => {
+      const { createUser } = await import('../../lib/authService.js');
+      const { verifyPinByIndex } = await import('../../lib/authService.js');
+      const r = await createUser({ email: 'portal@rest.com', name: 'Portal', role: 'kitchen', pin: '8080' });
+      const res = await verifyPinByIndex('8080', 'default');
+      expect(res.success).toBe(true);
+      expect(res.user.id).toBe(r.userId);
+      expect(res.user.name).toBe('Portal');
+      expect(res.user.email).toBe('portal@rest.com');
+    });
+
+    it('verifyPinByIndex rejects wrong PIN even when lookup key exists', async () => {
+      await new Promise(async (resolve) => {
+        const { createUser } = await import('../../lib/authService.js');
+        await createUser({ email: 'portal2@rest.com', name: 'Portal2', role: 'kitchen', pin: '1234' });
+        resolve();
+      });
+      const { verifyPinByIndex } = await import('../../lib/authService.js');
+      const res = await verifyPinByIndex('9999', 'default');
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('PIN incorrecto');
+    });
+
+    it('verifyPinByIndex migrates plaintext PIN on legacy scan fallback', async () => {
+      const { pinLookupKey } = await import('../../lib/crypto.js');
+      store.set('tenants/default/employees/legacy1', {
+        profile: { email: 'legacy@rest.com', name: 'Legacy', pin: '7777', active: true },
+        role: 'kitchen',
+        branches: { monteverde: true },
+      });
+      store.set('tenants/default/roles', {
+        kitchen: { name: 'Cocina', permissions: { 'orders:read': true } },
+      });
+      const lookup = await pinLookupKey('7777');
+      // no lookup entry → falls back to scan, then migrates
+      expect(store.get(`tenants/default/pin_lookup/${lookup}`)).toBeUndefined();
+      const { verifyPinByIndex } = await import('../../lib/authService.js');
+      const res = await verifyPinByIndex('7777', 'default');
+      expect(res.success).toBe(true);
+      expect(res.user.id).toBe('legacy1');
+      const employee = store.get('tenants/default/employees/legacy1');
+      expect(employee.profile.pinHash).toBeDefined();
+      expect(employee.profile.pin).toBeNull();
+    });
+
+    it('verifyPinByIndex rejects ambiguous plaintext PIN (duplicate)', async () => {
+      store.set('tenants/default/employees/dup1', {
+        profile: { email: 'dup1@rest.com', name: 'Dup1', pin: '4321', active: true },
+        role: 'kitchen',
+        branches: { monteverde: true },
+      });
+      store.set('tenants/default/employees/dup2', {
+        profile: { email: 'dup2@rest.com', name: 'Dup2', pin: '4321', active: true },
+        role: 'kitchen',
+        branches: { monteverde: true },
+      });
+      const { verifyPinByIndex } = await import('../../lib/authService.js');
+      const res = await verifyPinByIndex('4321', 'default');
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('PIN duplicado, usá email');
+    });
+
+    it('verifyPinByIndex disambiguates duplicated PIN by email', async () => {
+      store.set('tenants/default/employees/dup1', {
+        profile: { email: 'dup1@rest.com', name: 'Dup1', pin: '4321', active: true },
+        role: 'kitchen',
+        branches: { monteverde: true },
+      });
+      store.set('tenants/default/employees/dup2', {
+        profile: { email: 'dup2@rest.com', name: 'Dup2', pin: '4321', active: true },
+        role: 'kitchen',
+        branches: { monteverde: true },
+      });
+      store.set('tenants/default/roles', {
+        kitchen: { name: 'Cocina', permissions: { 'orders:read': true } },
+      });
+      const { verifyPinByIndex } = await import('../../lib/authService.js');
+      const res = await verifyPinByIndex('4321', 'default', 'dup2@rest.com');
+      expect(res, JSON.stringify(res)).toHaveProperty('success', true);
+      expect(res.user.id).toBe('dup2');
+    });
+
+    it('loginPortalByPin authenticates via tenant index and returns tenant employee record', async () => {
+      const { createUser } = await import('../../lib/authService.js');
+      const { loginPortalByPin } = await import('../../lib/empleadoService.js');
+      const r = await createUser({ email: 'portal@rest.com', name: 'Portal', role: 'kitchen', pin: '1357' });
+      const emp = await loginPortalByPin('1357', 'monteverde', 'default');
+      expect(emp).not.toBeNull();
+      // unified model: id IS the tenant employee key (no branch pushId resolution)
+      expect(emp.id).toBe(r.userId);
+      expect(emp.userId).toBe(r.userId);
+      expect(emp.role).toBe('kitchen');
+    });
+
+    it('loginPortalByPin rejects wrong PIN', async () => {
+      const { createUser } = await import('../../lib/authService.js');
+      const { loginPortalByPin } = await import('../../lib/empleadoService.js');
+      await createUser({ email: 'portal2@rest.com', name: 'Portal2', role: 'kitchen', pin: '2468' });
+      const emp = await loginPortalByPin('9999', 'monteverde', 'default');
+      expect(emp).toBeNull();
+    });
   });
 });

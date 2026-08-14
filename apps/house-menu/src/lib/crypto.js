@@ -48,6 +48,21 @@ export async function verifyPinHash(pin, stored) {
   return hex(hash) === hashHex;
 }
 
+/**
+ * Deterministic one-way key for O(1) PIN lookup (RTDB key-safe hex).
+ * DIFFERENT from hashPin: hashPin uses a random salt (unverifiable by key),
+ * this one is salt-less SHA-256 + pepper so `pin_lookup` can map a PIN to a
+ * uid without scanning. Not a password store — pinHash remains the actual
+ * credential check.
+ */
+export async function pinLookupKey(pin) {
+  let pepper;
+  try { pepper = getPepper(); } catch { pepper = 'house-menu-pin-lookup'; } // ponytail: fallback constante solo si falta pepper env
+  const enc = new TextEncoder();
+  const digest = await crypto.subtle.digest('SHA-256', enc.encode(`pin:${pin}:${pepper}`));
+  return hex(digest);
+}
+
 export async function encrypt(plaintext, salt = 'fixed') {
   if (!plaintext) return '';
   const enc = new TextEncoder();

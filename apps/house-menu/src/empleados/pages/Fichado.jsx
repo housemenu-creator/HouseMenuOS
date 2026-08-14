@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Timer, TimerOff, RefreshCw, CalendarDays, AlertCircle } from 'lucide-react';
 import AnimatedCounter from '@house/ui/src/components/AnimatedCounter';
-import { clockIn, clockOut, subscribeAttendance } from '../../lib/empleadoService';
+import { clockIn, clockOut, subscribeEmployeeTodayAttendance } from '../../lib/employeeService';
 
 function formatDuration(ms) {
   const totalMin = Math.floor(ms / 60000);
@@ -16,10 +16,12 @@ export default function Fichado({ employee, branchId }) {
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
 
+  const userId = employee?.userId || employee?.id;
+
   useEffect(() => {
-    const unsub = subscribeAttendance(employee.id, branchId, setAttendance);
+    const unsub = subscribeEmployeeTodayAttendance(userId, setAttendance);
     return () => unsub();
-  }, [employee.id, branchId]);
+  }, [userId]);
 
   useEffect(() => {
     if (attendance?.clockIn && !attendance.clockOut) {
@@ -35,11 +37,11 @@ export default function Fichado({ employee, branchId }) {
   const handleAction = useCallback(async (action) => {
     setLoading(true); setError('');
     try {
-      if (action === 'in') await clockIn(employee.id, branchId);
-      else await clockOut(employee.id, branchId);
-    } catch { setError(`Error al fichar ${action === 'in' ? 'entrada' : 'salida'}`); }
+      if (action === 'in') await clockIn(branchId, employee.id, userId);
+      else await clockOut(branchId, employee.id, userId);
+    } catch (err) { setError(err?.message || `Error al fichar ${action === 'in' ? 'entrada' : 'salida'}`); }
     finally { setLoading(false); }
-  }, [employee.id, branchId]);
+  }, [branchId, employee.id, userId]);
 
   return (
     <div className="space-y-4">
@@ -97,7 +99,7 @@ export default function Fichado({ employee, branchId }) {
       </div>
 
       <div className="text-center py-4">
-        <p className="text-xs text-cm-text-secondary"><CalendarDays className="w-3 h-3 inline-block mr-1" />{attendance?.status === 'presente' ? 'Presente ✅' : 'Sin fichar'}</p>
+        <p className="text-xs text-cm-text-secondary"><CalendarDays className="w-3 h-3 inline-block mr-1" />{attendance?.state === 'active' || attendance?.state === 'completed' ? 'Presente ✅' : 'Sin fichar'}</p>
       </div>
     </div>
   );

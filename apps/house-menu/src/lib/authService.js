@@ -5,7 +5,7 @@ import { getDefaultUsers } from './roleRegistry';
 import { tenantRef, tenantPath, getTenantId, setTenantId } from './tenantService';
 import { nowISO } from './format';
 import { auditLog } from './auditService';
-import { hashPin, verifyPinHash } from './crypto';
+import { hashPin, verifyPinHash, pinLookupKey } from './crypto';
 
 /** Fallback users when RTDB is unreachable (no Firebase Auth session yet) — only in dev */
 const DEFAULT_USERS = getDefaultUsers();
@@ -197,6 +197,128 @@ export async function fetchUserWorkspaces(memberships) {
   return workspaces;
 }
 
+/**
+ * Shared tail of PIN verification: fetch employee record for uid, verify hash
+ * (migrating plaintext PINs to hash on first successful login), build session user.
+ */
+async function verifyEmployeePin(uid, tenantId, pin) {
+  const empSnap = await get(ref(db, `tenants/${tenantId}/employees/${uid}`));
+  const empRecord = empSnap.val();
+  if (!empRecord) {
+    return { success: false, error: 'El usuario no existe en este espacio de trabajo' };
+  }
+
+  const found = normaliseEmployee(uid, empRecord);
+  const hashToCheck = found.pinHash || found.profile?.pinHash;
+  const plainToCheck = found.pin || found.profile?.pin;
+
+  let valid = false;
+  if (hashToCheck) {
+    valid = await verifyPinHash(pin, hashToCheck);
+  } else if (plainToCheck) {
+    valid = plainToCheck === pin;
+    if (valid) {
+      const newHash = await hashPin(pin);
+      try {
+        await update(ref(db, `tenants/${tenantId}/employees/${uid}`), {
+          'profile/pinHash': newHash,
+          'profile/pin': null,
+          pinHash: newHash,
+          pin: null,
+        });
+      } catch (err) {
+        console.warn('authService: no se pudo migrar PIN a hash:', err);
+      }
+    }
+  }
+
+  if (!valid) {
+    return { success: false, error: 'PIN incorrecto' };
+  }
+
+  const roles = await getRoles();
+  const roleDef = roles[found.role] || getDefaultRoles()[found.role];
+  if (!roleDef) {
+    return { success: false, error: 'Rol no encontrado' };
+  }
+
+  return {
+    success: true,
+    user: {
+      id: found.id,
+      email: found.email,
+      name: found.name,
+      role: found.role,
+      permissions: roleDef?.permissions || {},
+      branchIds: found.branches || { monteverde: true },
+    },
+  };
+}
+
+/**
+ * Portal-employee login by PIN ONLY, O(1) via tenants/{tenant}/pin_lookup/{key}.
+ * The lookup only resolves identity; pinHash is still verified as the credential.
+ * Falls back to a legacy scan for employees that predate the lookup index
+ * (logs a warning — run the migrate script to remove the scan entirely).
+ */
+export async function verifyPinByIndex(pin, selectedTenantId = null, emailToDisambiguate = null) {
+  if (!pin) return { success: false, error: 'Ingresá tu PIN' };
+
+  const tenantId = selectedTenantId || getTenantId() || 'default';
+  const lookup = await pinLookupKey(String(pin));
+
+  try {
+    const lookupSnap = await get(ref(db, `tenants/${tenantId}/pin_lookup/${lookup}`));
+    const uid = lookupSnap.val();
+    if (uid) {
+      setTenantId(tenantId);
+      const result = await verifyEmployeePin(uid, tenantId, String(pin));
+      if (result.success) return result;
+      return { success: false, error: 'PIN incorrecto' };
+    }
+
+    // ponytail: legacy scan only for pre-index employees; run scripts/migrate-employees-to-tenant.console.js to index them
+    const allSnap = await get(ref(db, `tenants/${tenantId}/employees`));
+    const all = allSnap.val();
+    if (!all) return { success: false, error: 'PIN incorrecto' };
+    const candidates = [];
+    for (const [id, emp] of Object.entries(all)) {
+      const n = normaliseEmployee(id, emp);
+      const plain = n.pin || n.profile?.pin;
+      if (plain === String(pin) && n.active !== false && n.status !== 'suspended' && n.status !== 'vacation') {
+        candidates.push(id);
+      }
+    }
+    if (candidates.length > 1) {
+      // Duplicate PIN: disambiguate by email (portal re-prompts with email field)
+      if (emailToDisambiguate) {
+        const byEmail = candidates.filter((id) => {
+          const n = normaliseEmployee(id, all[id]);
+          const email = String(n.email || n.profile?.email || '').trim().toLowerCase();
+          return email === String(emailToDisambiguate).trim().toLowerCase();
+        });
+        if (byEmail.length === 1) {
+          console.warn('authService.verifyPinByIndex: duplicated PIN resolved by email');
+          setTenantId(tenantId);
+          const result = await verifyEmployeePin(byEmail[0], tenantId, String(pin));
+          if (result.success) return result;
+        }
+      }
+      return { success: false, error: 'PIN duplicado, usá email' };
+    }
+    if (candidates.length === 1) {
+      console.warn('authService.verifyPinByIndex: legacy plaintext PIN scan hit — run scripts/migrate-employees-to-tenant.console.js');
+      setTenantId(tenantId);
+      const result = await verifyEmployeePin(candidates[0], tenantId, String(pin));
+      if (result.success) return result;
+    }
+    return { success: false, error: 'PIN incorrecto' };
+  } catch (err) {
+    console.warn('authService.verifyPinByIndex error:', err);
+    return { success: false, error: 'Error al conectar' };
+  }
+}
+
 export async function verifyPin(email, pin, selectedTenantId = null) {
   // Default users first — always work for known email+pin combos (dev only)
   for (const du of DEFAULT_USERS) {
@@ -228,6 +350,7 @@ export async function verifyPin(email, pin, selectedTenantId = null) {
 
   if (!uid) {
     // Fallback/Migration: search in 'default' tenant
+    console.warn('authService.verifyPin: global emails_to_uid miss, falling back to tenant scan — run migrate-employees-to-tenant.console.js');
     const fallbackUser = await findUserByEmailInTenant(email, 'default');
     if (fallbackUser) {
       uid = fallbackUser.id;
@@ -285,58 +408,8 @@ export async function verifyPin(email, pin, selectedTenantId = null) {
   // Set the tenant active path
   setTenantId(tenantId);
 
-  // Fetch the employee record from the tenant
-  const empSnap = await get(ref(db, `tenants/${tenantId}/employees/${uid}`));
-  const empRecord = empSnap.val();
-  if (!empRecord) {
-    return { success: false, error: 'El usuario no existe en este espacio de trabajo' };
-  }
-
-  const found = normaliseEmployee(uid, empRecord);
-  const hashToCheck = found.pinHash || found.profile?.pinHash;
-  const plainToCheck = found.pin || found.profile?.pin;
-
-  let valid = false;
-  if (hashToCheck) {
-    valid = await verifyPinHash(pin, hashToCheck);
-  } else if (plainToCheck) {
-    valid = plainToCheck === pin;
-    if (valid) {
-      const newHash = await hashPin(pin);
-      try {
-        await update(ref(db, `tenants/${tenantId}/employees/${uid}`), {
-          'profile/pinHash': newHash,
-          'profile/pin': null,
-          pinHash: newHash,
-          pin: null,
-        });
-      } catch (err) {
-        console.warn('authService: no se pudo migrar PIN a hash:', err);
-      }
-    }
-  }
-
-  if (!valid) {
-    return { success: false, error: 'PIN incorrecto' };
-  }
-
-  const roles = await getRoles();
-  const roleDef = roles[found.role] || getDefaultRoles()[found.role];
-  if (!roleDef) {
-    return { success: false, error: 'Rol no encontrado' };
-  }
-
-  return {
-    success: true,
-    user: {
-      id: found.id,
-      email: found.email,
-      name: found.name,
-      role: found.role,
-      permissions: roleDef?.permissions || {},
-      branchIds: found.branches || { monteverde: true },
-    },
-  };
+  // Shared tail: fetch employee, verify hash (migrating plaintext), build user
+  return verifyEmployeePin(uid, tenantId, pin);
 }
 
 export async function ensureFirebaseUser(firebaseUser, selectedTenantId = null) {
@@ -581,11 +654,13 @@ export async function createUser({ email, name, role, pin, branchIds, actor }) {
     const employeesRef = tenantRef('employees');
     const newRef = push(employeesRef);
     const pinHash = await hashPin(pin);
+    const lookup = await pinLookupKey(pin);
     const employee = {
       profile: {
         name,
         email,
         pinHash,
+        pinLookupKey: lookup,
         active: true,
         createdAt: nowISO(),
       },
@@ -595,6 +670,10 @@ export async function createUser({ email, name, role, pin, branchIds, actor }) {
       firebaseUid: null,
     };
     await set(newRef, employee);
+
+    // O(1) PIN index (identity hint only — pinHash is the credential check)
+    const tenantId = getTenantId();
+    await set(ref(db, `tenants/${tenantId}/pin_lookup/${lookup}`), newRef.key);
 
     // Sync role cache for all assigned branches
     const targetBranches = branchIds || { monteverde: true };
@@ -608,7 +687,6 @@ export async function createUser({ email, name, role, pin, branchIds, actor }) {
 
     // Sync to global index for multi-tenancy
     const encodedEmail = email.replace(/\./g, ',');
-    const tenantId = getTenantId();
     const globalPayload = {
       [`global/emails_to_uid/${encodedEmail}`]: newRef.key,
       [`global/users/${newRef.key}/profile`]: {
@@ -661,6 +739,19 @@ export async function updateUser(userId, data, actor) {
     if (data.pin) {
       updates['profile/pinHash'] = await hashPin(data.pin);
       updates['profile/pin'] = null;
+      const newLookup = await pinLookupKey(data.pin);
+      updates['profile/pinLookupKey'] = newLookup;
+      // Keep O(1) PIN index in sync: remove old key (if known), write new one
+      const oldLookupKey = current?.profile?.pinLookupKey;
+      const tenantIdForLookup = getTenantId();
+      if (oldLookupKey && oldLookupKey !== newLookup) {
+        await update(ref(db), {
+          [`tenants/${tenantIdForLookup}/pin_lookup/${oldLookupKey}`]: null,
+          [`tenants/${tenantIdForLookup}/pin_lookup/${newLookup}`]: userId,
+        });
+      } else {
+        await set(ref(db, `tenants/${tenantIdForLookup}/pin_lookup/${newLookup}`), userId);
+      }
     }
     if (data.role) updates.role = data.role;
     if (data.branchIds) updates.branches = data.branchIds;
