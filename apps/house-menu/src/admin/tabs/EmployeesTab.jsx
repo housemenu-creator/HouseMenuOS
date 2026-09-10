@@ -744,7 +744,7 @@ export default function EmployeesTab({ allOrders }) {
         </div>
       )}
       {/* Stats bar */}
-      <motion.div variants={iv} className="grid grid-cols-4 gap-3 mb-5">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="grid grid-cols-4 gap-3 mb-5">
         {EMPLOYEE_STATUS.map(st => {
           const Icon = st.icon;
           const count = statusCounts[st.value] || 0;
@@ -779,9 +779,9 @@ export default function EmployeesTab({ allOrders }) {
       </div>
 
       {/* List */}
-      <motion.div variants={iv} className="space-y-2">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-2">
         {filtered.length === 0 && (
-          <motion.div variants={iv} className="text-center py-12">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="text-center py-12">
             <Users className="w-10 h-10 text-cm-text-tertiary mx-auto mb-3" />
             <p className="text-sm text-cm-text-secondary">No hay empleados {search ? 'que coincidan' : 'aún'}</p>
           </motion.div>
@@ -790,7 +790,7 @@ export default function EmployeesTab({ allOrders }) {
           const kpi = allOrders ? computeEmployeeKPI(allOrders, emp.id, emp.name) : null;
           const today = attendance[emp.id];
           return (
-            <motion.div key={emp.id} variants={iv} className="bg-cm-surface rounded-xl border border-cm-border p-4 flex items-start justify-between gap-3 hover:border-cm-border-hover transition-colors">
+            <motion.div key={emp.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="bg-cm-surface rounded-xl border border-cm-border p-4 flex items-start justify-between gap-3 hover:border-cm-border-hover transition-colors">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-cm-text">{emp.name}</h4>
